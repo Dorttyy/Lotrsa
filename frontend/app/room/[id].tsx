@@ -1,5 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from "@/src/ui/icons";
 import * as Haptics from "expo-haptics";
+import * as NavigationBar from "expo-navigation-bar";
+import * as SystemUI from "expo-system-ui";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -72,13 +74,41 @@ export default function RoomScreen() {
   const router = useRouter();
   const { user, setUser } = useAuth();
   const { subscribe } = useCall();
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const styles = React.useMemo(() => makeStyles(colors), [colors]);
   const [room, setRoom] = useState<Room | null>(null);
   const [messages, setMessages] = useState<RoomMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(true);
   const [bgIndex, setBgIndex] = useState(0);
+  const roomBg = BG_COLORS[bgIndex];
+
+  // The room's saved background (set by the host) is the source of truth, so
+  // the screen, its overlay panels and the OS chrome all show the same colour.
+  useEffect(() => {
+    if (room?.background != null) {
+      setBgIndex(room.background % BG_COLORS.length);
+    }
+  }, [room?.background]);
+
+  // Paint the OS chrome with the room's own colour while this screen is open,
+  // so the phone's bottom (navigation) bar and the area behind the status bar
+  // match the room background instead of the app surface. Restored on exit.
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    SystemUI.setBackgroundColorAsync(roomBg).catch(() => {});
+    if (Platform.OS === "android") {
+      NavigationBar.setButtonStyleAsync("light").catch(() => {});
+    }
+    return () => {
+      SystemUI.setBackgroundColorAsync(colors.surface).catch(() => {});
+      if (Platform.OS === "android") {
+        NavigationBar.setButtonStyleAsync(mode === "dark" ? "light" : "dark").catch(
+          () => {},
+        );
+      }
+    };
+  }, [roomBg, colors.surface, mode]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [audioNoticeDismissed, setAudioNoticeDismissed] = useState(false);
   const [switcherRooms, setSwitcherRooms] = useState<Room[]>([]);
@@ -695,7 +725,7 @@ export default function RoomScreen() {
 
   if (loading || !room) {
     return (
-      <View style={[styles.container, { backgroundColor: BG_COLORS[bgIndex] }]}>
+      <View style={[styles.container, { backgroundColor: roomBg }]}>
         <StatusBar style="light" />
         <SafeAreaView style={styles.center}>
           <ActivityIndicator size="large" color="#FFFFFF" />
@@ -792,7 +822,7 @@ export default function RoomScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: BG_COLORS[bgIndex] }]}>
+    <View style={[styles.container, { backgroundColor: roomBg }]}>
       <StatusBar style="light" />
       <SafeAreaView style={styles.safe} edges={["top", "bottom"]} testID="room-screen">
         <View style={styles.header}>

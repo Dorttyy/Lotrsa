@@ -1,0 +1,31 @@
+{
+  "summary": "Bug fix verified: room screen now paints its own bg on the OS chrome (via expo-system-ui + expo-navigation-bar) with a Platform.OS==='web' guard. On web preview at 390x844, room screens fully cover the viewport (screen_h=844 == win_h=844) with no light band at the bottom, no page errors, and no console errors from the new native module calls. Non-host (mei) opened /room/<AR-live-room>: room-screen visible, purple #413389 background covers full height, composer accepts input, menu opens (Share/Minimize/Leave/Close). Left via power btn -> URL /voice with body bg rgb(255,255,255) confirming app theme restored. Then re-logged as host of TEST iter22 room (Mei is host), opened Edit Room, switched Background to swatch #2, saved: room repainted deep purple, dimensions still 844x844 (full height). Gift sheet, member tiles, exit sheet all render normally. Regression sweep over /voice, /connect, /chats, /profile: no errors. Preview URL used: https://icon-overhaul-4.preview.emergentagent.com.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/tmp/a3_room.png (room open, full-height purple bg)",
+    "/tmp/a5_after_leave.png (returned to /voice, light theme restored)",
+    "/tmp/b1_editroom.png (Edit Room sheet with Background swatches)",
+    "/tmp/b2_bg_changed.png (bg switched, still full height)",
+    "/tmp/b3_gift.png (gift sheet renders)",
+    "/tmp/b4_exit_sheet.png (Share/Minimize/Leave/Close)"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "SystemUI/NavigationBar cleanup effect in /app/frontend/app/room/[id].tsx (lines 89-103) correctly guards with Platform.OS==='web' and restores colors.surface + theme-matching button style on unmount — matches the global setter in /app/frontend/app/_layout.tsx.",
+    "roomBg (line 84) is derived from BG_COLORS[bgIndex] but is not synced with room?.background — the loaded root View at line 817 uses roomBg while the OS-chrome effect and switcher panel at line 1696 read room?.background. Currently bgIndex stays at 0 so a room whose background is not 0 will paint the OS nav-bar with the wrong colour until the host changes it via Edit Room. Consider driving roomBg from room?.background once loaded (e.g. useEffect(()=>setBgIndex(room?.background ?? 0),[room?.background])). Not part of the reported bug; noted for follow-up.",
+    "Full-screen coverage verified: SafeAreaView edges=['top','bottom'] inside a View with backgroundColor=roomBg means the safe-area strips are also the room colour — no white band at bottom on web (would map to the system nav-bar area on Android)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped per request)", "frontend": "100% (6/6 checks)"},
+  "seed_data_creation": "None (used seeded demo user mei@demo.com and existing live rooms)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Web preview cannot show the real Android system-navigation-bar; the important web-side checks are (a) no crash from SystemUI/NavigationBar calls (guarded by Platform.OS==='web'), (b) the room root View + SafeAreaView paints roomBg to the full viewport with no light band, (c) leaving the room restores the app theme (body bg becomes rgb(255,255,255) in light mode). All three are green in iteration 26. If host-selectable background needs to drive both the OS chrome AND the visible screen consistently, sync bgIndex from room?.background on load (see critical_code_review_comments).",
+  "rca_of_issue": "Root cause of the original bug: the app only set SystemUI.setBackgroundColorAsync(colors.surface) globally in _layout.tsx, so on Android the system navigation bar always used colors.surface (white/dark grey depending on theme) even when a coloured voice-room screen was open — visible mismatch between the room's purple/teal/etc. background and the OS bottom bar. Fix: room/[id].tsx now temporarily calls SystemUI.setBackgroundColorAsync(roomBg) + NavigationBar.setButtonStyleAsync('light') on mount (native only), and restores colors.surface + the theme-matched button style on unmount. Verified on web that these calls are no-oped and do not throw."
+}
