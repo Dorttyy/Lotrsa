@@ -9,13 +9,14 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Keyboard,
   Modal,
   Platform,
   Pressable,
   ScrollView,
   Share,
   StyleSheet,
-    Text,
+  Text,
   TextInput,
   View,
 } from "react-native";
@@ -123,6 +124,14 @@ export default function RoomScreen() {
   const [audienceModalOpen, setAudienceModalOpen] = useState(false);
   const [quickRepliesVisible, setQuickRepliesVisible] = useState(true);
   const [inputFocused, setInputFocused] = useState(false);
+  const chatInputRef = useRef<TextInput>(null);
+
+  /** Close the keyboard and restore the icon row beside the comment box. */
+  const dismissComposer = useCallback(() => {
+    chatInputRef.current?.blur();
+    Keyboard.dismiss();
+    setInputFocused(false);
+  }, []);
   const [joinAnnouncement, setJoinAnnouncement] = useState<{
     key: string;
     text: string;
@@ -974,8 +983,15 @@ export default function RoomScreen() {
           style={{ flex: 1 }}
           behavior={Platform.OS === "web" ? undefined : "translate-with-padding"}
         >
-          {/* Stage is fixed (no scrolling) — only the chat area below scrolls */}
-          <View style={styles.stageFixed}>
+          {/* Stage is fixed (no scrolling) — only the chat area below scrolls.
+              Tapping it dismisses the keyboard so the composer icons come back. */}
+          <View
+            style={styles.stageFixed}
+            onStartShouldSetResponder={() => {
+              if (inputFocused) dismissComposer();
+              return false;
+            }}
+          >
             <View style={styles.stageGrid}>
               {stageMembers.map(renderStageMember)}
               {Array.from({ length: emptySeatCount }).map((_, i) =>
@@ -1077,6 +1093,11 @@ export default function RoomScreen() {
               data={messages}
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.chatList}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              onScrollBeginDrag={() => {
+                if (inputFocused) dismissComposer();
+              }}
               ListHeaderComponent={
                 <View style={styles.noticeRow} testID="room-notice">
                   <View style={styles.noticeIconCircle} testID="room-notice-icon">
@@ -1207,6 +1228,7 @@ export default function RoomScreen() {
 
           <View style={styles.controls}>
             <TextInput
+              ref={chatInputRef}
               testID="room-chat-input"
               style={[styles.input, inputFocused && styles.inputFocused]}
               placeholder={

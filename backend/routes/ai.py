@@ -249,26 +249,9 @@ async def translate(body: TranslateRequest, current_user: CurrentUser):
     target = (body.target_language or "en").strip()
     if len(target) > 3:
         target = NAME_TO_CODE.get(target.lower(), "en")
-    # Free users: configurable translations/day. VIP: unlimited.
+    # Translation is unlimited and free for everyone: it runs on the free
+    # Google endpoint (no API key, no cost), so there is nothing to meter.
     remaining = None
-    if not _vip_active(current_user):
-        limit = (await get_app_config())["free_translations_per_day"]
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        usage = current_user.get("translate_usage") or {}
-        count = usage.get("count", 0) if usage.get("date") == today else 0
-        if count >= limit:
-            raise HTTPException(
-                status_code=429,
-                detail=(
-                    f"Daily translation limit reached ({limit}/day for free users). "
-                    "Upgrade to VIP for unlimited translations."
-                ),
-            )
-        await users_col.update_one(
-            {"_id": current_user["_id"]},
-            {"$set": {"translate_usage": {"date": today, "count": count + 1}}},
-        )
-        remaining = limit - count - 1
     try:
         translated = await _google_translate(body.text, target)
     except Exception:

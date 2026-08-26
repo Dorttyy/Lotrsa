@@ -1,0 +1,474 @@
+{
+  "320": {
+    "vw": 320,
+    "listLeft": 0,
+    "listRight": 320,
+    "items": [
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 29,
+        "right": 85,
+        "width": 56,
+        "top": -536,
+        "text": "Travel"
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 91,
+        "right": 139,
+        "width": 48,
+        "top": -536,
+        "text": "Food"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 145,
+        "right": 238,
+        "width": 93,
+        "top": -536,
+        "text": "Photography"
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 29,
+        "right": 77,
+        "width": 48,
+        "top": -505,
+        "text": "Yoga"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 163,
+        "right": 304,
+        "width": 141,
+        "top": -123,
+        "text": "iter24-test-msg"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 240,
+        "right": 304,
+        "width": 64,
+        "top": 65,
+        "text": "Short"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 96.640625,
+        "right": 304,
+        "width": 207.359375,
+        "top": 115,
+        "text": "This is a very long outgoing message written to check the wrapping beh"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 261,
+        "right": 304,
+        "width": 43,
+        "top": 341,
+        "text": "ok"
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 64,
+        "right": 211,
+        "width": 147,
+        "top": 391,
+        "text": "Hey! Short reply"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 64,
+        "right": 271.359375,
+        "width": 207.359375,
+        "top": 441,
+        "text": "And here is an equally long incoming message from the partner side so "
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 64,
+        "right": 108,
+        "width": 44,
+        "top": 667,
+        "text": "\ud83d\udc4d"
+      }
+    ],
+    "overflow": false
+  },
+  "360": {
+    "vw": 360,
+    "listLeft": 0,
+    "listRight": 360,
+    "items": [
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 29,
+        "right": 85,
+        "width": 56,
+        "top": -439,
+        "text": "Travel"
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 91,
+        "right": 139,
+        "width": 48,
+        "top": -439,
+        "text": "Food"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 145,
+        "right": 238,
+        "width": 93,
+        "top": -439,
+        "text": "Photography"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 244,
+        "right": 292,
+        "width": 48,
+        "top": -439,
+        "text": "Yoga"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 203,
+        "right": 344,
+        "width": 141,
+        "top": -57,
+        "text": "iter24-test-msg"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 280,
+        "right": 344,
+        "width": 64,
+        "top": 131,
+        "text": "Short"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 107.84375,
+        "right": 344,
+        "width": 236.15625,
+        "top": 181,
+        "text": "This is a very long outgoing message written to check the wrapping beh"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 301,
+        "right": 344,
+        "width": 43,
+        "top": 385,
+        "text": "ok"
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 64,
+        "right": 211,
+        "width": 147,
+        "top": 435,
+        "text": "Hey! Short reply"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 64,
+        "right": 300.15625,
+        "width": 236.15625,
+        "top": 485,
+        "text": "And here is an equally long incoming message from the partner side so "
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 64,
+        "right": 108,
+        "width": 44,
+        "top": 667,
+        "text": "\ud83d\udc4d"
+      }
+    ],
+    "overflow": false
+  },
+  "390": {
+    "vw": 390,
+    "listLeft": 0,
+    "listRight": 390,
+    "items": [
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 29,
+        "right": 85,
+        "width": 56,
+        "top": -417,
+        "text": "Travel"
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 91,
+        "right": 139,
+        "width": 48,
+        "top": -417,
+        "text": "Food"
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 145,
+        "right": 238,
+        "width": 93,
+        "top": -417,
+        "text": "Photography"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 244,
+        "right": 292,
+        "width": 48,
+        "top": -417,
+        "text": "Yoga"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 233,
+        "right": 374,
+        "width": 141,
+        "top": -35,
+        "text": "iter24-test-msg"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 310,
+        "right": 374,
+        "width": 64,
+        "top": 153,
+        "text": "Short"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 116.25,
+        "right": 374,
+        "width": 257.75,
+        "top": 203,
+        "text": "This is a very long outgoing message written to check the wrapping beh"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 331,
+        "right": 374,
+        "width": 43,
+        "top": 385,
+        "text": "ok"
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 64,
+        "right": 211,
+        "width": 147,
+        "top": 435,
+        "text": "Hey! Short reply"
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 64,
+        "right": 321.75,
+        "width": 257.75,
+        "top": 485,
+        "text": "And here is an equally long incoming message from the partner side so "
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 64,
+        "right": 108,
+        "width": 44,
+        "top": 667,
+        "text": "\ud83d\udc4d"
+      }
+    ],
+    "overflow": false
+  },
+  "430": {
+    "vw": 430,
+    "listLeft": 0,
+    "listRight": 430,
+    "items": [
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 29,
+        "right": 85,
+        "width": 56,
+        "top": -373,
+        "text": "Travel"
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 91,
+        "right": 139,
+        "width": 48,
+        "top": -373,
+        "text": "Food"
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 145,
+        "right": 238,
+        "width": 93,
+        "top": -373,
+        "text": "Photography"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 244,
+        "right": 292,
+        "width": 48,
+        "top": -373,
+        "text": "Yoga"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 273,
+        "right": 414,
+        "width": 141,
+        "top": 9,
+        "text": "iter24-test-msg"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 350,
+        "right": 414,
+        "width": 64,
+        "top": 197,
+        "text": "Short"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 127.453125,
+        "right": 414,
+        "width": 286.546875,
+        "top": 247,
+        "text": "This is a very long outgoing message written to check the wrapping beh"
+      },
+      {
+        "side": "mine",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 371,
+        "right": 414,
+        "width": 43,
+        "top": 407,
+        "text": "ok"
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 64,
+        "right": 211,
+        "width": 147,
+        "top": 457,
+        "text": "Hey! Short reply"
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 64,
+        "right": 350.546875,
+        "width": 286.546875,
+        "top": 507,
+        "text": "And here is an equally long incoming message from the partner side so "
+      },
+      {
+        "side": "theirs",
+        "isCallCard": false,
+        "isBubble": true,
+        "left": 64,
+        "right": 108,
+        "width": 44,
+        "top": 667,
+        "text": "\ud83d\udc4d"
+      }
+    ],
+    "overflow": false
+  }
+}

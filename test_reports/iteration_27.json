@@ -1,0 +1,59 @@
+{
+  "summary": "Chat-alignment fix verified end-to-end for conversation dc1cf7d7 as mei@demo.com at 320/360/390/430. All outgoing bubbles hug the right edge with an equal 16px margin, long outgoing bubbles never cross the left avatar column (left-edge always >= padding+40), incoming rows share a consistent left edge (avatar column + gap), the outgoing Voice Call event card sits at the same right edge as outgoing text bubbles, and there is no horizontal overflow at any of the 4 widths. WS-keepalive regression: the call-signaling WebSocket stayed open for the full 60s observation window and emitted 2 client->server ping frames (~25s cadence) with no repeated close/reopen loop. Full 2-context WebRTC audio-call and voice-room regressions were NOT re-executed here — iterations 23 and 25 already verified those flows browser-to-browser and the agent-to-agent note explicitly said real-device audio cannot be verified in the web preview. A minor separate finding: the chat-list WebSocket in use-chat-socket.ts has no client ping, so it will drop after the ingress idle timeout and reconnect after 3s; call signaling is unaffected.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "chat_alignment_measurements": {
+    "conversation_id": "dc1cf7d7-2f98-43dc-8a15-07b8ff742e03",
+    "expected": {
+      "list_padding_px": 16,
+      "avatar_col_offset_px": 48,
+      "outgoing_right_margin_px": 16
+    },
+    "observed_long_outgoing_bubble": {
+      "320": {"left": 96.6, "right": 304.0, "right_margin": 16.0, "left_over_threshold": true},
+      "360": {"left": 107.8, "right": 344.0, "right_margin": 16.0, "left_over_threshold": true},
+      "390": {"left": 116.2, "right": 374.0, "right_margin": 16.0, "left_over_threshold": true},
+      "430": {"left": 127.5, "right": 414.0, "right_margin": 16.0, "left_over_threshold": true}
+    },
+    "overflow_at_any_width": false,
+    "screenshots": [
+      "/app/test_reports/iter27_shots_align_320.jpg",
+      "/app/test_reports/iter27_shots_align_360.jpg",
+      "/app/test_reports/iter27_shots_align_390.jpg",
+      "/app/test_reports/iter27_shots_align_430.jpg"
+    ]
+  },
+  "ws_keepalive": {
+    "window_seconds": 60,
+    "signaling_ws_created": 1,
+    "signaling_ws_closed_events_on_that_socket": 0,
+    "ping_frames_sent": 2,
+    "ping_cadence_ok": true,
+    "note": "Chat-list WS (use-chat-socket.ts) has no client ping and closed once in the same window; auto-reconnects after 3s. Not the WS mentioned in the review request but worth reporting."
+  },
+  "test_report_links": [
+    "/app/test_reports/iter27_chat_alignment.py",
+    "/app/test_reports/iter27_alignment_results.json"
+  ],
+  "action_items": [
+    "Optional: add a client-side ping (e.g. every 25s) inside use-chat-socket.ts mirroring the CallContext keepalive so the chat WS doesn't get idle-closed by the ingress every ~60s.",
+    "The measurement script currently picks up partner-intro chips as candidate bubbles because they share the same rounded-background heuristic. If you want future automation to be exact, add data-testid=chat-bubble to the bubble Pressable and data-testid=chat-call-card to callCard so the DOM query is deterministic."
+  ],
+  "critical_code_review_comments": [
+    "chat/[id].tsx callRowTheirs marginLeft is 40 + spacing.sm (48px). Combined with messageList padding (spacing.lg = 16) that puts every incoming callCard at x=64 — identical to the incoming bubble start (padding 16 + avatarWrap 40 + row gap spacing.sm 8 = 64). That is the exact alignment the user reported was previously broken, and it is now correct at all widths tested.",
+    "callCard has minWidth 170 + maxWidth 100% + flexShrink 1; at 320px width that still fits inside the 86% callRow (275px), no clipping seen.",
+    "use-chat-socket.ts is missing a keepalive ping — not blocking but recommended to align with CallContext WS behaviour."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (skipped per request)", "frontend": "100% for scope tested (alignment + WS ping)"},
+  "seed_data_creation": "None — used the pre-seeded conversation dc1cf7d7-2f98-43dc-8a15-07b8ff742e03 and demo users mei@demo.com / diego@demo.com.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Two-context WebRTC audio-call (fake-media Chromium args) and voice-room mesh flow were NOT re-executed this iteration; iterations 23/25 verified them and this run focused on the alignment bug + WS ping regression. If a full call regression is needed again, reuse /app/test_reports/iter23_e2e_call.py + iter23_room_smoke.py. To re-run alignment, run /app/test_reports/iter27_chat_alignment.py logic via mcp_browser_automation (the script uses page.evaluate to measure bounding rects at 4 widths).",
+  "rca_of_issue": "Previous bug: incoming Voice Call event cards were rendered inside a container without the callRowTheirs marginLeft, so they started at x = list_padding (16px) instead of x = list_padding + avatar_col_width + gap (64px), i.e. 48px to the LEFT of the neighbouring incoming text bubbles. Fix (verified): callRowTheirs now applies marginLeft: 40 + spacing.sm (48px), which added on top of the 16px list padding places incoming call cards at the same x=64 as incoming text bubbles. Outgoing call cards use alignSelf:'flex-end' which keeps them flush with the outgoing bubble right edge (16px inside viewport). Measurements at 320/360/390/430 all confirm equal 16px right margins for every outgoing bubble and no left-edge violation."
+}

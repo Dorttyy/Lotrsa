@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import {
   Alert,
+  AppState,
   Modal,
   Platform,
   Pressable,
@@ -42,11 +43,11 @@ import {
   createLevelMeter,
 } from "@/src/utils/audio-level";
 import { audioSession } from "@/src/utils/incall";
+import { alertMicError } from "@/src/utils/mic-error";
 import {
   getIceConfig,
   getMicStream,
   getRTC,
-  micErrorMessage,
   preferOpus,
   readStats,
   webrtcAvailable,
@@ -129,6 +130,7 @@ const RING_TIMEOUT_MS = 45000;
 const ICE_RESTART_DELAY_MS = 2000;
 const RECONNECT_GIVEUP_MS = 25000;
 const LEVEL_POLL_MS = 300;
+const KEEPALIVE_MS = 25000;
 
 /** RN-web's Alert.alert is a no-op — use window.alert on web so users always see feedback. */
 const notify = (title: string, message: string) => {
@@ -347,6 +349,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   const createPeer = async (peerId: string) => {
     const rtc = getRTC();
     if (!rtc) throw new Error("webrtc-unavailable");
+    if (rtc.native) audioSession.start(false);
     const stream = await getMicStream();
     localStreamRef.current = stream;
     const config = await getIceConfig();
@@ -448,7 +451,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         finalizeSession(callId, "FAILED");
         cleanupMedia();
         setCall(null);
-        notify("Call failed", micErrorMessage(err));
+        alertMicError(err, "Call failed");
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -493,7 +496,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
       finalizeSession(current.callId, "FAILED");
       cleanupMedia();
       setCall(null);
-      notify("Call failed", micErrorMessage(err));
+      alertMicError(err, "Call failed");
     }
   };
 
@@ -653,10 +656,34 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user) return;
     let closed = false;
     let retry: ReturnType<typeof setTimeout> | null = null;
+    let ping: ReturnType<typeof setInterval> | null = null;
 
     const connect = () => {
+      if (closed) return;
+      const existing = wsRef.current;
+      if (
+        existing &&
+        (existing.readyState === WebSocket.OPEN ||
+          existing.readyState === WebSocket.CONNECTING)
+      ) {
+        return;
+      }
       const ws = new WebSocket(wsUrl());
       wsRef.current = ws;
+      ws.onopen = () => {
+        // Mobile carriers / proxies drop idle sockets — a light keepalive keeps
+        // incoming calls and room events flowing in real time.
+        if (ping) clearInterval(ping);
+        ping = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            try {
+              ws.send(JSON.stringify({ type: "ping" }));
+            } catch {
+              // socket closing; onclose will reconnect
+            }
+          }
+        }, KEEPALIVE_MS);
+      };
       ws.onmessage = (e) => {
         try {
           handleEvent(JSON.parse(e.data));
@@ -665,14 +692,31 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       };
       ws.onclose = () => {
+        if (ping) {
+          clearInterval(ping);
+          ping = null;
+        }
         if (!closed) retry = setTimeout(connect, 3000);
       };
     };
     connect();
 
+    // Reconnect the moment the app comes back to the foreground (Android/iOS
+    // suspend sockets in the background).
+    const appStateSub = AppState.addEventListener("change", (state) => {
+      if (state !== "active" || closed) return;
+      const ws = wsRef.current;
+      if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+        if (retry) clearTimeout(retry);
+        connect();
+      }
+    });
+
     return () => {
       closed = true;
+      appStateSub.remove();
       if (retry) clearTimeout(retry);
+      if (ping) clearInterval(ping);
       wsRef.current?.close();
       wsRef.current = null;
     };

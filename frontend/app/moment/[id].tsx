@@ -30,6 +30,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ActionSheetPopup, QuickAction, SheetHighlight, SheetRow } from "@/src/components/ActionSheetPopup";
 import { Avatar } from "@/src/components/Avatar";
+import { FlagIcon } from "@/src/components/FlagIcon";
 import { BackButton } from "@/src/components/BackButton";
 import { VipBadge } from "@/src/components/Badges";
 import { LikersRow } from "@/src/components/LikersRow";
@@ -684,6 +685,26 @@ export default function MomentDetail() {
                       {moment.author?.is_vip ? (
                         <VipBadge small tier={moment.author?.vip_tier} />
                       ) : null}
+                    </View>
+                    {/* Same native → learning language pair the author shows on
+                        their profile and in the moments list. */}
+                    <View style={styles.langRow}>
+                      <FlagIcon code={moment.author?.native_language} size={13} />
+                      <Ionicons
+                        name="arrow-forward"
+                        size={9}
+                        color={colors.onSurfaceSecondary}
+                      />
+                      {(moment.author?.learning_languages?.length
+                        ? moment.author.learning_languages
+                        : moment.author?.learning_language
+                          ? [moment.author.learning_language]
+                          : []
+                      )
+                        .slice(0, 3)
+                        .map((c: string) => (
+                          <FlagIcon key={c} code={c} size={13} />
+                        ))}
                     </View>
                     <Text style={styles.time}>
                       {timeAgo(moment.created_at)}
@@ -1495,6 +1516,12 @@ const makeStyles = (colors: ThemeColors) =>
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
+  },
+  langRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    marginTop: 1,
   },
   authorName: {
     fontFamily: fonts.displaySemi,

@@ -13,7 +13,11 @@
       "bundleIdentifier": "com.emergent.communityspeak.z97eev",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Share photos from your gallery in chat",
-        "NSMicrophoneUsageDescription": "Record voice messages and join voice rooms"
+        "NSMicrophoneUsageDescription": "Record voice messages and join voice rooms",
+        "UIBackgroundModes": [
+          "audio",
+          "voip"
+        ]
       }
     },
     "android": {
@@ -23,7 +27,16 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.emergent.communityspeak.z97eev",
-      "permissions": ["READ_MEDIA_IMAGES", "RECORD_AUDIO"]
+      "permissions": [
+        "READ_MEDIA_IMAGES",
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS",
+        "BLUETOOTH",
+        "BLUETOOTH_CONNECT",
+        "WAKE_LOCK",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
     },
     "web": {
       "bundler": "metro",

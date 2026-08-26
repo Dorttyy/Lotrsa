@@ -124,7 +124,8 @@ async def _reply_snapshot(conversation_id: str, reply_to_id: str | None) -> dict
         "author_id": ref["sender_id"],
         "author_name": (author or {}).get("name") or "User",
         "type": rtype,
-        "preview": (preview or "")[:120],
+        # Keep the whole quoted message so replies show it in full.
+        "preview": (preview or "")[:2000],
         "duration_ms": ref.get("duration_ms"),
     }
 

@@ -1512,7 +1512,20 @@ export default function ChatScreen() {
               const onBubblePress = () => {
                 if (selectMode) {
                   toggleSelect(item.id);
-                } else if (isImage && item.image_id) {
+                  return;
+                }
+                if (!isImage) {
+                  // Tap any message to translate it into your native language
+                  // (tap again to hide the translation). Voice notes are
+                  // transcribed first so there is text to translate.
+                  if (isVoice && !item.transcript) {
+                    transcribeVoice(item);
+                  } else if (item.transcript || item.text) {
+                    translate(item);
+                  }
+                  return;
+                }
+                if (isImage && item.image_id) {
                   // Tap opens the full-screen photo viewer (long-press keeps
                   // the AI action sheet).
                   router.push({
@@ -1550,7 +1563,7 @@ export default function ChatScreen() {
                       delayLongPress={220}
                       style={[
                         styles.stickerMsg,
-                        { alignSelf: mine ? "flex-end" : "flex-start" },
+                        mine ? styles.callRowMine : styles.callRowTheirs,
                         selected && styles.bubbleSelected,
                       ]}
                     >
@@ -1561,8 +1574,14 @@ export default function ChatScreen() {
                       />
                     </Pressable>
                   ) : isCall ? (
-                    <View style={[styles.callRow, { alignSelf: mine ? "flex-end" : "flex-start" }]}>
-                      <View style={styles.callCard}>                        <View
+                    <View
+                      style={[
+                        styles.callRow,
+                        mine ? styles.callRowMine : styles.callRowTheirs,
+                      ]}
+                    >
+                      <View style={styles.callCard}>
+                        <View
                           style={[
                             styles.callIconWrap,
                             item.call_status === "missed" && styles.callIconMissed,
@@ -1703,7 +1722,7 @@ export default function ChatScreen() {
                               </Text>
                             </View>
                           ) : (
-                            <Text style={styles.replyPreview} numberOfLines={2}>
+                            <Text style={styles.replyPreview}>
                               {item.reply_to.type === "image"
                                 ? "Photo"
                                 : item.reply_to.preview}
@@ -2076,7 +2095,7 @@ export default function ChatScreen() {
                         : partner?.name || ""}
                     </Text>
                   </Text>
-                  <Text style={styles.replyBannerPreview} numberOfLines={1}>
+                  <Text style={styles.replyBannerPreview} numberOfLines={3}>
                     {replyTarget.type === "voice"
                       ? "Voice message"
                       : replyTarget.type === "image"
@@ -2847,6 +2866,17 @@ const makeStyles = (colors: ThemeColors) =>
     },
     callRow: {
       marginVertical: spacing.sm,
+      maxWidth: "86%",
+    },
+    // Outgoing rows hug the right edge; incoming rows start where the partner's
+    // bubbles start (avatar column width + row gap) so call cards, stickers and
+    // text bubbles all share one clean alignment on each side.
+    callRowMine: {
+      alignSelf: "flex-end",
+    },
+    callRowTheirs: {
+      alignSelf: "flex-start",
+      marginLeft: 40 + spacing.sm,
     },
     stickerMsg: {
       paddingVertical: 2,
@@ -2884,7 +2914,9 @@ const makeStyles = (colors: ThemeColors) =>
       borderRadius: radius.lg,
       paddingVertical: spacing.sm + 2,
       paddingHorizontal: spacing.lg,
-      minWidth: 200,
+      minWidth: 170,
+      maxWidth: "100%",
+      flexShrink: 1,
     },
     callIconWrap: {
       width: 34,

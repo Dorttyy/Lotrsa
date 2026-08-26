@@ -9,6 +9,7 @@ import {
   createLevelMeter,
 } from "@/src/utils/audio-level";
 import { audioSession } from "@/src/utils/incall";
+import { alertMicError } from "@/src/utils/mic-error";
 import {
   getIceConfig,
   getMicStream,
@@ -143,13 +144,19 @@ export function useRoomAudio({
     if (!iSpeakRef.current) return null;
     if (!localStreamRef.current) {
       try {
+        // Own the native audio session before opening the mic (iOS needs the
+        // session configured first, otherwise capture can come up silent).
+        if (getRTC()?.native) audioSession.start(true);
         const stream = await getMicStream();
         localStreamRef.current = stream;
         stream.getAudioTracks().forEach((t: any) => {
           t.enabled = micOnRef.current;
         });
         localMeterRef.current = createLevelMeter(stream);
-      } catch {
+      } catch (err) {
+        // Don't dead-end the user: explain why they can't talk (and how to fix
+        // it) while they stay in the room as a listener.
+        alertMicError(err, "Can't turn on your mic");
         return null;
       }
     }
