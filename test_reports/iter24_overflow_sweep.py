@@ -17,7 +17,7 @@ import os
 import sys
 from playwright.async_api import async_playwright
 
-BASE = "https://icon-overhaul-4.preview.emergentagent.com"
+BASE = "https://expo-fix-12.preview.emergentagent.com"
 EMAIL = "mei@demo.com"
 PASSWORD = "Demo1234!"
 

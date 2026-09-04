@@ -4,7 +4,7 @@ import asyncio
 from playwright.async_api import async_playwright
 import requests
 
-BASE = "https://icon-overhaul-4.preview.emergentagent.com"
+BASE = "https://expo-fix-12.preview.emergentagent.com"
 FAKE_ARGS = [
     "--use-fake-device-for-media-stream",
     "--use-fake-ui-for-media-stream",

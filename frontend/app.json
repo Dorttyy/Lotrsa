@@ -30,6 +30,7 @@
       "permissions": [
         "READ_MEDIA_IMAGES",
         "RECORD_AUDIO",
+        "CAMERA",
         "MODIFY_AUDIO_SETTINGS",
         "BLUETOOTH",
         "BLUETOOTH_CONNECT",

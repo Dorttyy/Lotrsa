@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { PermissionsAndroid, Platform } from "react-native";
 
 import { proRtcUrl } from "@/src/utils/api";
 import { audioSession } from "@/src/utils/incall";
@@ -86,6 +87,26 @@ export function useProRtc(room: string | undefined, displayName: string) {
     try {
       // Prime the ICE cache (STUN/TURN from the server) before peering.
       await getIceConfig();
+      // Android: request camera + mic at runtime before capture.
+      if (Platform.OS === "android") {
+        try {
+          const res = await PermissionsAndroid.requestMultiple([
+            PermissionsAndroid.PERMISSIONS.CAMERA,
+            PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          ]);
+          const granted =
+            res[PermissionsAndroid.PERMISSIONS.CAMERA] ===
+              PermissionsAndroid.RESULTS.GRANTED &&
+            res[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] ===
+              PermissionsAndroid.RESULTS.GRANTED;
+          if (!granted) {
+            setMediaError("Camera/mic permission denied");
+            return;
+          }
+        } catch {
+          // fall through — getUserMedia will surface any remaining issue
+        }
+      }
       const stream: MediaStream = await rtc.mediaDevices.getUserMedia({
         video: { facingMode: "user" },
         audio: true,

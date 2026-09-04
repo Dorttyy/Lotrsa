@@ -27,7 +27,7 @@ import websockets
 # back to localhost if the WS scheme fails.
 PUBLIC = os.environ.get(
     "EXPO_PUBLIC_BACKEND_URL",
-    "https://icon-overhaul-4.preview.emergentagent.com",
+    "https://expo-fix-12.preview.emergentagent.com",
 ).rstrip("/")
 BASE = f"{PUBLIC}/api"
 # Prefer localhost for WS to avoid ingress-strip issues; backend runs on 8001.

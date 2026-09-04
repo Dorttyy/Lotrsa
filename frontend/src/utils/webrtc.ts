@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { PermissionsAndroid, Platform } from "react-native";
 
 import { api } from "@/src/utils/api";
 
@@ -105,10 +105,55 @@ export const micErrorMessage = (err: any): string => {
   return "Could not start the microphone. Please check your audio device and try again.";
 };
 
+/**
+ * Ensure the OS-level microphone permission is granted before capture.
+ *
+ * - Web: getUserMedia shows the browser prompt itself, so this is a no-op.
+ * - Android: RECORD_AUDIO is a runtime permission. Even though it's declared in
+ *   the manifest, `getUserMedia` fails silently/with NotAllowedError unless the
+ *   user has granted it at runtime, so we request it explicitly here.
+ * - iOS: react-native-webrtc's getUserMedia triggers the system prompt (backed
+ *   by NSMicrophoneUsageDescription); nothing extra to do.
+ *
+ * Throws a NotAllowedError-shaped error when the user denies, so existing
+ * `alertMicError` handling shows the "open settings" flow.
+ */
+export const ensureMicPermission = async (): Promise<void> => {
+  if (Platform.OS !== "android") return;
+  try {
+    const already = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+    );
+    if (already) return;
+    const result = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+      {
+        title: "Microphone access",
+        message:
+          "Allow microphone access so you can talk in calls and voice rooms.",
+        buttonPositive: "Allow",
+        buttonNegative: "Not now",
+      },
+    );
+    if (result !== PermissionsAndroid.RESULTS.GRANTED) {
+      const err: any = new Error("Microphone permission denied");
+      err.name = "NotAllowedError";
+      throw err;
+    }
+  } catch (err: any) {
+    if (err?.name === "NotAllowedError") throw err;
+    // PermissionsAndroid unavailable (e.g. Expo Go quirk) — let getUserMedia
+    // handle the prompt / failure itself.
+  }
+};
+
 /** Capture the mic with voice-optimised constraints (falls back to plain audio). */
 export const getMicStream = async (): Promise<any> => {
   const rtc = getRTC();
   if (!rtc) throw new Error("webrtc-unavailable");
+  // Request the runtime mic permission up front (Android) so capture never
+  // comes up silent because the OS never asked the user.
+  await ensureMicPermission();
   try {
     return await rtc.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
   } catch (err: any) {

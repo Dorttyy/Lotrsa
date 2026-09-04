@@ -4,7 +4,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("EXPO_BACKEND_URL", "https://icon-overhaul-4.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("EXPO_BACKEND_URL", "https://expo-fix-12.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 PASSWORD = "Demo1234!"
 
