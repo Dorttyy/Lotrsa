@@ -345,14 +345,33 @@ async def list_partners(
     location: str | None = None,
     gender: str | None = None,
     online_only: bool = False,
+    paid_practice: bool = False,
 ):
     """Partners list. Default: users whose native language matches my learning
     language, or who are learning my native language. `language=all` shows everyone.
-    Explicit search filters (age/location/gender/online_only) bypass matching."""
+    Explicit search filters (age/location/gender/online_only) bypass matching.
+    `paid_practice=true` shows only users offering coin-gated practice."""
     query: dict = {
         "_id": {"$ne": current_user["_id"]},
         "native_language": {"$ne": None},
     }
+    # Paid Practice tab: only partners who offer coin-gated practice. This is a
+    # standalone pool (ignores language-matching / other category filters).
+    if paid_practice:
+        query["paid_practice"] = True
+        docs = (
+            await users_col.find(query, {"password_hash": 0})
+            .sort("created_at", -1)
+            .to_list(100)
+        )
+        online_ids = manager.online_user_ids()
+        cards = []
+        for d in docs:
+            card = user_card(d)
+            card["is_online"] = d["_id"] in online_ids
+            card["streak_count"] = int(d.get("streak_count") or 0)
+            cards.append(apply_privacy(card, d))
+        return cards
     explicit = bool(
         location or gender or search or online_only or min_age is not None or max_age is not None
     )

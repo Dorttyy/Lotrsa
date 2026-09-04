@@ -64,7 +64,11 @@
           "cameraPermission": "Make video calls with language partners",
           "microphonePermission": "Talk in audio calls and voice rooms"
         }
-      ]
+      ],
+      "expo-image",
+      "expo-secure-store",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

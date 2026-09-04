@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from auth_utils import CurrentUser
 from config_utils import get_app_config
-from db import audio_col, conversations_col, follows_col, media_col, messages_col, rooms_col, users_col
+from db import audio_col, conversations_col, follows_col, gift_unlocks_col, media_col, messages_col, practice_unlocks_col, rooms_col, users_col
 from models import (
     CallLogCreate,
     ConversationCreate,
@@ -29,6 +29,19 @@ from ws_manager import manager
 
 router = APIRouter(prefix="/chats", tags=["chats"])
 logger = logging.getLogger(__name__)
+
+# Chat gift catalog — coin prices shared with the gift-gate feature.
+CHAT_GIFTS = {
+    "rose": {"emoji": "🌹", "name": "Rose", "price": 10},
+    "heart": {"emoji": "💖", "name": "Heart", "price": 20},
+    "star": {"emoji": "⭐", "name": "Star", "price": 30},
+    "crown": {"emoji": "👑", "name": "Crown", "price": 100},
+    "diamond": {"emoji": "💎", "name": "Diamond", "price": 200},
+}
+
+
+class ChatGiftCreate(BaseModel):
+    gift_id: str = Field(min_length=1, max_length=20)
 
 
 async def _push_new_message(partner_id: str, muted: bool, sender_name: str, preview: str) -> None:
@@ -220,6 +233,54 @@ async def ensure_not_blocked(current_user: dict, partner_id: str):
     partner = await users_col.find_one({"_id": partner_id})
     if partner and current_user["_id"] in (partner.get("blocked_users") or []):
         raise HTTPException(status_code=403, detail="You can't message this user.")
+
+
+async def ensure_practice_unlocked(current_user: dict, partner_id: str):
+    """If the recipient is a paid-practice partner, the sender must hold an
+    active (24h) unlock. Returns 402 so the client can show the unlock UI.
+    The paid partner themselves can always reply (recipient wouldn't be paid)."""
+    partner = await users_col.find_one(
+        {"_id": partner_id}, {"paid_practice": 1, "practice_rate": 1}
+    )
+    if not partner or not partner.get("paid_practice"):
+        return
+    unlock = await practice_unlocks_col.find_one(
+        {"buyer_id": current_user["_id"], "partner_id": partner_id}
+    )
+    now_iso = datetime.now(timezone.utc).isoformat()
+    if unlock and unlock.get("expires_at", "") > now_iso:
+        return
+    rate = int(partner.get("practice_rate") or 50)
+    raise HTTPException(
+        status_code=402,
+        detail=f"Unlock practice with this partner ({rate} coins) to send messages.",
+    )
+
+
+async def ensure_gift_unlocked(current_user: dict, partner_id: str):
+    """If the recipient requires a gift before chatting, the sender must have
+    already sent a qualifying gift (recorded as a gift unlock)."""
+    partner = await users_col.find_one(
+        {"_id": partner_id}, {"gift_gate": 1, "gift_gate_min": 1}
+    )
+    if not partner or not partner.get("gift_gate"):
+        return
+    unlock = await gift_unlocks_col.find_one(
+        {"buyer_id": current_user["_id"], "partner_id": partner_id}
+    )
+    if unlock:
+        return
+    min_coins = int(partner.get("gift_gate_min") or 20)
+    raise HTTPException(
+        status_code=402,
+        detail=f"gift_gate:Send a gift worth at least {min_coins} coins to start chatting.",
+    )
+
+
+async def ensure_can_message(current_user: dict, partner_id: str):
+    """Combined message gate: paid-practice unlock + gift gate."""
+    await ensure_practice_unlocked(current_user, partner_id)
+    await ensure_gift_unlocked(current_user, partner_id)
 
 
 async def get_owned_conversation(conversation_id: str, user_id: str) -> dict:
@@ -566,6 +627,7 @@ async def send_message(conversation_id: str, body: MessageCreate, current_user: 
     partner_id = other_ids[0]
     if not conv.get("is_group"):
         await ensure_not_blocked(current_user, partner_id)
+        await ensure_can_message(current_user, partner_id)
     now = datetime.now(timezone.utc).isoformat()
 
     # A "room share" message drops a rich voice-room card into the chat. It
@@ -622,6 +684,87 @@ async def send_message(conversation_id: str, body: MessageCreate, current_user: 
     await conversations_col.update_one({"_id": conversation_id}, text_update)
     await _fanout_new_message(conv, conversation_id, current_user, msg, preview)
     return msg
+
+
+@router.post("/{conversation_id}/gift", status_code=201)
+async def send_gift(
+    conversation_id: str, body: ChatGiftCreate, current_user: CurrentUser
+):
+    """Send a coin gift to the chat partner. Deducts coins from the sender,
+    credits the recipient, posts a gift bubble, and — if the recipient has a
+    gift gate — unlocks messaging once a qualifying gift is sent."""
+    conv = await get_owned_conversation(conversation_id, current_user["_id"])
+    if conv.get("is_group"):
+        raise HTTPException(status_code=400, detail="Gifts are for 1:1 chats only.")
+    other_ids = [p for p in conv["participant_ids"] if p != current_user["_id"]]
+    partner_id = other_ids[0]
+    await ensure_not_blocked(current_user, partner_id)
+    gift = CHAT_GIFTS.get(body.gift_id)
+    if not gift:
+        raise HTTPException(status_code=404, detail="Unknown gift.")
+    price = gift["price"]
+    coins = int(current_user.get("coins") or 0)
+    if coins < price:
+        raise HTTPException(
+            status_code=402,
+            detail=f"Not enough coins. This gift costs {price} coins.",
+        )
+    # Move coins sender -> recipient.
+    await users_col.update_one({"_id": current_user["_id"]}, {"$inc": {"coins": -price}})
+    await users_col.update_one({"_id": partner_id}, {"$inc": {"coins": price}})
+
+    partner = await users_col.find_one(
+        {"_id": partner_id}, {"gift_gate": 1, "gift_gate_min": 1}
+    )
+    unlocked = False
+    if partner and partner.get("gift_gate"):
+        if price >= int(partner.get("gift_gate_min") or 20):
+            await gift_unlocks_col.update_one(
+                {"buyer_id": current_user["_id"], "partner_id": partner_id},
+                {
+                    "$set": {
+                        "buyer_id": current_user["_id"],
+                        "partner_id": partner_id,
+                        "gift_id": body.gift_id,
+                        "price": price,
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                },
+                upsert=True,
+            )
+            unlocked = True
+
+    now = datetime.now(timezone.utc).isoformat()
+    doc = {
+        "_id": str(uuid.uuid4()),
+        "conversation_id": conversation_id,
+        "sender_id": current_user["_id"],
+        "text": f"{gift['emoji']} {gift['name']}",
+        "type": "gift",
+        "gift_id": body.gift_id,
+        "gift_emoji": gift["emoji"],
+        "created_at": now,
+    }
+    await messages_col.insert_one(doc)
+    msg = message_public(doc)
+    preview = f"{gift['emoji']} {gift['name']}"
+    gift_update: dict = {
+        "$set": {
+            "last_message": {"text": preview, "sender_id": current_user["_id"], "created_at": now},
+            "updated_at": now,
+        },
+    }
+    inc = {
+        f"unread.{oid}": 1
+        for oid in other_ids
+        if not conv.get("muted", {}).get(oid)
+    }
+    if inc:
+        gift_update["$inc"] = inc
+    await conversations_col.update_one({"_id": conversation_id}, gift_update)
+    await _fanout_new_message(conv, conversation_id, current_user, msg, preview)
+    return {"ok": True, "message": msg, "coins": coins - price, "unlocked": unlocked}
+
 
 
 @router.post("/{conversation_id}/call", status_code=status.HTTP_201_CREATED)
@@ -697,6 +840,8 @@ async def send_sticker(
     conv = await get_owned_conversation(conversation_id, current_user["_id"])
     other_ids = [p for p in conv["participant_ids"] if p != current_user["_id"]]
     partner_id = other_ids[0]
+    if not conv.get("is_group"):
+        await ensure_can_message(current_user, partner_id)
     now = datetime.now(timezone.utc).isoformat()
     doc = {
         "_id": str(uuid.uuid4()),
@@ -981,6 +1126,8 @@ async def send_voice_message(
     conv = await get_owned_conversation(conversation_id, current_user["_id"])
     other_ids = [p for p in conv["participant_ids"] if p != current_user["_id"]]
     partner_id = other_ids[0]
+    if not conv.get("is_group"):
+        await ensure_can_message(current_user, partner_id)
     try:
         audio_bytes = base64.b64decode(body.audio_base64)
     except Exception:
@@ -1033,6 +1180,8 @@ async def send_image_message(
     conv = await get_owned_conversation(conversation_id, current_user["_id"])
     other_ids = [p for p in conv["participant_ids"] if p != current_user["_id"]]
     partner_id = other_ids[0]
+    if not conv.get("is_group"):
+        await ensure_can_message(current_user, partner_id)
     try:
         image_bytes = base64.b64decode(body.image_base64)
     except Exception:

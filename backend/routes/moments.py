@@ -207,7 +207,11 @@ def comment_public(
 
 
 @router.get("")
-async def list_moments(current_user: CurrentUser, user_id: str | None = None):
+async def list_moments(
+    current_user: CurrentUser,
+    user_id: str | None = None,
+    all_langs: bool = False,
+):
     query = {"user_id": user_id} if user_id else {}
     docs = (
         await moments_col.find(
@@ -236,9 +240,33 @@ async def list_moments(current_user: CurrentUser, user_id: str | None = None):
     )
     docs = [d for d in docs if d["user_id"] not in hidden]
 
+    viewer_id = current_user["_id"]
+
+    # Language-match feed: on the MAIN feed (no specific user), only show posts
+    # from authors whose native language is one of the languages I'm learning
+    # (plus my own posts). `all_langs=true` bypasses this filter.
+    if not user_id and not all_langs:
+        my_learning = set(
+            current_user.get("learning_languages")
+            or ([current_user["learning_language"]] if current_user.get("learning_language") else [])
+        )
+        if my_learning:
+            author_langs = {
+                u["_id"]: u.get("native_language")
+                for u in await users_col.find(
+                    {"_id": {"$in": list({d["user_id"] for d in docs})}},
+                    {"native_language": 1},
+                ).to_list(200)
+            }
+            docs = [
+                d
+                for d in docs
+                if d["user_id"] == viewer_id
+                or author_langs.get(d["user_id"]) in my_learning
+            ]
+
     # Visibility filter — public visible to all; friends only to people the
     # author follows (mutual not required); private only to owner.
-    viewer_id = current_user["_id"]
     author_ids = {d["user_id"] for d in docs}
     following_by_author: dict[str, set] = {}
     friends_authors = [

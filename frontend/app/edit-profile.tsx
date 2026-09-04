@@ -18,6 +18,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -147,6 +148,26 @@ export default function EditProfile() {
     },
     [setUser],
   );
+
+  // ── Paid Practice (offer coin-gated practice conversations) ──
+  const togglePaidPractice = async (on: boolean) => {
+    try {
+      await persist({
+        paid_practice: on,
+        ...(on && !user?.practice_rate ? { practice_rate: 50 } : {}),
+      });
+    } catch {
+      setErr("Could not update paid practice.");
+    }
+  };
+  const changePracticeRate = async (delta: number) => {
+    const next = Math.min(1000, Math.max(5, (user?.practice_rate ?? 50) + delta));
+    try {
+      await persist({ practice_rate: next });
+    } catch {
+      setErr("Could not update the rate.");
+    }
+  };
 
   // ── Inline text editing ──
   const startInline = (fieldKey: string, value: string | null | undefined) => {
@@ -1025,6 +1046,51 @@ export default function EditProfile() {
             last
           />
         </View>
+
+        {/* Paid Practice */}
+        <Text style={styles.sectionHeader}>Paid Practice</Text>
+        <View style={styles.card}>
+          <View style={styles.ppRow}>
+            <View style={{ flex: 1, paddingRight: spacing.md }}>
+              <Text style={styles.ppLabel}>Offer paid practice</Text>
+              <Text style={styles.ppSub}>
+                Learners spend coins to unlock a 24-hour practice chat with you.
+                You earn the coins.
+              </Text>
+            </View>
+            <Switch
+              testID="paid-practice-switch"
+              value={!!user.paid_practice}
+              onValueChange={togglePaidPractice}
+              trackColor={{ true: colors.brand, false: colors.borderStrong }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+          {user.paid_practice && (
+            <View style={styles.ppRateRow}>
+              <Text style={styles.ppLabel}>Coins per unlock</Text>
+              <View style={styles.ppStepper}>
+                <Pressable
+                  testID="pp-rate-minus"
+                  onPress={() => changePracticeRate(-10)}
+                  style={styles.ppStepBtn}
+                  hitSlop={6}
+                >
+                  <Ionicons name="remove" size={18} color={colors.onSurface} />
+                </Pressable>
+                <Text style={styles.ppRateText}>{user.practice_rate ?? 50}</Text>
+                <Pressable
+                  testID="pp-rate-plus"
+                  onPress={() => changePracticeRate(10)}
+                  style={styles.ppStepBtn}
+                  hitSlop={6}
+                >
+                  <Ionicons name="add" size={18} color={colors.onSurface} />
+                </Pressable>
+              </View>
+            </View>
+          )}
+        </View>
       </ScrollView>
 
       {/* Bottom bar */}
@@ -1306,6 +1372,51 @@ const makeStyles = (colors: ThemeColors) =>
       gap: spacing.md,
       paddingVertical: spacing.md,
       minHeight: 60,
+    },
+    ppRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: spacing.md,
+    },
+    ppRateRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: spacing.md,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.divider,
+    },
+    ppLabel: {
+      fontFamily: fonts.textSemi,
+      fontSize: 15,
+      color: colors.onSurface,
+    },
+    ppSub: {
+      fontFamily: fonts.text,
+      fontSize: 12.5,
+      lineHeight: 18,
+      color: colors.onSurfaceSecondary,
+      marginTop: 2,
+    },
+    ppStepper: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    ppStepBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: colors.surfaceSecondary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    ppRateText: {
+      fontFamily: fonts.displaySemi,
+      fontSize: 16,
+      color: colors.onSurface,
+      minWidth: 34,
+      textAlign: "center",
     },
     rowBorder: {
       borderBottomWidth: StyleSheet.hairlineWidth,

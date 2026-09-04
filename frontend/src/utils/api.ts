@@ -59,7 +59,9 @@ async function request<T>(
     } catch {
       // keep default detail
     }
-    throw new Error(detail);
+    const err = new Error(detail) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
   }
   return res.json();
 }
@@ -120,6 +122,8 @@ export interface User {
   cover_url?: string | null;
   voice_bio_id?: string | null;
   voice_bio_duration_ms?: number | null;
+  paid_practice?: boolean;
+  practice_rate?: number;
 }
 
 export interface Visitor extends User {

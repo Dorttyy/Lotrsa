@@ -26,6 +26,7 @@ import { api, Conversation, User } from "@/src/utils/api";
 
 const CATEGORIES = [
   { key: "all", label: "All" },
+  { key: "practice", label: "Paid Practice" },
   { key: "serious", label: "Serious Learners" },
   { key: "nearby", label: "Nearby" },
   { key: "city", label: "City" },
@@ -55,7 +56,9 @@ export default function Connect() {
     try {
       const params = new URLSearchParams();
       // Category tabs that need a broader pool than language-matching:
-      if (category === "nearby" && user.country) {
+      if (category === "practice") {
+        params.set("paid_practice", "true");
+      } else if (category === "nearby" && user.country) {
         params.set("location", user.country);
       } else if (category === "city" && cityPick) {
         params.set("location", cityPick);
@@ -89,6 +92,9 @@ export default function Connect() {
 
   const visiblePartners = React.useMemo(() => {
     switch (category) {
+      case "practice":
+        // API already returns only paid-practice partners.
+        return partners;
       case "serious":
         // Consistent with the "Serious learner" card tag: 3+ day streak.
         return partners.filter((p) => (p.streak_count || 0) >= 3);
@@ -125,6 +131,8 @@ export default function Connect() {
 
   const emptyHint = (() => {
     switch (category) {
+      case "practice":
+        return "No paid-practice partners available right now.";
       case "serious":
         return "No partners with a 3+ day streak right now.";
       case "nearby":

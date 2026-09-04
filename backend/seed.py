@@ -206,6 +206,19 @@ async def seed():
         email_to_id[u["email"]] = user_id
         created_users += 1
 
+    # Mark a few demo users as Paid Practice partners (idempotent) so the
+    # "Paid Practice" Connect tab always has real results to show.
+    PAID_PARTNERS = {
+        "emma@demo.com": 50,
+        "yuki@demo.com": 30,
+        "amelie@demo.com": 80,
+    }
+    for email, rate in PAID_PARTNERS.items():
+        await users_col.update_one(
+            {"email": email},
+            {"$set": {"paid_practice": True, "practice_rate": rate}},
+        )
+
     created_moments = 0
     for i, (email, text) in enumerate(MOMENTS):
         existing = await moments_col.find_one({"text": text})

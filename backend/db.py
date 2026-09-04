@@ -29,6 +29,10 @@ config_col = db["app_config"]
 market_config_col = db["market_config"]
 # --- Realtime audio (1-to-1 WebRTC call sessions / history) ---
 calls_col = db["calls"]
+# --- Paid Practice (coin-gated conversations with practice partners) ---
+practice_unlocks_col = db["practice_unlocks"]
+# --- Gift Gate (require a gift before a stranger can message you) ---
+gift_unlocks_col = db["gift_unlocks"]
 
 # --- Pro (1-on-1 video tutoring sub-app) collections ---
 pro_profiles_col = db["pro_profiles"]
@@ -63,6 +67,8 @@ async def ensure_indexes():
         (follows_col, [("following_id", 1)], {}),
         (calls_col, [("caller_id", 1), ("started_at", -1)], {}),
         (calls_col, [("receiver_id", 1), ("started_at", -1)], {}),
+        (practice_unlocks_col, [("buyer_id", 1), ("partner_id", 1)], {"unique": True}),
+        (gift_unlocks_col, [("buyer_id", 1), ("partner_id", 1)], {"unique": True}),
     ]
     for col, keys, opts in specs:
         try:

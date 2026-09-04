@@ -164,6 +164,14 @@ export const PartnerCard: React.FC<Props> = ({
             {item.name}
           </Text>
           {item.is_vip && <VipBadge small tier={item.vip_tier} />}
+          {item.paid_practice && (
+            <View style={styles.rateBadge} testID={`${testIDPrefix}-rate-${item.id}`}>
+              <Ionicons name="logo-usd" size={10} color="#B45309" />
+              <Text style={styles.rateBadgeText}>
+                {item.practice_rate ?? 50}/day
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.langRow}>
@@ -282,6 +290,20 @@ const makeStyles = (colors: ThemeColors) =>
       fontSize: 18,
       color: colors.onSurface,
       flexShrink: 1,
+    },
+    rateBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 2,
+      backgroundColor: "#FEF3C7",
+      borderRadius: radius.sm,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    },
+    rateBadgeText: {
+      fontFamily: fonts.textBold,
+      fontSize: 10,
+      color: "#B45309",
     },
     langRow: {
       flexDirection: "row",

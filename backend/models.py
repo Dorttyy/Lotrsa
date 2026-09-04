@@ -40,6 +40,12 @@ class UserUpdate(BaseModel):
     school: Optional[str] = Field(default=None, max_length=80)
     birthday: Optional[str] = Field(default=None, max_length=10)
     cover_url: Optional[str] = None
+    # Paid Practice: offer coin-gated practice conversations to other users.
+    paid_practice: Optional[bool] = None
+    practice_rate: Optional[int] = Field(default=None, ge=5, le=1000)
+    # Gift Gate: require an incoming gift (min coins) before a stranger can chat.
+    gift_gate: Optional[bool] = None
+    gift_gate_min: Optional[int] = Field(default=None, ge=5, le=1000)
 
 
 class AvatarUpload(BaseModel):
@@ -259,6 +265,10 @@ def user_public(doc: dict) -> dict:
         "voice_bio_id": doc.get("voice_bio_id"),
         "voice_bio_duration_ms": doc.get("voice_bio_duration_ms"),
         "is_guest": bool(doc.get("is_guest")),
+        "paid_practice": bool(doc.get("paid_practice")),
+        "practice_rate": int(doc.get("practice_rate") or 50),
+        "gift_gate": bool(doc.get("gift_gate")),
+        "gift_gate_min": int(doc.get("gift_gate_min") or 20),
     }
 
 
@@ -284,4 +294,8 @@ def user_card(doc: dict) -> dict:
         "active_badge": _active_item(doc.get("active_badge")),
         "active_frame": _active_item(doc.get("active_frame")),
         "bio": doc.get("bio"),
+        "paid_practice": bool(doc.get("paid_practice")),
+        "practice_rate": int(doc.get("practice_rate") or 50),
+        "gift_gate": bool(doc.get("gift_gate")),
+        "gift_gate_min": int(doc.get("gift_gate_min") or 20),
     }

@@ -224,6 +224,17 @@ export default function ChatScreen() {
   const [correctDraft, setCorrectDraft] = useState("");
   const [correctNote, setCorrectNote] = useState("");
   const [savingCorrection, setSavingCorrection] = useState(false);
+  // Paid Practice + Gift Gate: coin/gift-gated conversations.
+  const [practice, setPractice] = useState<{
+    is_paid_partner: boolean;
+    rate: number;
+    unlocked: boolean;
+    expires_at: string | null;
+    is_gift_gate?: boolean;
+    gift_min?: number;
+    gift_unlocked?: boolean;
+  } | null>(null);
+  const [unlocking, setUnlocking] = useState(false);
   const listRef = useRef<FlatList<Message>>(null);
   // Keeps the list pinned to the newest message. True until the reader
   // scrolls up to browse history, so we never yank them back down.
@@ -246,6 +257,18 @@ export default function ChatScreen() {
           api
             .get<User>(`/users/${conv.partner.id}`)
             .then((p) => active && setFullPartner(p))
+            .catch(() => {});
+          api
+            .get<{
+              is_paid_partner: boolean;
+              rate: number;
+              unlocked: boolean;
+              expires_at: string | null;
+              is_gift_gate?: boolean;
+              gift_min?: number;
+              gift_unlocked?: boolean;
+            }>(`/practice/status/${conv.partner.id}`)
+            .then((s) => active && setPractice(s))
             .catch(() => {});
         }
         api.post(`/chats/${id}/read`).catch(() => {});
@@ -803,8 +826,57 @@ export default function ChatScreen() {
       setMessages((prev) => [...prev, msg]);
       setDraft("");
       setReplyTarget(null);
+    } catch (e) {
+      const err = e as Error & { status?: number };
+      if (err.status === 402) {
+        // Partner is a paid-practice partner — reflect the lock and prompt.
+        setPractice((p) =>
+          p ? { ...p, is_paid_partner: true, unlocked: false } : p,
+        );
+        handleUnlock();
+      } else {
+        notify("Message", err.message || "Could not send the message.");
+      }
     } finally {
       setSending(false);
+    }
+  };
+
+  // Paid Practice: buy a 24h unlock (coins) for this partner.
+  const handleUnlock = async () => {
+    const pid = conversation?.partner?.id;
+    if (!pid || unlocking) return;
+    const rate = practice?.rate ?? 50;
+    const myCoins = user?.coins ?? 0;
+    const goBuy = (msg: string) =>
+      Alert.alert("Not enough coins", msg, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Buy coins", onPress: () => router.push("/coins") },
+      ]);
+    if (myCoins < rate) {
+      goBuy(
+        `You need ${rate} coins to unlock practice with ${conversation?.partner?.name || "this partner"}.`,
+      );
+      return;
+    }
+    setUnlocking(true);
+    try {
+      const res = await api.post<{
+        ok: boolean;
+        expires_at: string;
+        coins: number;
+      }>(`/practice/unlock/${pid}`);
+      setPractice((p) =>
+        p ? { ...p, unlocked: true, expires_at: res.expires_at } : p,
+      );
+      if (user) setUser({ ...user, coins: res.coins });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {
+      const err = e as Error & { status?: number };
+      if (err.status === 402) goBuy(err.message);
+      else notify("Unlock failed", err.message || "Please try again.");
+    } finally {
+      setUnlocking(false);
     }
   };
 
@@ -1052,6 +1124,10 @@ export default function ChatScreen() {
   const isBlocked = !!(
     partner?.id && (user?.blocked_users || []).includes(partner.id)
   );
+  // Paid Practice gate: partner charges coins and I haven't unlocked yet.
+  const practiceLocked = !isGroup && !!practice?.is_paid_partner && !practice.unlocked;
+  // Gift gate: partner requires a gift before I can message them.
+  const giftLocked = !isGroup && !!practice?.is_gift_gate && !practice.gift_unlocked;
 
   const toggleMuteChat = async () => {
     try {
@@ -2113,21 +2189,65 @@ export default function ChatScreen() {
               </View>
             )}
           <View style={styles.inputArea}>
+            {practiceLocked && (
+              <View style={styles.practiceBar} testID="practice-unlock-bar">
+                <View style={styles.practiceIconWrap}>
+                  <Ionicons name="lock-closed" size={16} color="#B45309" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.practiceTitle} numberOfLines={1}>
+                    Paid practice with {partner?.name || "this partner"}
+                  </Text>
+                  <Text style={styles.practiceSub} numberOfLines={2}>
+                    Unlock 24h of chat for {practice?.rate ?? 50} coins · You have{" "}
+                    {user?.coins ?? 0}
+                  </Text>
+                </View>
+                <Pressable
+                  testID="practice-unlock-btn"
+                  onPress={handleUnlock}
+                  disabled={unlocking}
+                  style={[styles.practiceBtn, unlocking && { opacity: 0.5 }]}
+                >
+                  {unlocking ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.practiceBtnText}>
+                      Unlock · {practice?.rate ?? 50}
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+            )}
             <View style={styles.inputRow}>
               <View style={styles.inputPill}>
                 <TextInput
                   testID="chat-message-input"
                   style={styles.input}
-                  placeholder="Type a message..."
+                  placeholder={
+                    practiceLocked
+                      ? "Unlock to start practicing…"
+                      : "Type a message..."
+                  }
                   placeholderTextColor={colors.onSurfaceSecondary}
                   selectionColor={colors.brand}
                   value={draft}
                   onChangeText={setDraft}
                   onFocus={() => setPanel(null)}
+                  editable={!practiceLocked}
                   multiline
                 />
               </View>
-              {draft.trim() ? (
+              {practiceLocked ? (
+                <Pressable
+                  testID="chat-locked-btn"
+                  onPress={handleUnlock}
+                  style={styles.sendBtn}
+                  disabled={unlocking}
+                >
+                  <Ionicons name="lock-closed" size={18} color={colors.onBrand} />
+                </Pressable>
+              ) : draft.trim() ? (
                 <Pressable
                   testID="chat-send-btn"
                   onPress={send}
@@ -3429,6 +3549,49 @@ const makeStyles = (colors: ThemeColors) =>
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.sm,
+    },
+    practiceBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      backgroundColor: "#FEF3C7",
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    practiceIconWrap: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: "#FDE68A",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    practiceTitle: {
+      fontFamily: fonts.textBold,
+      fontSize: 13,
+      color: "#92400E",
+    },
+    practiceSub: {
+      fontFamily: fonts.text,
+      fontSize: 11.5,
+      color: "#B45309",
+      marginTop: 1,
+    },
+    practiceBtn: {
+      backgroundColor: "#D97706",
+      borderRadius: radius.pill,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      minWidth: 84,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    practiceBtnText: {
+      fontFamily: fonts.textBold,
+      fontSize: 13,
+      color: "#FFFFFF",
     },
     inputPill: {
       flex: 1,
