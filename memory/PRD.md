@@ -215,3 +215,14 @@ Note: Daily streak (backend touch_streak + profile/user page display) already ex
 ✅ connect.tsx: 'Paid Practice' category now LAST in the tab row; hides language filter chips and shows 'Introducing Paid Practice' banner (paid-practice-banner) → new /paid-practice-overview page (What is / Where / Rules).
 ✅ PartnerCard: paid_practice partners render the message button as a gold (#F59E0B) circular chatbubble icon (no 'Chat' text); other tabs keep the brand-colored icon.
 
+
+## Round 70 — Wallet earnings + settings toggles + call/sticker avatars
+✅ Chat gifts now feed the Wallet: POST /chats/{id}/gift → sender spends coins, recipient EARNS diamonds (price/10), writes gift_ledger + wallet_tx for both sides (mirrors room gifts). Practice unlock now writes wallet_tx for both sides. Verified iteration 31 (backend 5/5).
+✅ edit-profile paid-practice-switch + gift-gate-switch use app-wide AppSwitch (match other settings toggles).
+✅ profile feature grid: new 'Wallet' entry (feature-wallet) → /coins hub (coin + diamond balance, top-up, redeem, transactions, gift history).
+✅ chat/[id].tsx: incoming call & sticker messages show partner avatar on first-of-run (shared withAvatarRow wrapper) like text bubbles.
+✅ Fixed market.py GET /market/gifts missing user_card import (found by testing agent).
+
+## Verified complete (original problem statement)
+✅ #3 Bottom-bar/gesture-bar overlap: (tabs)/_layout uses useSafeAreaInsets, tabBar height = 56 + max(insets.bottom,12)+10; global safe-area pass (Round 66). No overlap in previews.
+✅ #6 Moments feed language filter: implemented in GET /moments (frontend calls it) — shows only posts whose author native_language ∈ my learning languages (+ own). Verified live (mei EN+JA → sees EN/JA authors).
