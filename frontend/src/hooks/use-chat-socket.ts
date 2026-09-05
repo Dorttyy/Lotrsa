@@ -7,6 +7,8 @@ export interface ChatEvent {
   type: string;
   conversation_id?: string;
   ids?: unknown;
+  reader_id?: string;
+  read_at?: string;
   message?: {
     id: string;
     conversation_id: string;

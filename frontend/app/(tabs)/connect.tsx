@@ -26,11 +26,11 @@ import { api, Conversation, User } from "@/src/utils/api";
 
 const CATEGORIES = [
   { key: "all", label: "All" },
-  { key: "practice", label: "Paid Practice" },
   { key: "serious", label: "Serious Learners" },
   { key: "nearby", label: "Nearby" },
   { key: "city", label: "City" },
   { key: "gender", label: "Gender" },
+  { key: "practice", label: "Paid Practice" },
 ];
 
 export default function Connect() {
@@ -280,6 +280,24 @@ export default function Connect() {
             </ScrollView>
           </View>
 
+          {category === "practice" ? (
+            <Pressable
+              testID="paid-practice-banner"
+              style={styles.ppBanner}
+              onPress={() => router.push("/paid-practice-overview")}
+            >
+              <View style={styles.ppBannerIcon}>
+                <Ionicons name="cash" size={20} color="#B45309" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.ppBannerTitle}>Introducing Paid Practice</Text>
+                <Text style={styles.ppBannerSub}>
+                  Get more replies and have better conversations!
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#B45309" />
+            </Pressable>
+          ) : (
           <View>
             <ScrollView
               horizontal
@@ -315,6 +333,7 @@ export default function Connect() {
               )}
             </ScrollView>
           </View>
+          )}
         </View>
       </View>
 
@@ -623,6 +642,36 @@ const makeStyles = (colors: ThemeColors) =>
       gap: spacing.sm,
       paddingHorizontal: spacing.lg,
       paddingBottom: spacing.sm,
+    },
+    ppBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      marginHorizontal: spacing.lg,
+      marginBottom: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
+      backgroundColor: "#FEF3C7",
+    },
+    ppBannerIcon: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#FDE68A",
+    },
+    ppBannerTitle: {
+      fontFamily: fonts.displaySemi,
+      fontSize: 15,
+      color: "#B45309",
+    },
+    ppBannerSub: {
+      fontFamily: fonts.text,
+      fontSize: 12.5,
+      color: "#B45309",
+      marginTop: 1,
     },
     filterChip: {
       flexDirection: "row",

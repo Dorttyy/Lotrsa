@@ -3385,18 +3385,18 @@ frontend:
 
 test_plan:
   current_focus:
-    - "All-courses page (Learn + Classes tabs) after JSX fix"
-    - "Placement test end-to-end"
-    - "Weekly leaderboard both scopes"
-    - "Saved moments bookmark flow"
-    - "Study room pomodoro"
-    - "Admin session hardening + audit"
+    - "Gift-Gated Messaging end-to-end (gift-gate toggle, 402 gate, unlock via gift)"
+    - "Paid Practice gate + unlock"
+    - "Read receipts (Seen/Delivered) incl. real-time messages_read WS event"
+    - "Reply preview single-line truncation"
   stuck_tasks: []
   test_all: false
   test_priority: "high"
 
 agent_communication:
     - agent: "main"
-      message: "Round 62 — Fixed P0 JSX error in all-courses.tsx (missing fragment close after Learn tab). Built 4 P1 features end-to-end: Weekly XP Leaderboard (/leaderboard + backend routes/leaderboard.py), Language Placement Test (/placement-test + /vocab/placement/*, auto-sets vocab_level and pre-selects level in Vocab Hub), Saved Moments bookmarks (feed + detail toggle, /saved-moments, profile entries), Study Rooms w/ shared Pomodoro (mode=study, PomodoroCard, host-only controls, ws room_update sync). Admin security hardening: 60-min versioned admin tokens, revoke-all endpoint, admin_audit trail + new Audit tab in console. TypeScript: 203 → 0 errors. All backend routes verified via curl. Note: admin login tokens now expire after 60 min by design."
+      message: "Round 69 — Paid Practice discoverability + overview. (1) Backend GET /api/users/partners now EXCLUDES paid_practice users from every non-practice list (added query paid_practice: {$ne: True}); the Paid Practice tab (paid_practice=true) still returns ALL paid partners. (2) connect.tsx: on the 'Paid Practice' category the language filter chips are hidden and replaced by an 'Introducing Paid Practice' banner (testID paid-practice-banner) routing to new /paid-practice-overview page. (3) PartnerCard: paid_practice partners render a premium gold 'Chat' pill instead of the round chatbubble. Please verify paid users are excluded from All/Serious/Nearby/City/Gender but present in Paid Practice; banner→overview nav; gold Chat pill. Creds mei@demo.com / Demo1234!."
+    - agent: "main"
+      message: "Round 68 — (1) Finished Gift-Gated Messaging frontend: chat/[id].tsx now renders a gift-lock banner (testID gift-unlock-bar/gift-unlock-btn), gates the composer via inputLocked, sendGiftMessage calls POST /chats/{id}/gift (aligned CHAT_GIFTS to backend 5 gifts: rose10/heart20/star30/crown100/diamond200), 402 'gift_gate:' opens the gift panel, and gift_unlocked flips on qualifying gift. (2) edit-profile.tsx: new 'Gift-Gated Messaging' card with gift-gate-switch + gift-min stepper (persists gift_gate/gift_gate_min via PUT /users/me). (3) Read receipts: backend POST /chats/{id}/read now sets last_read.{uid} + emits messages_read WS event; conversation_public exposes partner_read_at; chat screen shows Seen/Delivered under my latest message (checkmark-done when partner_read_at >= msg.created_at) and updates live on messages_read. (4) Reply preview truncated to numberOfLines=1 in both the input reply banner and the in-bubble reply quote. Backend healthy, lint clean, smoke screenshot confirms chat renders with 'Delivered' receipt. Credentials: mei@demo.com / Demo1234! (and diego@demo.com). Please test backend + frontend for these flows."
     - agent: "main"
       message: "Round 63 — (1) VIP language policy finalized per user: 1 native + max 2 teaching langs. users.py PUT /me: non-VIP clears teach_languages, VIP filters native + caps 2 (model max_length=2 → 422 on more), native switch drops dup from teach list. Backend 7/7 pytest (iteration17). (2) Full theme migration purple → Botanical Emerald Green: src/theme.ts light+dark rewritten, ~37 files hex-swept, PomodoroCard/IconChip special-cased, moments.tsx #6C4DF0 leak fixed post-test. French course gradient + learn/premium/lessons sub-palettes intentionally kept. Frontend smoke: all tabs emerald, 0 purple hits, TSC 0."

@@ -124,6 +124,8 @@ export interface User {
   voice_bio_duration_ms?: number | null;
   paid_practice?: boolean;
   practice_rate?: number;
+  gift_gate?: boolean;
+  gift_gate_min?: number;
 }
 
 export interface Visitor extends User {
@@ -190,6 +192,7 @@ export interface Conversation {
   last_message: { text: string; sender_id: string; created_at: string } | null;
   unread: number;
   muted?: boolean;
+  partner_read_at?: string | null;
   updated_at: string;
 }
 

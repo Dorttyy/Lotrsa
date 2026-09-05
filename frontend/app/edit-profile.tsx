@@ -169,6 +169,26 @@ export default function EditProfile() {
     }
   };
 
+  // ── Gift-Gated Messaging (require a gift before strangers can chat) ──
+  const toggleGiftGate = async (on: boolean) => {
+    try {
+      await persist({
+        gift_gate: on,
+        ...(on && !user?.gift_gate_min ? { gift_gate_min: 20 } : {}),
+      });
+    } catch {
+      setErr("Could not update gift gate.");
+    }
+  };
+  const changeGiftMin = async (delta: number) => {
+    const next = Math.min(1000, Math.max(5, (user?.gift_gate_min ?? 20) + delta));
+    try {
+      await persist({ gift_gate_min: next });
+    } catch {
+      setErr("Could not update the amount.");
+    }
+  };
+
   // ── Inline text editing ──
   const startInline = (fieldKey: string, value: string | null | undefined) => {
     setInlineErr(null);
@@ -1082,6 +1102,51 @@ export default function EditProfile() {
                 <Pressable
                   testID="pp-rate-plus"
                   onPress={() => changePracticeRate(10)}
+                  style={styles.ppStepBtn}
+                  hitSlop={6}
+                >
+                  <Ionicons name="add" size={18} color={colors.onSurface} />
+                </Pressable>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* Gift-Gated Messaging */}
+        <Text style={styles.sectionHeader}>Gift-Gated Messaging</Text>
+        <View style={styles.card}>
+          <View style={styles.ppRow}>
+            <View style={{ flex: 1, paddingRight: spacing.md }}>
+              <Text style={styles.ppLabel}>Require a gift to chat</Text>
+              <Text style={styles.ppSub}>
+                New people must send you a gift worth at least the amount below
+                before they can message you. You keep the coins.
+              </Text>
+            </View>
+            <Switch
+              testID="gift-gate-switch"
+              value={!!user.gift_gate}
+              onValueChange={toggleGiftGate}
+              trackColor={{ true: colors.brand, false: colors.borderStrong }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+          {user.gift_gate && (
+            <View style={styles.ppRateRow}>
+              <Text style={styles.ppLabel}>Minimum gift (coins)</Text>
+              <View style={styles.ppStepper}>
+                <Pressable
+                  testID="gift-min-minus"
+                  onPress={() => changeGiftMin(-10)}
+                  style={styles.ppStepBtn}
+                  hitSlop={6}
+                >
+                  <Ionicons name="remove" size={18} color={colors.onSurface} />
+                </Pressable>
+                <Text style={styles.ppRateText}>{user.gift_gate_min ?? 20}</Text>
+                <Pressable
+                  testID="gift-min-plus"
+                  onPress={() => changeGiftMin(10)}
                   style={styles.ppStepBtn}
                   hitSlop={6}
                 >

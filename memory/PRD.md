@@ -204,3 +204,14 @@ Note: Daily streak (backend touch_streak + profile/user page display) already ex
 ✅ src/ui/icons.tsx: mic / mic-outline / microphone / keyboard-voice / record-voice-over / voice → MicGlyph; mic-off / microphone-off → MicOffGlyph (Lucide Mic/MicOff/Speech imports removed). Covers all 26 mic/voice icon usages app-wide (chat composer, room mic button, pro session dock, voiceroom notices, etc.).
 ✅ src/ui/NavIcons.tsx VoiceIcon now renders the shared MicShape → navbar Voice tab is pixel-identical to every in-app mic icon (spring pop + tab tint kept).
 ✅ Verified at 200px (glyph matches reference), plus tab bar + chat composer clips at 390×844. tsc 0, eslint clean.
+
+## Round 68 — Gift-Gated Messaging, Read Receipts, Reply preview
+✅ Gift-Gated Messaging (frontend complete): chat/[id].tsx gift-lock banner (gift-unlock-bar/-btn), composer gated via inputLocked, sendGiftMessage → POST /chats/{id}/gift (CHAT_GIFTS aligned to backend: rose10/heart20/star30/crown100/diamond200), 402 'gift_gate:' opens gift panel, gift_unlocked flips on qualifying gift. edit-profile 'Gift-Gated Messaging' card (gift-gate-switch + gift-min stepper → gift_gate/gift_gate_min via PUT /users/me).
+✅ Read receipts: POST /chats/{id}/read sets last_read.{uid} + emits messages_read WS; conversation exposes partner_read_at; chat shows Seen (checkmark-done)/Delivered under my latest message incl. gift/call bubbles, live-updates on WS.
+✅ Reply preview truncated numberOfLines=1 (input banner + in-bubble quote). Verified iteration 29 (backend 9/9 + frontend).
+
+## Round 69 — Paid Practice isolation, overview page, tab order & gold icon
+✅ Backend: GET /users/partners excludes paid_practice users from ALL non-practice lists (query paid_practice:{$ne:True}); ?paid_practice=true returns all paid partners. Verified iteration 30 (backend 11/11 + frontend).
+✅ connect.tsx: 'Paid Practice' category now LAST in the tab row; hides language filter chips and shows 'Introducing Paid Practice' banner (paid-practice-banner) → new /paid-practice-overview page (What is / Where / Rules).
+✅ PartnerCard: paid_practice partners render the message button as a gold (#F59E0B) circular chatbubble icon (no 'Chat' text); other tabs keep the brand-colored icon.
+

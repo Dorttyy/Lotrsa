@@ -219,6 +219,9 @@ async def conversation_public(
         "last_message": doc.get("last_message"),
         "unread": doc.get("unread", {}).get(viewer_id, 0),
         "muted": bool(doc.get("muted", {}).get(viewer_id)),
+        # When the partner last read this conversation — used by the sender to
+        # render a "Seen"/"Delivered" receipt under their latest message.
+        "partner_read_at": doc.get("last_read", {}).get(partner_id),
         "updated_at": doc.get("updated_at"),
     }
 
@@ -1222,9 +1225,26 @@ async def send_image_message(
 
 @router.post("/{conversation_id}/read")
 async def mark_read(conversation_id: str, current_user: CurrentUser):
-    await get_owned_conversation(conversation_id, current_user["_id"])
+    conv = await get_owned_conversation(conversation_id, current_user["_id"])
+    now = datetime.now(timezone.utc).isoformat()
     await conversations_col.update_one(
         {"_id": conversation_id},
-        {"$set": {f"unread.{current_user['_id']}": 0}},
+        {
+            "$set": {
+                f"unread.{current_user['_id']}": 0,
+                f"last_read.{current_user['_id']}": now,
+            }
+        },
     )
+    # Tell the other participant(s) so their "Seen" receipt updates in real time.
+    for oid in [p for p in conv["participant_ids"] if p != current_user["_id"]]:
+        await manager.send_to_user(
+            oid,
+            {
+                "type": "messages_read",
+                "conversation_id": conversation_id,
+                "reader_id": current_user["_id"],
+                "read_at": now,
+            },
+        )
     return {"ok": True}

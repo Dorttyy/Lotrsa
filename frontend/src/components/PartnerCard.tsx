@@ -238,13 +238,23 @@ export const PartnerCard: React.FC<Props> = ({
         )}
       </View>
 
-      <Pressable
-        testID={`${testIDPrefix}-message-btn-${item.id}`}
-        style={[styles.waveBtn, item.boosted && { backgroundColor: "#F5A623" }]}
-        onPress={onMessage}
-      >
-        <Ionicons name="chatbubble" size={20} color="#FFFFFF" />
-      </Pressable>
+      {item.paid_practice ? (
+        <Pressable
+          testID={`${testIDPrefix}-message-btn-${item.id}`}
+          style={[styles.waveBtn, { backgroundColor: "#F59E0B" }]}
+          onPress={onMessage}
+        >
+          <Ionicons name="chatbubble" size={20} color="#FFFFFF" />
+        </Pressable>
+      ) : (
+        <Pressable
+          testID={`${testIDPrefix}-message-btn-${item.id}`}
+          style={[styles.waveBtn, item.boosted && { backgroundColor: "#F5A623" }]}
+          onPress={onMessage}
+        >
+          <Ionicons name="chatbubble" size={20} color="#FFFFFF" />
+        </Pressable>
+      )}
     </Pressable>
   );
 };

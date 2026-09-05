@@ -1,0 +1,50 @@
+{
+  "summary": "Iteration 30 verified Round 69 — Paid-Practice partner ISOLATION + Connect UI swap + gold Chat pill. BACKEND (11/11 pytest PASSED, iteration30.xml): (1) GET /api/users/partners?paid_practice=true returns the standalone pool (3 demo users: Emma Wilson, Amélie Laurent, Yuki Tanaka) and every user in it has paid_practice=true. (2) Default GET /api/users/partners (no params) excludes all 3 paid users. (3) Same exclusion holds for ?language=all, ?language=en/es/ja/fr/zh, ?location=<paid user's country>, ?gender=male, ?gender=female, ?online_only=true, ?search=<paid user's first name>, and ?min_age/max_age. Not a single paid_practice=true user leaks into any non-paid endpoint. Implementation in /app/backend/routes/users.py:377 sets query['paid_practice']={'$ne':True} on every non-paid branch — correct. FRONTEND (Playwright, mei@demo.com, mobile 390x844): (a) On Connect 'All' tab the connect-filter-match Best-Match chip is present and paid-practice-banner is absent. (b) Tapping connect-cat-practice hides ALL connect-filter-* chips (count went from ≥1 to 0) and reveals paid-practice-banner. (c) 3 partner cards render with partner-rate-{id} rate badges (50/day, 80/day, 30/day) and gold partner-message-btn-{id} 'Chat' pill (iter30_practice_tab.jpg). (d) Tapping paid-practice-banner navigates to paid-practice-overview and all three sections render: 'What is Paid Practice?', 'Where do I find Paid Practice?', 'Paid Practice Rules' (iter30_overview.jpg). (e) ppo-back returns to Connect. (f) Switching back to connect-cat-all restores the chips and hides the banner. No demo data was mutated (only reads).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "verified_flows": [
+    "GET /api/users/partners?paid_practice=true → returns 3 demo paid partners; every card has paid_practice=true",
+    "GET /api/users/partners (default) → excludes all paid_practice users",
+    "?language=all, ?language=<code> → excludes paid users",
+    "?location=<country> → excludes paid users",
+    "?gender=male / ?gender=female → excludes paid users",
+    "?online_only=true → excludes paid users",
+    "?search=<first name of a paid user> → excludes paid users",
+    "?min_age/?max_age → excludes paid users",
+    "Connect All tab shows connect-filter-* chips and NO paid-practice-banner",
+    "Connect Paid Practice tab hides connect-filter-* chips and shows paid-practice-banner",
+    "Paid-practice cards render partner-rate-{id} rate badges and gold partner-message-btn-{id} 'Chat' pill",
+    "Tapping banner navigates to paid-practice-overview with all 3 sections",
+    "ppo-back returns to Connect; switching back to All restores chips"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration30_paid_practice_isolation.py",
+    "/app/test_reports/pytest/iteration30.xml",
+    "/app/test_reports/iter30_practice_tab.jpg",
+    "/app/test_reports/iter30_overview.jpg"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "backend/routes/users.py:360-374 — paid_practice branch returns the standalone pool BEFORE the non-paid guard is applied. Good.",
+    "backend/routes/users.py:377 — query['paid_practice']={'$ne':True} on every other branch guarantees paid users are filtered out at the Mongo level, so no filter combination can leak them.",
+    "frontend/app/(tabs)/connect.tsx:283-336 — category==='practice' cleanly swaps the filter-chip row for the paid-practice-banner Pressable. Filter state is preserved but not shown, so returning to All keeps the previously selected filter.",
+    "frontend/app/(tabs)/connect.tsx:59-60 — when category==='practice' the API call sets paid_practice=true and OMITS language/location/gender params. Correct.",
+    "frontend/src/components/PartnerCard.tsx:241-249 — gold paidBtn with 'Chat' label + cash icon is rendered ONLY when item.paid_practice=true. Non-paid partners keep the round waveBtn.",
+    "frontend/src/components/PartnerCard.tsx:167-175 — rateBadge (partner-rate-{id}) also rendered only when paid_practice=true, showing item.practice_rate ?? 50 /day.",
+    "paid-practice-overview.tsx — testIDs paid-practice-overview + ppo-back present; all three required section titles rendered; router.back() used for the back button (works from banner-tap navigation)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration30_paid_practice_isolation.py (new)"
+  ],
+  "success_rate": {"backend": "100% (11/11 pytest)", "frontend": "100% observed (banner swap, gold Chat pill, rate badge, overview sections, back navigation all verified live)"},
+  "seed_data_creation": "None. Tests were read-only against demo seed; no user records were mutated so demo state (Emma / Amélie / Yuki as paid partners) is preserved.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Re-run /app/backend/tests/test_iteration30_paid_practice_isolation.py (self-contained; only reads with mei@demo.com). Frontend flow reproducible: login mei → Connect tab → tap connect-cat-practice → banner visible, chips gone → tap paid-practice-banner → paid-practice-overview → tap ppo-back → returns to Connect.",
+  "rca_of_issue": "N/A — feature works end-to-end."
+}

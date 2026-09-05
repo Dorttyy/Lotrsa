@@ -372,6 +372,9 @@ async def list_partners(
             card["streak_count"] = int(d.get("streak_count") or 0)
             cards.append(apply_privacy(card, d))
         return cards
+    # Paid-practice partners appear ONLY in the Paid Practice tab; hide them
+    # from every other partner list so they aren't discoverable elsewhere.
+    query["paid_practice"] = {"$ne": True}
     explicit = bool(
         location or gender or search or online_only or min_age is not None or max_age is not None
     )

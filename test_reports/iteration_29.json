@@ -1,0 +1,55 @@
+{
+  "summary": "Iteration 29 verified (A) Read receipts, (B) Gift-Gated Messaging, (C) Paid Practice gate, and (D) PUT /api/users/me new fields. BACKEND (9/9 pytest PASSED, iteration29.xml): (1) PUT /api/users/me accepts gift_gate:bool + gift_gate_min:int (5..1000) and returns them; min<5 → 422, min>1000 → 422. (2) user_public via GET /api/users/{diego_id} includes gift_gate + gift_gate_min. (3) GET /api/practice/status/{diego} returns is_gift_gate=true, gift_min=20, gift_unlocked=false when diego has gift_gate on. (4) POST /api/chats/{conv}/messages 402 with detail starting 'gift_gate:'. (5) rose (10c) gift succeeds, unlocked=false, still 402 for messages, gift_unlocked stays false. (6) heart (20c) gift → unlocked=true, coins deducted from mei, credited to diego, subsequent messages send OK, practice/status now gift_unlocked=true. (7) After mei sends a message and diego POSTs /api/chats/{id}/read (200 {ok:true}), mei's GET /api/chats/{id} returns partner_read_at >= mei's last sent message created_at. (8) Paid-practice gate: diego paid_practice=true, rate=50 → mei's status shows is_paid_partner=true, unlocked=false; messages 402; POST /api/practice/unlock/{diego} returns ok+expires_at, deducts 50 coins from mei, credits diego, subsequent messages send OK. FRONTEND (via Playwright, mei@demo.com, mobile 390x844): (a) edit-profile shows two cards — Paid Practice (paid-practice-switch + pp-rate-minus/plus) AND Gift-Gated Messaging (gift-gate-switch + gift-min-minus/plus). Toggling gift-gate-switch ON immediately reveals the min-coin stepper, plus+minus work; toggling OFF hides it. (b) In /chat/{diego_conv} with diego gift-gated, the gift-unlock-bar with gift-unlock-btn IS visible above the composer (screenshot iter29_chat.jpg). Note: composer text input is still visible (not fully hidden) — the placeholder swaps to 'Send a gift to start chatting…' but the TextInput is not disabled/read-only; UX-wise the send button is still reachable. This matches the description 'composer is locked' loosely but a disable/onPress guard on the send button relies on the 402 to bounce it. (c) receipt-{id} testID is rendered under the LAST sent bubble showing 'Delivered' (checkmark). After partner reads, backend flips partner_read_at (verified) — UI icon becomes checkmark-done + 'Seen'. (d) Reply preview truncation: code confirmed at chat/[id].tsx:2246 (reply-banner preview) and :1849 (in-bubble reply quote) — both use <Text numberOfLines={1}>, so long quoted text renders single-line with ellipsis. Cleanup: diego's paid_practice + gift_gate restored to false; residual gift/practice unlocks between mei↔diego cleared via pymongo in the pytest fixture.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "chat/[id].tsx composer", "issue": "When giftLocked (or practiceLocked) is true, the chat-message-input remains editable and the send button is still tappable — locking relies purely on backend 402. Consider setting editable={false} on TextInput and disabling the send button while locked to avoid the 'send then bounce' UX.", "testID": "chat-message-input", "priority": "MINOR"}
+    ],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "verified_flows": [
+    "PUT /api/users/me with gift_gate + gift_gate_min (both bounds enforced 422 outside 5..1000)",
+    "user_public / user_card include gift_gate + gift_gate_min (verified via GET /api/users/{diego_id})",
+    "GET /api/practice/status/{diego_id} returns is_gift_gate/gift_min/gift_unlocked correctly",
+    "POST /api/chats/{conv}/messages → 402 detail='gift_gate:...' when gated",
+    "Cheap gift (rose,10) does NOT unlock; qualifying gift (heart,20) unlocks + credits partner",
+    "POST /api/chats/{conv}/read sets last_read.{uid}; other party's GET /api/chats/{id} exposes partner_read_at >= last sent msg created_at",
+    "Paid practice: 402 before, /api/practice/unlock/{id} deducts+credits+returns expires_at, messages 201 after",
+    "edit-profile UI: gift-gate-switch + gift-min-minus/plus stepper toggle behaviour",
+    "chat UI: gift-unlock-bar + gift-unlock-btn appear when partner is gift-gated",
+    "chat UI: receipt-{id} rendered under last sent bubble showing 'Delivered' (icon checkmark)"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration29_gift_gate.py",
+    "/app/test_reports/pytest/iteration29.xml",
+    "/app/test_reports/iter29_edit_profile.jpg",
+    "/app/test_reports/iter29_edit_profile_gg.jpg",
+    "/app/test_reports/iter29_chat.jpg"
+  ],
+  "action_items": [
+    "(Optional UX polish) In /app/frontend/app/chat/[id].tsx, when giftLocked or practiceLocked, set the TextInput editable={false} and disable the send button so the locked composer visibly refuses input instead of relying on a 402 response.",
+    "Consider clearing/resetting gift_unlocks_col + practice_unlocks_col in the demo seed to avoid stale unlocks between demo runs (pytest fixture had to do this via pymongo)."
+  ],
+  "critical_code_review_comments": [
+    "backend/routes/chats.py ensure_gift_unlocked raises 402 with detail 'gift_gate:...' (prefix used by frontend). Good.",
+    "backend/routes/chats.py send_gift correctly gates unlock by price >= gift_gate_min and upserts gift_unlocks (idempotent).",
+    "backend/routes/chats.py mark_read updates last_read.{uid} + broadcasts WS 'messages_read' event with read_at — matches Delivered→Seen flip contract.",
+    "backend/routes/practice.py practice_status returns full state (is_paid_partner, unlocked, is_gift_gate, gift_min, gift_unlocked, coins) — powers both UI gates from a single call.",
+    "backend/models.py UserUpdate validates gift_gate_min with ge=5 le=1000 (matches spec) and user_public/user_card include gift_gate + gift_gate_min.",
+    "frontend/app/chat/[id].tsx renders receipt-{id} only for the last mine index and non-system types — matches spec; icon flips checkmark → checkmark-done when partner_read_at >= item.created_at.",
+    "frontend/app/chat/[id].tsx reply-banner preview (line 2246) and in-bubble reply quote (line 1849) both use numberOfLines={1} → single-line truncation with ellipsis on both surfaces.",
+    "frontend/app/edit-profile.tsx cleanly separates the two gates with testIDs gift-gate-switch, gift-min-minus, gift-min-plus, paid-practice-switch, pp-rate-minus, pp-rate-plus.",
+    "chat composer stays editable when locked (minor UX nit — noted in action items)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration29_gift_gate.py (new)"
+  ],
+  "success_rate": {"backend": "100% (9/9 pytest)", "frontend": "100% observed (edit-profile gates + chat gift-unlock bar + receipt-{id} 'Delivered' verified; reply single-line truncation confirmed by code)"},
+  "seed_data_creation": "Temporarily set diego gift_gate=true / paid_practice=true during tests, then restored to false at the end. Sent 1 rose + 1 heart gift and a few TEST_ messages into the mei↔diego 1:1 chat. gift_unlocks + practice_unlocks between mei and diego were cleared before + after the run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Re-run /app/backend/tests/test_iteration29_gift_gate.py — self-contained (logs in mei + diego, sets/restores diego flags, clears mei↔diego unlock docs via pymongo). Frontend flows are directly testable at /edit-profile and /chat/{id} once logged in as mei via testIDs auth-segment-login/auth-email-input/auth-password-input/auth-submit-btn. The one open UX item is composer editability while locked — decide with product whether to disable input or keep the current 'try-and-bounce' pattern.",
+  "rca_of_issue": "N/A — feature bundle works end-to-end."
+}

@@ -137,15 +137,11 @@ const TOPIC_PROMPTS = [
 ];
 
 const CHAT_GIFTS = [
-  { key: "highfive", name: "High Five", emoji: "🙌", coins: 1 },
   { key: "rose", name: "Rose", emoji: "🌹", coins: 10 },
   { key: "heart", name: "Heart", emoji: "💖", coins: 20 },
   { key: "star", name: "Star", emoji: "⭐", coins: 30 },
-  { key: "cake", name: "Cake", emoji: "🎂", coins: 50 },
   { key: "crown", name: "Crown", emoji: "👑", coins: 100 },
-  { key: "sakura", name: "Sakura", emoji: "🌸", coins: 199 },
-  { key: "diamond", name: "Diamond", emoji: "💎", coins: 299 },
-  { key: "rocket", name: "Rocket", emoji: "🚀", coins: 599 },
+  { key: "diamond", name: "Diamond", emoji: "💎", coins: 200 },
 ];
 
 const EMOJI_GRID = [
@@ -235,6 +231,8 @@ export default function ChatScreen() {
     gift_unlocked?: boolean;
   } | null>(null);
   const [unlocking, setUnlocking] = useState(false);
+  // Partner's last-read timestamp — drives the "Seen"/"Delivered" receipt.
+  const [partnerReadAt, setPartnerReadAt] = useState<string | null>(null);
   const listRef = useRef<FlatList<Message>>(null);
   // Keeps the list pinned to the newest message. True until the reader
   // scrolls up to browse history, so we never yank them back down.
@@ -252,6 +250,7 @@ export default function ChatScreen() {
         ]);
         if (!active) return;
         setConversation(conv);
+        setPartnerReadAt(conv?.partner_read_at ?? null);
         setMessages(msgs);
         if (conv?.partner?.id) {
           api
@@ -293,6 +292,15 @@ export default function ChatScreen() {
             prev.some((m) => m.id === msg.id) ? prev : [...prev, msg],
           );
           api.post(`/chats/${id}/read`).catch(() => {});
+        }
+        if (
+          event.type === "messages_read" &&
+          event.conversation_id === id &&
+          event.read_at
+        ) {
+          setPartnerReadAt((prev) =>
+            !prev || event.read_at! > prev ? event.read_at! : prev,
+          );
         }
         if (
           event.type === "message_reaction" &&
@@ -522,18 +530,37 @@ export default function ChatScreen() {
   const sendGiftMessage = async () => {
     const gift = CHAT_GIFTS.find((g) => g.key === selectedGift);
     if (!gift || sending) return;
+    const myCoins = user?.coins ?? 0;
+    const goBuy = (msg: string) =>
+      Alert.alert("Not enough coins", msg, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Buy coins", onPress: () => router.push("/coins") },
+      ]);
+    if (myCoins < gift.coins) {
+      goBuy(`This gift costs ${gift.coins} coins. You have ${myCoins}.`);
+      return;
+    }
     setSending(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     try {
-      const msg = await api.post<Message>(`/chats/${id}/messages`, {
-        text: `${gift.emoji} ${gift.name}`,
-      });
+      const res = await api.post<{
+        ok: boolean;
+        message: Message;
+        coins: number;
+        unlocked: boolean;
+      }>(`/chats/${id}/gift`, { gift_id: gift.key });
       stickToEnd.current = true;
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => [...prev, res.message]);
+      if (user) setUser({ ...user, coins: res.coins });
+      if (res.unlocked) {
+        setPractice((p) => (p ? { ...p, gift_unlocked: true } : p));
+      }
       setPanel(null);
       setSelectedGift(null);
     } catch (e) {
-      notify("Gift", e instanceof Error ? e.message : "Could not send the gift.");
+      const err = e as Error & { status?: number };
+      if (err.status === 402) goBuy(err.message);
+      else notify("Gift", err.message || "Could not send the gift.");
     } finally {
       setSending(false);
     }
@@ -829,11 +856,21 @@ export default function ChatScreen() {
     } catch (e) {
       const err = e as Error & { status?: number };
       if (err.status === 402) {
-        // Partner is a paid-practice partner — reflect the lock and prompt.
-        setPractice((p) =>
-          p ? { ...p, is_paid_partner: true, unlocked: false } : p,
-        );
-        handleUnlock();
+        const msg = err.message || "";
+        if (msg.startsWith("gift_gate:")) {
+          // Recipient requires a gift before chatting — open the gift panel.
+          setPractice((p) =>
+            p ? { ...p, is_gift_gate: true, gift_unlocked: false } : p,
+          );
+          setPanel("gift");
+          notify("Gift required", msg.replace("gift_gate:", ""));
+        } else {
+          // Partner is a paid-practice partner — reflect the lock and prompt.
+          setPractice((p) =>
+            p ? { ...p, is_paid_partner: true, unlocked: false } : p,
+          );
+          handleUnlock();
+        }
       } else {
         notify("Message", err.message || "Could not send the message.");
       }
@@ -1128,6 +1165,17 @@ export default function ChatScreen() {
   const practiceLocked = !isGroup && !!practice?.is_paid_partner && !practice.unlocked;
   // Gift gate: partner requires a gift before I can message them.
   const giftLocked = !isGroup && !!practice?.is_gift_gate && !practice.gift_unlocked;
+  // Combined input lock — either gate blocks the composer.
+  const inputLocked = practiceLocked || giftLocked;
+  // Index of my most-recent message — the only one that shows a read receipt.
+  const lastMineIndex = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i].sender_id === user?.id && messages[i].type !== "system") {
+        return i;
+      }
+    }
+    return -1;
+  }, [messages, user?.id]);
 
   const toggleMuteChat = async () => {
     try {
@@ -1798,7 +1846,7 @@ export default function ChatScreen() {
                               </Text>
                             </View>
                           ) : (
-                            <Text style={styles.replyPreview}>
+                            <Text style={styles.replyPreview} numberOfLines={1}>
                               {item.reply_to.type === "image"
                                 ? "Photo"
                                 : item.reply_to.preview}
@@ -2093,6 +2141,30 @@ export default function ChatScreen() {
                       ))}
                   </View>
                   )}
+                  {mine &&
+                    index === lastMineIndex &&
+                    item.type !== "system" && (
+                      <View style={styles.receiptRow} testID={`receipt-${item.id}`}>
+                        <Ionicons
+                          name={
+                            partnerReadAt && partnerReadAt >= item.created_at
+                              ? "checkmark-done"
+                              : "checkmark"
+                          }
+                          size={13}
+                          color={
+                            partnerReadAt && partnerReadAt >= item.created_at
+                              ? colors.brand
+                              : colors.onSurfaceSecondary
+                          }
+                        />
+                        <Text style={styles.receiptText}>
+                          {partnerReadAt && partnerReadAt >= item.created_at
+                            ? "Seen"
+                            : "Delivered"}
+                        </Text>
+                      </View>
+                    )}
                 </>
               );
             }}
@@ -2171,7 +2243,7 @@ export default function ChatScreen() {
                         : partner?.name || ""}
                     </Text>
                   </Text>
-                  <Text style={styles.replyBannerPreview} numberOfLines={3}>
+                  <Text style={styles.replyBannerPreview} numberOfLines={1}>
                     {replyTarget.type === "voice"
                       ? "Voice message"
                       : replyTarget.type === "image"
@@ -2219,33 +2291,62 @@ export default function ChatScreen() {
                 </Pressable>
               </View>
             )}
+            {giftLocked && (
+              <View style={styles.practiceBar} testID="gift-unlock-bar">
+                <View style={styles.practiceIconWrap}>
+                  <Ionicons name="gift" size={16} color="#B45309" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.practiceTitle} numberOfLines={1}>
+                    Send a gift to chat with {partner?.name || "this partner"}
+                  </Text>
+                  <Text style={styles.practiceSub} numberOfLines={2}>
+                    Gift {practice?.gift_min ?? 20}+ coins to unlock messaging ·
+                    You have {user?.coins ?? 0}
+                  </Text>
+                </View>
+                <Pressable
+                  testID="gift-unlock-btn"
+                  onPress={() => setPanel("gift")}
+                  style={styles.practiceBtn}
+                >
+                  <Text style={styles.practiceBtnText}>Send gift</Text>
+                </Pressable>
+              </View>
+            )}
             <View style={styles.inputRow}>
               <View style={styles.inputPill}>
                 <TextInput
                   testID="chat-message-input"
                   style={styles.input}
                   placeholder={
-                    practiceLocked
-                      ? "Unlock to start practicing…"
-                      : "Type a message..."
+                    giftLocked
+                      ? "Send a gift to start chatting…"
+                      : practiceLocked
+                        ? "Unlock to start practicing…"
+                        : "Type a message..."
                   }
                   placeholderTextColor={colors.onSurfaceSecondary}
                   selectionColor={colors.brand}
                   value={draft}
                   onChangeText={setDraft}
                   onFocus={() => setPanel(null)}
-                  editable={!practiceLocked}
+                  editable={!inputLocked}
                   multiline
                 />
               </View>
-              {practiceLocked ? (
+              {inputLocked ? (
                 <Pressable
                   testID="chat-locked-btn"
-                  onPress={handleUnlock}
+                  onPress={giftLocked ? () => setPanel("gift") : handleUnlock}
                   style={styles.sendBtn}
                   disabled={unlocking}
                 >
-                  <Ionicons name="lock-closed" size={18} color={colors.onBrand} />
+                  <Ionicons
+                    name={giftLocked ? "gift" : "lock-closed"}
+                    size={18}
+                    color={colors.onBrand}
+                  />
                 </Pressable>
               ) : draft.trim() ? (
                 <Pressable
@@ -3242,6 +3343,20 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: "center",
       justifyContent: "space-between",
       gap: spacing.md,
+    },
+    receiptRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-end",
+      gap: 3,
+      marginTop: 2,
+      marginRight: spacing.xs,
+      marginBottom: 2,
+    },
+    receiptText: {
+      fontFamily: fonts.text,
+      fontSize: 11,
+      color: colors.onSurfaceSecondary,
     },
     bubbleActions: {
       flexDirection: "row",
