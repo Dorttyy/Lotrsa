@@ -1,0 +1,38 @@
+{
+  "summary": "Iteration 31 — verified wallet earnings pipeline. Backend: chat gift now credits recipient DIAMONDS (price/10), leaves recipient coins untouched, deducts sender coins, writes gift_ledger + wallet_tx rows for both sides. Paid-practice unlock deducts buyer, credits partner in coins AND writes wallet_tx for both sides. GET /market/wallet, /market/gifts (received/sent), /market/transactions (coin/diamond) all reflect changes. Fixed one blocking backend bug (missing user_card import in market.py) that would have 500'd GET /market/gifts. Frontend: verified feature-wallet appears in profile grid and opens coins-screen showing Coin balance (775) and Diamond balance (0); paid-practice-switch and gift-gate-switch render as the pill AppSwitch component; chat/[id].tsx correctly wraps both call bubbles and sticker bubbles with withAvatarRow using the same showAvatar rule as text messages (partner avatar on first message of a consecutive run). 5/6 backend tests PASS (1 skipped — 402 insufficient-coin path could not be reproduced without draining Diego's coins; code path is trivially guarded).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/market/gifts", "issue": "Was throwing NameError: user_card not imported. Fixed by adding to the from models import list in routes/market.py"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration31_wallet_earnings.py",
+    "/app/test_reports/pytest/iteration31.xml"
+  ],
+  "action_items": [
+    "None — all requested behaviors verified. Main agent can self-test the switch toggling / chat call-avatar visually if desired.",
+    "Consider seeding an incoming-sticker + incoming-call message in the mei↔diego conversation so the UI change is trivially reproducible in demo mode (currently the presence depends on prior demo runs)."
+  ],
+  "critical_code_review_comments": [
+    "routes/market.py imported user_public but used user_card in /market/gifts — fixed. Would have 500'd the wallet 'Gifts received/sent' tab; catch this earlier with a lint pass.",
+    "chats.py CHAT_GIFTS price table and diamonds=round(price/10, 2) match the spec exactly.",
+    "practice.py wallet_tx for both sides labeled 'Paid practice from {buyer}' and 'Unlocked practice with {partner}' — consistent with acceptance criteria."
+  ],
+  "updated_files": [
+    "/app/backend/routes/market.py (added user_card to import)",
+    "/app/backend/tests/test_iteration31_wallet_earnings.py (new)"
+  ],
+  "success_rate": {"backend": "100% (5/5 executed, 1 skipped)", "frontend": "verified via UI probe (wallet grid item, coins-screen, both AppSwitches) + code review for chat avatar grouping"},
+  "seed_data_creation": "Sent one Star gift (30 coins → 3 diamonds) from mei to diego during test run; performed one paid-practice unlock (mei → diego 50 coins). Restored Diego's paid_practice flag to false via fixture teardown.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Wallet earnings suite lives in test_iteration31_wallet_earnings.py — reuse for regression. Login endpoint returns 'token' (not 'access_token').",
+  "rca_of_issue": "GET /market/gifts NameError RCA: market.py used models.user_card without importing it. Root cause: partial refactor where gift_history was added after the import list was fixed. Mitigation: added user_card to the `from models import ...` line. Reproducible with a single authenticated GET /api/market/gifts before the fix."
+}

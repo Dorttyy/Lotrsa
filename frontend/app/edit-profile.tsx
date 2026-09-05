@@ -18,7 +18,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
@@ -26,6 +25,7 @@ import {
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AppSwitch } from "@/src/components/AppSwitch";
 import { Avatar } from "@/src/components/Avatar";
 import { BackButton } from "@/src/components/BackButton";
 import { VoiceBubble } from "@/src/components/VoiceBubble";
@@ -1078,12 +1078,10 @@ export default function EditProfile() {
                 You earn the coins.
               </Text>
             </View>
-            <Switch
+            <AppSwitch
               testID="paid-practice-switch"
               value={!!user.paid_practice}
               onValueChange={togglePaidPractice}
-              trackColor={{ true: colors.brand, false: colors.borderStrong }}
-              thumbColor="#FFFFFF"
             />
           </View>
           {user.paid_practice && (
@@ -1123,12 +1121,10 @@ export default function EditProfile() {
                 before they can message you. You keep the coins.
               </Text>
             </View>
-            <Switch
+            <AppSwitch
               testID="gift-gate-switch"
               value={!!user.gift_gate}
               onValueChange={toggleGiftGate}
-              trackColor={{ true: colors.brand, false: colors.borderStrong }}
-              thumbColor="#FFFFFF"
             />
           </View>
           {user.gift_gate && (

@@ -1666,6 +1666,34 @@ export default function ChatScreen() {
                   });
                 }
               };
+              // Incoming special messages (calls, stickers) follow the same
+              // avatar grouping as text bubbles: the partner's avatar shows on
+              // the FIRST message of a consecutive run and a spacer keeps the
+              // rest aligned. Outgoing ones simply hug the right edge.
+              const withAvatarRow = (content: React.ReactNode) =>
+                mine ? (
+                  <View style={styles.specialRowMine}>{content}</View>
+                ) : (
+                  <View style={styles.specialRowTheirs}>
+                    {showAvatar ? (
+                      <View style={styles.avatarWrap}>
+                        <Avatar
+                          name={(isGroup ? item.sender?.name : partner?.name) || ""}
+                          url={
+                            isGroup ? item.sender?.avatar_url : partner?.avatar_url
+                          }
+                          size={40}
+                          flagCode={countryToCode(
+                            isGroup ? item.sender?.country : partner?.country,
+                          )}
+                        />
+                      </View>
+                    ) : (
+                      <View style={styles.avatarSpacer} />
+                    )}
+                    {content}
+                  </View>
+                );
               return (
                 <>
                   {showTimeSep && (
@@ -1678,33 +1706,30 @@ export default function ChatScreen() {
                       {item.text}
                     </Text>
                   ) : isSticker ? (
-                    <Pressable
-                      ref={setBubbleRef}
-                      onPress={() =>
-                        selectMode ? toggleSelect(item.id) : openReactions()
-                      }
-                      onLongPress={openReactions}
-                      delayLongPress={220}
-                      style={[
-                        styles.stickerMsg,
-                        mine ? styles.callRowMine : styles.callRowTheirs,
-                        selected && styles.bubbleSelected,
-                      ]}
-                    >
-                      <Image
-                        source={{ uri: stickerUrl(item.sticker!) }}
-                        style={styles.stickerMsgImg}
-                        contentFit="contain"
-                      />
-                    </Pressable>
+                    withAvatarRow(
+                      <Pressable
+                        ref={setBubbleRef}
+                        onPress={() =>
+                          selectMode ? toggleSelect(item.id) : openReactions()
+                        }
+                        onLongPress={openReactions}
+                        delayLongPress={220}
+                        style={[
+                          styles.stickerMsg,
+                          selected && styles.bubbleSelected,
+                        ]}
+                      >
+                        <Image
+                          source={{ uri: stickerUrl(item.sticker!) }}
+                          style={styles.stickerMsgImg}
+                          contentFit="contain"
+                        />
+                      </Pressable>,
+                    )
                   ) : isCall ? (
-                    <View
-                      style={[
-                        styles.callRow,
-                        mine ? styles.callRowMine : styles.callRowTheirs,
-                      ]}
-                    >
-                      <View style={styles.callCard}>
+                    withAvatarRow(
+                      <View style={styles.callRow}>
+                        <View style={styles.callCard}>
                         <View
                           style={[
                             styles.callIconWrap,
@@ -1755,7 +1780,8 @@ export default function ChatScreen() {
                           </Text>
                         </View>
                       </View>
-                    </View>
+                    </View>,
+                    )
                   ) : isRoomShare ? (
                     <View style={styles.roomShareRow}>
                       <Pressable
@@ -3098,6 +3124,19 @@ const makeStyles = (colors: ThemeColors) =>
     callRowTheirs: {
       alignSelf: "flex-start",
       marginLeft: 40 + spacing.sm,
+    },
+    // Wrapper rows that give calls/stickers the same avatar column + grouping
+    // as text bubbles (avatar on the first of a run, spacer for the rest).
+    specialRowTheirs: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      gap: spacing.sm,
+      alignSelf: "flex-start",
+      maxWidth: "100%",
+    },
+    specialRowMine: {
+      alignSelf: "flex-end",
+      maxWidth: "100%",
     },
     stickerMsg: {
       paddingVertical: 2,

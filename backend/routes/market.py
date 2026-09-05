@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from auth_utils import CurrentUser
 from db import market_config_col, users_col
-from models import user_public
+from models import user_card, user_public
 
 router = APIRouter(prefix="/market", tags=["market"])
 

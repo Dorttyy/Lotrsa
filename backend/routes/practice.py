@@ -6,11 +6,15 @@ from their profile. To send messages to such a partner, another user must
 """
 
 from datetime import datetime, timedelta, timezone
+import uuid
 
 from fastapi import APIRouter, HTTPException
 
 from auth_utils import CurrentUser
 from db import gift_unlocks_col, practice_unlocks_col, users_col
+from db import db as _appdb
+
+wallet_tx_col = _appdb["wallet_tx"]
 
 router = APIRouter(prefix="/practice", tags=["practice"])
 
@@ -102,6 +106,30 @@ async def practice_unlock(partner_id: str, current_user: CurrentUser):
         {"_id": current_user["_id"]}, {"$inc": {"coins": -rate}}
     )
     await users_col.update_one({"_id": partner_id}, {"$inc": {"coins": rate}})
+    # Record both sides in the wallet ledger so earnings/spends are visible.
+    partner = await users_col.find_one({"_id": partner_id}, {"name": 1})
+    me_name = current_user.get("name") or "someone"
+    partner_name = (partner or {}).get("name") or "partner"
+    await wallet_tx_col.insert_many(
+        [
+            {
+                "_id": str(uuid.uuid4()),
+                "user_id": partner_id,
+                "kind": "coin",
+                "amount": rate,
+                "label": f"Paid practice from {me_name}",
+                "created_at": _iso(_now()),
+            },
+            {
+                "_id": str(uuid.uuid4()),
+                "user_id": current_user["_id"],
+                "kind": "coin",
+                "amount": -rate,
+                "label": f"Unlocked practice with {partner_name}",
+                "created_at": _iso(_now()),
+            },
+        ]
+    )
     await practice_unlocks_col.update_one(
         {"buyer_id": current_user["_id"], "partner_id": partner_id},
         {

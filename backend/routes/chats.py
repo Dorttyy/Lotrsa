@@ -9,6 +9,12 @@ from pydantic import BaseModel, Field
 from auth_utils import CurrentUser
 from config_utils import get_app_config
 from db import audio_col, conversations_col, follows_col, gift_unlocks_col, media_col, messages_col, practice_unlocks_col, rooms_col, users_col
+from db import db as _appdb
+
+# Wallet collections (shared with the market/wallet feature) — chat gifts feed
+# the recipient's earnings ledger just like room gifts do.
+gift_ledger_col = _appdb["gift_ledger"]
+wallet_tx_col = _appdb["wallet_tx"]
 from models import (
     CallLogCreate,
     ConversationCreate,
@@ -712,9 +718,45 @@ async def send_gift(
             status_code=402,
             detail=f"Not enough coins. This gift costs {price} coins.",
         )
-    # Move coins sender -> recipient.
+    # Sender spends coins; the recipient EARNS diamonds (price/10) into their
+    # wallet — the same model as room gifts — plus a permanent gift-ledger
+    # entry and wallet transactions so every earning shows up in the Wallet.
+    diamonds = round(price / 10, 2)
+    tx_now = datetime.now(timezone.utc).isoformat()
     await users_col.update_one({"_id": current_user["_id"]}, {"$inc": {"coins": -price}})
-    await users_col.update_one({"_id": partner_id}, {"$inc": {"coins": price}})
+    await users_col.update_one({"_id": partner_id}, {"$inc": {"diamonds": diamonds}})
+    await gift_ledger_col.insert_one(
+        {
+            "_id": str(uuid.uuid4()),
+            "from_id": current_user["_id"],
+            "to_id": partner_id,
+            "emoji": gift["emoji"],
+            "name": gift["name"],
+            "price": price,
+            "diamonds": diamonds,
+            "created_at": tx_now,
+        }
+    )
+    await wallet_tx_col.insert_many(
+        [
+            {
+                "_id": str(uuid.uuid4()),
+                "user_id": partner_id,
+                "kind": "diamond",
+                "amount": diamonds,
+                "label": f"Gift received {gift['emoji']} {gift['name']}",
+                "created_at": tx_now,
+            },
+            {
+                "_id": str(uuid.uuid4()),
+                "user_id": current_user["_id"],
+                "kind": "coin",
+                "amount": -price,
+                "label": f"Sent {gift['emoji']} {gift['name']}",
+                "created_at": tx_now,
+            },
+        ]
+    )
 
     partner = await users_col.find_one(
         {"_id": partner_id}, {"gift_gate": 1, "gift_gate_min": 1}
