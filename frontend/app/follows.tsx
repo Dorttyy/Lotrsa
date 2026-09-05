@@ -149,7 +149,7 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       textAlign: "center",
       fontFamily: fonts.display,
-      fontSize: 18,
+      fontSize: 24,
       color: colors.onSurface,
     },
     tabs: {

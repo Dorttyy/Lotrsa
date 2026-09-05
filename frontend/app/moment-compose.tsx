@@ -789,7 +789,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     title: {
       fontFamily: fonts.displayBold,
-      fontSize: 18,
+      fontSize: 24,
       color: colors.onSurface,
     },
     postBtn: {

@@ -228,7 +228,7 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    headerTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.onSurface },
+    headerTitle: { fontFamily: fonts.display, fontSize: 24, color: colors.onSurface },
     headerSub: {
       fontFamily: fonts.text,
       fontSize: 13,

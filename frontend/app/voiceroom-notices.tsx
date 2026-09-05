@@ -211,7 +211,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.sm,
     },
-    title: { fontFamily: fonts.displayBold, fontSize: 18, color: colors.onSurface },
+    title: { fontFamily: fonts.displayBold, fontSize: 24, color: colors.onSurface },
     subtitle: { fontFamily: fonts.text, fontSize: 12, color: colors.onSurfaceSecondary },
     center: {
       flex: 1,

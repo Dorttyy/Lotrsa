@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: 12,
   },
-  title: { flex: 1, textAlign: "center", fontFamily: fonts.displayBold, fontSize: 18, color: "#111" },
+  title: { flex: 1, textAlign: "center", fontFamily: fonts.displayBold, fontSize: 24, color: "#111" },
   empty: { fontFamily: fonts.text, fontSize: 15, color: "#666", textAlign: "center", marginTop: 60 },
   line: { flexDirection: "row", gap: 12, alignItems: "center", marginBottom: 18 },
   thumb: { width: 70, height: 70, borderRadius: 6, backgroundColor: "#F5F5F5" },

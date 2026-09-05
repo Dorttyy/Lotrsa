@@ -2281,7 +2281,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     title: {
       fontFamily: fonts.display,
-      fontSize: 18,
+      fontSize: 24,
       color: "#FFFFFF",
       flexShrink: 1,
       maxWidth: 160,

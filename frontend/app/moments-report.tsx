@@ -210,7 +210,7 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       textAlign: "center",
       fontFamily: fonts.displayBold,
-      fontSize: 18,
+      fontSize: 24,
       color: "#FFFFFF",
     },
     body: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },

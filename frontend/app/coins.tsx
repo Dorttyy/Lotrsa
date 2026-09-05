@@ -232,7 +232,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: spacing.sm,
       backgroundColor: colors.surface,
     },
-    title: { flex: 1, textAlign: "center", fontFamily: fonts.displayBold, fontSize: 18, color: colors.onSurface },
+    title: { flex: 1, textAlign: "center", fontFamily: fonts.displayBold, fontSize: 24, color: colors.onSurface },
     body: { padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.md },
     balanceCard: { borderRadius: 20, padding: spacing.lg },
     balanceHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },

@@ -164,7 +164,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.sm,
     },
-    title: { flex: 1, textAlign: "center", fontFamily: fonts.displayBold, fontSize: 18, color: colors.onSurface },
+    title: { flex: 1, textAlign: "center", fontFamily: fonts.displayBold, fontSize: 24, color: colors.onSurface },
     body: { padding: spacing.lg, paddingBottom: spacing.xl },
     card: { backgroundColor: colors.surface, borderRadius: 18, padding: spacing.lg },
     cardTitle: { fontFamily: fonts.displayBold, fontSize: 16.5, color: colors.onSurface },

@@ -235,3 +235,6 @@ NOTE: avatar-on-first-message grouping for messages + calls was already delivere
 ## Round 72 — Uniform title bars + professional VIP badge
 ✅ VipBadge redesigned (src/components/Badges.tsx): now a glossy SVG "verified" checkmark sticker (rounded square, top gloss highlight, white check) tinted by tier — gold (weekly/monthly), blue (weekly), purple (lifetime). Replaces the old text "VIP" pill everywhere (12 usages update via the shared component). Unique gradient ids via React.useId.
 ✅ Title-bar size unified to 18px (chat header size) across ALL core-app pages per user (1a landing titles too, 2b sub-apps untouched): edited 19 files — (tabs) connect/chats/moments/voice (22/24→18), market(24), backpack/categories(22), voiceroom-notices/moments-report(17.5), placement-test/leaderboard/saved-moments/room/share-to-chat(17), vocab-hub/play/connect-filter(20), moment-compose(19), moment/[id](20). fontFamily kept per-page; only size normalized. Pro/Learn/Lessons sub-apps intentionally left with their own larger serif titles. lint clean.
+
+## Round 73 — Title bars bumped to 24px
+- Per user, all core-app header titles (37 files incl. chat headerName) set to fontSize 24 for a larger, uniform look (was 18). Pro/Learn/Lessons sub-apps still untouched.

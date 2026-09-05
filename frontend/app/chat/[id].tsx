@@ -2886,7 +2886,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     headerName: {
       fontFamily: fonts.displaySemi,
-      fontSize: 18,
+      fontSize: 24,
       color: colors.onSurface,
     },
     headerStatus: {

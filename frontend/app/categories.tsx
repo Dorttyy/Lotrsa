@@ -246,7 +246,7 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    title: { fontFamily: fonts.displayBold, fontSize: 18, color: colors.onSurface },
+    title: { fontFamily: fonts.displayBold, fontSize: 24, color: colors.onSurface },
     coinPill: {
       flexDirection: "row",
       alignItems: "center",

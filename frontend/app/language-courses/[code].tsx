@@ -339,7 +339,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     headerTitle: {
       fontFamily: fonts.displayBold,
-      fontSize: 18,
+      fontSize: 24,
       color: colors.onSurface,
     },
     section: {

@@ -331,7 +331,7 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       textAlign: "center",
       fontFamily: fonts.displayBold,
-      fontSize: 18,
+      fontSize: 24,
       color: colors.onSurface,
     },
     tabsRow: { flexDirection: "row", gap: 8, paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
