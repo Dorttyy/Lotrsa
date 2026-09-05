@@ -226,3 +226,8 @@ Note: Daily streak (backend touch_streak + profile/user page display) already ex
 ## Verified complete (original problem statement)
 ✅ #3 Bottom-bar/gesture-bar overlap: (tabs)/_layout uses useSafeAreaInsets, tabBar height = 56 + max(insets.bottom,12)+10; global safe-area pass (Round 66). No overlap in previews.
 ✅ #6 Moments feed language filter: implemented in GET /moments (frontend calls it) — shows only posts whose author native_language ∈ my learning languages (+ own). Verified live (mei EN+JA → sees EN/JA authors).
+
+## Round 71 — Bottom-sheet gesture-bar overlap fix
+✅ Audited all 14 files with flex-end backdrops. Only connect.tsx (Add-language + Gender/City sheets) and market.tsx (Top-up sheet) had UNPROTECTED bottom sheets — the rest were either already insets-aware (Round 66) or false positives (card styles: all-courses bookCover, learn/plan topBar, moment/[id] commentActionRow).
+✅ connect.tsx + market.tsx: added useSafeAreaInsets; sheet modalCard now paddingBottom = insets.bottom + spacing.xxl so the last option (Poland/Female/Greek/top-up amount) clears the phone gesture bar. Verified sheets open cleanly (web insets=0; device gets the extra pad). lint clean.
+NOTE: avatar-on-first-message grouping for messages + calls was already delivered (Round 70, iteration 31) — re-confirmed as the desired behavior.

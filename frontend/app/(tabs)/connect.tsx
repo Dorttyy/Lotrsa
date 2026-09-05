@@ -13,7 +13,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FlagIcon } from "@/src/components/FlagIcon";
 import { IconChip } from "@/src/components/IconChip";
@@ -37,6 +37,7 @@ export default function Connect() {
   const { user, setUser } = useAuth();
   const router = useRouter();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const styles = React.useMemo(() => makeStyles(colors), [colors]);
   const [partners, setPartners] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -372,7 +373,7 @@ export default function Connect() {
         onRequestClose={() => setAddLangOpen(false)}
       >
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+          <View style={[styles.modalCard, { paddingBottom: insets.bottom + spacing.xxl }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
                 {needsVipForMore ? "VIP Feature" : "Add a learning language"}
@@ -441,7 +442,7 @@ export default function Connect() {
         onRequestClose={() => setCatSheet(null)}
       >
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+          <View style={[styles.modalCard, { paddingBottom: insets.bottom + spacing.xxl }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
                 {catSheet === "gender" ? "Filter by gender" : "Filter by location"}
