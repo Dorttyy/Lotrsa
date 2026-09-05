@@ -571,7 +571,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     title: {
       fontFamily: fonts.displayBold,
-      fontSize: 20,
+      fontSize: 18,
       color: colors.onSurface,
     },
     resetText: {

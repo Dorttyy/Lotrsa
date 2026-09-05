@@ -1,8 +1,13 @@
 import { Ionicons } from "@/src/ui/icons";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
-
-import { fonts } from "@/src/theme";
+import { StyleSheet, View } from "react-native";
+import Svg, {
+  Defs,
+  LinearGradient,
+  Path,
+  Rect,
+  Stop,
+} from "react-native-svg";
 
 /** Small ♂ / ♀ symbol shown next to user names. */
 export const GenderBadge: React.FC<{
@@ -32,44 +37,62 @@ export const GenderBadge: React.FC<{
   );
 };
 
-/** Gold (weekly/monthly) or purple (lifetime) VIP pill shown next to VIP users' names. */
+// Glossy sticker palette per VIP tier (light top → dark bottom).
+const VIP_COLORS: Record<string, [string, string]> = {
+  gold: ["#FFDB57", "#F0A000"],
+  blue: ["#63ABF5", "#1C6ED6"],
+  purple: ["#C483EC", "#8A2FC2"],
+};
+
+/**
+ * Professional glossy "verified" VIP badge — a checkmark sticker with a
+ * top gloss highlight, tinted by tier (gold = weekly/monthly, purple =
+ * lifetime). Renders as an SVG so it stays crisp at every size.
+ */
 export const VipBadge: React.FC<{
   small?: boolean;
   tier?: "weekly" | "monthly" | "lifetime" | null;
-}> = ({ small, tier }) => (
-  <View
-    style={[
-      styles.vipWrap,
-      small && styles.vipWrapSmall,
-      tier === "lifetime" && { backgroundColor: "#0E9AE0" },
-    ]}
-  >
-    <Text style={[styles.vipText, small && styles.vipTextSmall]}>VIP</Text>
-  </View>
-);
+}> = ({ small, tier }) => {
+  const gid = React.useId();
+  const size = small ? 16 : 20;
+  const [light, dark] =
+    tier === "lifetime"
+      ? VIP_COLORS.purple
+      : tier === "weekly"
+        ? VIP_COLORS.blue
+        : VIP_COLORS.gold;
+  return (
+    <Svg width={size} height={size} viewBox="0 0 100 100">
+      <Defs>
+        <LinearGradient id={`v${gid}`} x1="0.25" y1="0" x2="0.75" y2="1">
+          <Stop offset="0" stopColor={light} />
+          <Stop offset="1" stopColor={dark} />
+        </LinearGradient>
+        <LinearGradient id={`g${gid}`} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0.6" />
+          <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
+        </LinearGradient>
+      </Defs>
+      {/* Sticker body */}
+      <Rect x="8" y="8" width="84" height="84" rx="24" fill={`url(#v${gid})`} />
+      {/* Top gloss highlight */}
+      <Rect x="16" y="14" width="68" height="34" rx="17" fill={`url(#g${gid})`} />
+      {/* Checkmark */}
+      <Path
+        d="M29 52 L44 68 L73 33"
+        stroke="#FFFFFF"
+        strokeWidth="11"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </Svg>
+  );
+};
 
 const styles = StyleSheet.create({
   genderWrap: {
     alignItems: "center",
     justifyContent: "center",
-  },
-  vipWrap: {
-    backgroundColor: "#F59E0B",
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
-  },
-  vipWrapSmall: {
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-  },
-  vipText: {
-    color: "#FFFFFF",
-    fontFamily: fonts.textBold,
-    fontSize: 10,
-    letterSpacing: 0.5,
-  },
-  vipTextSmall: {
-    fontSize: 8,
   },
 });

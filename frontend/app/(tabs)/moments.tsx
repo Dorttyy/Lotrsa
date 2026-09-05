@@ -1444,7 +1444,7 @@ const makeStyles = (colors: ThemeColors) =>
   },
   headerTitle: {
     fontFamily: fonts.displayBold,
-    fontSize: 24,
+    fontSize: 18,
     color: colors.onSurface,
   },
   headerSub: {

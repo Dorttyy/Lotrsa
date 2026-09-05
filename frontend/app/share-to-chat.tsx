@@ -190,7 +190,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     title: {
       fontFamily: fonts.displaySemi,
-      fontSize: 17,
+      fontSize: 18,
       color: colors.onSurface,
     },
     searchWrap: {

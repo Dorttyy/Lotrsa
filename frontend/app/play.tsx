@@ -368,7 +368,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     headerTitle: {
       fontFamily: fonts.displayBold,
-      fontSize: 20,
+      fontSize: 18,
       color: colors.onSurface,
     },
     hero: {

@@ -189,7 +189,7 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    title: { flex: 1, fontFamily: fonts.displayBold, fontSize: 22, color: colors.onSurface },
+    title: { flex: 1, fontFamily: fonts.displayBold, fontSize: 18, color: colors.onSurface },
     tabsRow: { flexDirection: "row", gap: 8, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
     tab: { paddingHorizontal: 15, paddingVertical: 9, borderRadius: radius.pill },
     tabOn: { backgroundColor: colors.surface },

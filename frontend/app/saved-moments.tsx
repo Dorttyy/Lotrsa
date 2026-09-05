@@ -200,7 +200,7 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       textAlign: "center",
       fontFamily: fonts.displayBold,
-      fontSize: 17,
+      fontSize: 18,
       color: colors.onSurface,
     },
     center: { flex: 1, alignItems: "center", justifyContent: "center" },

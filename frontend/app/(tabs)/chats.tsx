@@ -544,7 +544,7 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       textAlign: "left",
       fontFamily: fonts.display,
-      fontSize: 22,
+      fontSize: 18,
       color: colors.onSurface,
     },
     shortcutRow: {

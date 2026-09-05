@@ -822,7 +822,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     headerTitle: {
       fontFamily: fonts.display,
-      fontSize: 22,
+      fontSize: 18,
       color: colors.onSurface,
     },
     headerSub: {
