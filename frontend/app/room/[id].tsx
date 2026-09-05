@@ -99,14 +99,14 @@ export default function RoomScreen() {
     if (Platform.OS === "web") return;
     SystemUI.setBackgroundColorAsync(roomBg).catch(() => {});
     if (Platform.OS === "android") {
-      NavigationBar.setButtonStyleAsync("light").catch(() => {});
+      // SDK 57: setStyle replaces the removed setButtonStyleAsync. "dark" gives
+      // light buttons, suitable for the immersive dark room background.
+      NavigationBar.setStyle?.("dark");
     }
     return () => {
       SystemUI.setBackgroundColorAsync(colors.surface).catch(() => {});
       if (Platform.OS === "android") {
-        NavigationBar.setButtonStyleAsync(mode === "dark" ? "light" : "dark").catch(
-          () => {},
-        );
+        NavigationBar.setStyle?.(mode === "dark" ? "dark" : "light");
       }
     };
   }, [roomBg, colors.surface, mode]);

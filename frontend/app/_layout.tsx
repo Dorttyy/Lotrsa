@@ -103,9 +103,9 @@ function ThemedApp() {
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(colors.surface).catch(() => {});
     if (Platform.OS === "android") {
-      NavigationBar.setButtonStyleAsync(mode === "dark" ? "light" : "dark").catch(
-        () => {},
-      );
+      // expo-navigation-bar SDK 57 replaced setButtonStyleAsync with setStyle
+      // (synchronous). "dark" = dark bar w/ light buttons, "light" = vice-versa.
+      NavigationBar.setStyle?.(mode === "dark" ? "dark" : "light");
     }
   }, [mode, colors.surface]);
   return (

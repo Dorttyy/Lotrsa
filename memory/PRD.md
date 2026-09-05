@@ -243,3 +243,7 @@ NOTE: avatar-on-first-message grouping for messages + calls was already delivere
 - Root cause: Metro fallback file-watcher intermittently crashed on a phantom node_modules path (@typescript-eslint/utils/node_modules/eslint/lib/cli-engine; ESLint 9 removed cli-engine) → dev server died mid-bundle → Expo Go loaded a broken/partial bundle → render error.
 - Fix: materialized the missing dir + cleared Metro/.expo cache + restarted. Dev server now stable (persistent PID, packager-status running, HTTP 200). Verified via testing_agent iteration 32 (5/5 pass, 0 console/page errors, app loads clean, VIP badge + 24px titles + chat receipts all intact).
 - Note: @react-native-picker/picker 2.11.4 vs expo-expected 2.11.1 is a cosmetic doctor warning (newer in-range); left as-is.
+
+## Round 75 — REAL fix for Expo Go Android crash (undefined is not a function @ _layout.tsx:106)
+- Root cause: expo-navigation-bar@57 REMOVED NavigationBar.setButtonStyleAsync (now synchronous NavigationBar.setStyle). Root _layout.tsx useEffect + room/[id].tsx called the undefined method inside a Platform.OS==="android" branch → crash on Android/Fabric only (web unaffected, which is why earlier web smokes passed).
+- Fix: replaced all 3 call sites with NavigationBar.setStyle?.(mode==="dark"?"dark":"light") (room immersive uses "dark"). Removed the .catch (setStyle is sync). lint clean; web boot regression-free (testing iteration 33). Requires Expo Go reload to verify on device.

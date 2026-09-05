@@ -1,0 +1,25 @@
+{
+  "summary": "Web regression smoke after root _layout.tsx edit (expo-navigation-bar SDK57: setButtonStyleAsync→setStyle). App boots cleanly on web with 0 console errors and 0 'undefined is not a function' errors. Login as mei@demo.com works. All 5 bottom tabs (Connect / Chats / Moments / Voice / Profile) navigate without error. Voice tab renders (currently empty — 'Nothing here~'), so opening an existing live room could not be exercised end-to-end, but the underlying room/[id].tsx SystemUI/NavigationBar block is guarded by `if (Platform.OS === 'web') return;` and uses optional chaining `NavigationBar.setStyle?.(...)`, so it is safe on web. No red screen, no ErrorBoundary fallback shown. The Android-native crash the fix targets cannot be reproduced on web preview by design — a native build is required to confirm on Android/Fabric.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "To fully verify the original Android crash fix, build a native Android app (Expo dev-client / EAS build) and open the app + a Voice room on a Fabric-enabled Android device. Web smoke alone cannot exercise the expo-navigation-bar Android branch."
+  ],
+  "critical_code_review_comments": [
+    "Fix in _layout.tsx:108 correctly uses optional chaining (`NavigationBar.setStyle?.(...)`) so even if the export is missing on some SDK sub-versions the app will not crash — good defensive coding.",
+    "room/[id].tsx:99 early-returns for web before touching SystemUI/NavigationBar — matches the web-preview constraint and keeps the fix isolated to native."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (not tested per request)", "frontend": "100% (boot + login + 5-tab nav + voice screen)"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Voice tab was empty during this run so a live room screen could not be opened. If a live room is needed for follow-up testing, seed one via backend or have another demo user (diego@demo.com) create/host one, then re-run to open the room. Login path: welcome-screen → login-btn → auth-email-input / auth-password-input → auth-submit-btn → /connect. Bottom tabs use testIDs tab-connect, tab-chats, tab-moments, tab-voice, tab-profile.",
+  "rca_of_issue": "Original bug: `NavigationBar.setButtonStyleAsync` was removed in expo-navigation-bar@57 and replaced by a synchronous `NavigationBar.setStyle`. The old call in _layout.tsx and room/[id].tsx crashed Android with 'undefined is not a function'. Fix replaces both call-sites with `NavigationBar.setStyle?.(mode === 'dark' ? 'dark' : 'light')` (immersive room uses 'dark'). Web preview never executes that branch, so web boot passes cleanly — confirmed here."
+}
