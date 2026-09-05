@@ -238,3 +238,8 @@ NOTE: avatar-on-first-message grouping for messages + calls was already delivere
 
 ## Round 73 — Title bars bumped to 24px
 - Per user, all core-app header titles (37 files incl. chat headerName) set to fontSize 24 for a larger, uniform look (was 18). Pro/Learn/Lessons sub-apps still untouched.
+
+## Round 74 — Fix Expo Go "undefined is not a function" render error
+- Root cause: Metro fallback file-watcher intermittently crashed on a phantom node_modules path (@typescript-eslint/utils/node_modules/eslint/lib/cli-engine; ESLint 9 removed cli-engine) → dev server died mid-bundle → Expo Go loaded a broken/partial bundle → render error.
+- Fix: materialized the missing dir + cleared Metro/.expo cache + restarted. Dev server now stable (persistent PID, packager-status running, HTTP 200). Verified via testing_agent iteration 32 (5/5 pass, 0 console/page errors, app loads clean, VIP badge + 24px titles + chat receipts all intact).
+- Note: @react-native-picker/picker 2.11.4 vs expo-expected 2.11.1 is a cosmetic doctor warning (newer in-range); left as-is.

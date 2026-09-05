@@ -1,0 +1,27 @@
+{
+  "summary": "Frontend smoke/regression pass after Metro watcher stabilization fix (iteration 32). Tested on web preview (mobile viewport 390x844) via https://expo-fix-12.preview.emergentagent.com. All 5 requested scenarios PASS. Zero 'undefined is not a function' errors, zero pageerrors, zero console errors. Login as mei@demo.com works, all 5 bottom tabs navigate cleanly, VIP glossy checkmark badges render on Fad/Goga/Demo User (Connect) and Goga (Chats), header titles render at 24px size (Chats/Connect/Moments/Profile), 1:1 chat with Diego Ramírez renders messages, composer sends 'Hello from smoke test' successfully and 'Delivered' receipt is shown beneath the latest sent message. Only minor non-blocking RN-web deprecation warnings observed (shadow* / pointerEvents) and one package version mismatch (@react-native-picker/picker 2.11.4 vs expo-expected 2.11.1).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "@react-native-picker/picker", "issue": "Installed version 2.11.4 does not match expo-expected 2.11.1. Non-blocking but Expo warns on every startup. Reference: /var/log/supervisor/expo.err.log"},
+      {"component": "RN-Web deprecations", "issue": "Console warnings: 'shadow*' style props deprecated (use boxShadow) and props.pointerEvents deprecated (use style.pointerEvents). Non-blocking on web but should be migrated for future SDK compatibility."}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional: align @react-native-picker/picker to 2.11.1 to silence Expo doctor warnings",
+    "Optional: migrate shadow* -> boxShadow and props.pointerEvents -> style.pointerEvents across styles",
+    "No blocking issues — Metro watcher stabilization fix is confirmed working; the reported 'undefined is not a function' render error is not reproducible on web."
+  ],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (not tested per request)", "frontend": "100% (5/5 scenarios)"},
+  "seed_data_creation": "None. Sent one transient chat message 'Hello from smoke test' from mei -> Diego to verify Delivered receipt.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Metro is stable (expo pid uptime >1min, HTTP 200). The phantom ENOENT path @typescript-eslint/utils/node_modules/eslint/lib/cli-engine has been materialized (empty dir exists on disk). Web smoke passes cleanly. If Android/Expo Go issue reappears, verify that empty dir at /app/frontend/node_modules/@typescript-eslint/utils/node_modules/eslint/lib/cli-engine still exists.",
+  "rca_of_issue": "Original crash: Metro's FallbackWatcher tried to fs.watch a non-existent path (@typescript-eslint/utils/node_modules/eslint/lib/cli-engine — ESLint 9 removed cli-engine). ENOENT killed the dev server and Expo Go received a broken bundle -> 'undefined is not a function' at React fiber passive-effects. Mitigation: pre-create the missing directory + clear Metro cache + restart supervisor expo. Verified stable via supervisorctl (expo RUNNING, uptime persistent) and full web smoke test with 0 console/page errors."
+}
