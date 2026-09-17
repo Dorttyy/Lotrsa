@@ -1,9 +1,10 @@
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CheckInModal } from "@/src/components/CheckInModal";
+import { GuestTabBoundary } from "@/src/components/GuestExperience";
 import { useAuth } from "@/src/context/AuthContext";
 import { useNotifications } from "@/src/context/NotificationsContext";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -26,8 +27,11 @@ interface CheckInReward {
 export default function TabsLayout() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
-  const { chatUnread, momentsUnread, profileUnread } = useNotifications();
+  const { user, loading, isGuestBrowsing } = useAuth();
+  const counts = useNotifications();
+  const chatUnread = isGuestBrowsing ? 0 : counts.chatUnread;
+  const momentsUnread = isGuestBrowsing ? 0 : counts.momentsUnread;
+  const profileUnread = isGuestBrowsing ? 0 : counts.profileUnread;
   const [reward, setReward] = useState<CheckInReward | null>(null);
 
   // Daily streak check-in: runs once when the main app mounts. The backend
@@ -60,9 +64,16 @@ export default function TabsLayout() {
   // extra lift so the icon row sits comfortably clear of the very edge.
   const bottomGap = Math.max(insets.bottom, 12) + 10;
 
+  if (!loading && !user && !isGuestBrowsing) {
+    return <Redirect href="/auth?mode=login" />;
+  }
+
   return (
     <>
     <Tabs
+      screenLayout={({ children, route }) => (
+        <GuestTabBoundary name={route.name}>{children}</GuestTabBoundary>
+      )}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.brand,
@@ -182,7 +193,7 @@ export default function TabsLayout() {
       />
     </Tabs>
     <CheckInModal
-      visible={!!reward}
+      visible={!isGuestBrowsing && !!reward}
       streak={reward?.streak ?? 1}
       coinsAwarded={reward?.coinsAwarded ?? 0}
       totalCoins={reward?.totalCoins ?? 0}

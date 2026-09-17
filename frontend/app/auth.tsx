@@ -2,7 +2,8 @@
  * LinguaConnect auth screen — email-only login + signup.
  *
  * A single screen with a segmented Log in / Sign up toggle. Both flows share
- * the same fields (name shown only when signing up). No social / guest logins.
+ * the same fields (name shown only when signing up). Local guest browsing
+ * is available without creating an account or contacting the server.
  */
 
 import { Ionicons } from "@/src/ui/icons";
@@ -11,6 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
   Platform,
   Pressable,
   ScrollView,
@@ -42,7 +44,7 @@ export default function AuthScreen() {
   const [focused, setFocused] = useState<FieldKey | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const { login, register } = useAuth();
+  const { login, register, enterGuestBrowsing, isGuestBrowsing } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -118,7 +120,13 @@ export default function AuthScreen() {
         end={{ x: 1, y: 1 }}
         style={[styles.hero, { paddingTop: insets.top + spacing.sm }]}
       >
-        <BackButton testID="auth-back-btn" variant="overlay" />
+        <BackButton
+          testID="auth-back-btn"
+          variant="overlay"
+          onPress={() => router.canGoBack()
+            ? router.back()
+            : router.replace(isGuestBrowsing ? "/(tabs)/connect" : "/welcome")}
+        />
         <View style={styles.heroBody}>
           <View style={styles.logoBadge}>
             <Ionicons name="chatbubbles" size={26} color="#0E9AE0" />
@@ -147,7 +155,7 @@ export default function AuthScreen() {
       >
         <View style={styles.sheet}>
           <ScrollView
-            contentContainerStyle={styles.scroll}
+            contentContainerStyle={[styles.scroll, { paddingBottom: spacing.xxl + insets.bottom }]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
@@ -176,6 +184,26 @@ export default function AuthScreen() {
                   </Pressable>
                 );
               })}
+            </View>
+
+            <View style={styles.guestEntry}>
+              <Pressable
+                testID="auth-guest-btn"
+                accessibilityRole="button"
+                accessibilityLabel="Continue as Guest"
+                accessibilityHint="Browse the app without creating an account"
+                onPress={() => {
+                  Keyboard.dismiss();
+                  enterGuestBrowsing();
+                  router.replace("/(tabs)/connect");
+                }}
+                style={({ pressed }) => [styles.guestButton, pressed && { opacity: 0.75 }]}
+              >
+                <Ionicons name="compass-outline" size={21} color={colors.brand} />
+                <Text style={styles.guestButtonText}>Continue as Guest</Text>
+                <Ionicons name="arrow-forward" size={18} color={colors.brand} />
+              </Pressable>
+              <Text style={styles.guestHint}>No account needed. Chat, posts, and calls require sign-in.</Text>
             </View>
 
             {!isLogin && (
@@ -409,6 +437,36 @@ const makeStyles = (colors: ThemeColors) =>
     scroll: {
       padding: spacing.xl,
       paddingBottom: spacing.xxl,
+    },
+    guestEntry: {
+      gap: spacing.sm,
+      marginBottom: spacing.lg,
+    },
+    guestButton: {
+      minHeight: 52,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      borderRadius: 999,
+      backgroundColor: colors.brandTertiary,
+      borderWidth: 1,
+      borderColor: colors.brand,
+    },
+    guestButtonText: {
+      fontFamily: fonts.textBold,
+      fontSize: 15,
+      color: colors.brand,
+      flexShrink: 1,
+    },
+    guestHint: {
+      textAlign: "center",
+      fontFamily: fonts.text,
+      fontSize: 11.5,
+      lineHeight: 17,
+      color: colors.onSurfaceSecondary,
     },
     // ── Segmented switcher ──
     segmentedRow: {

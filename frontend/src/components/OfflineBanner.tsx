@@ -9,17 +9,20 @@ import React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useAuth } from "@/src/context/AuthContext";
 import { useNetwork } from "@/src/context/NetworkContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, spacing, ThemeColors } from "@/src/theme";
 
 export const OfflineBanner: React.FC = () => {
+  const { isGuestBrowsing } = useAuth();
   const { isOnline } = useNetwork();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = React.useMemo(() => makeStyles(colors), [colors]);
 
-  if (isOnline) return null;
+  // Guest screens carry their own inline explanation; do not cover controls.
+  if (isOnline || isGuestBrowsing) return null;
   return (
     <View
       pointerEvents="none"

@@ -101,6 +101,79 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+## Priority update — signup/login recovery; Guest Mode work paused by user
+user_problem_statement: "User paused execution and requested: Fix sign up login. Stop further Guest Mode work and prioritize real authentication."
+backend:
+  - task: "Restore real signup/login service"
+    implemented: true
+    working: false
+    file: "backend/db.py, backend/auth_utils.py; missing backend/.env and frontend/.env"
+    stuck_count: 5
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Rechecked after user pause: both .env files absent and required keys not injected. Backend still fails db.py13 KeyError MONGO_URL. Troubleshooter and auth playbook reconfirm original config restoration or explicit fresh-preview reprovision approval is required. User previously selected ORIGINAL restoration; no approval to create a fresh DB/JWT secret yet. No further code, secrets, or DB changes made. Guest implementation below remains unverified/paused, not a login fix. Do not repeatedly search already-investigated config sources. Correct frontend key is EXPO_PUBLIC_BACKEND_URL (not React App variables). Preserve existing /api/auth routes, bcrypt hashes, token/user response shape."
+metadata:
+  created_by: "main_agent"
+  run_ui: false
+test_plan:
+  current_focus:
+    - "Await original configuration source or explicit fresh-preview authorization"
+  stuck_tasks:
+    - "Backend worker unavailable until approved configuration restored"
+  test_all: false
+agent_communication:
+  - agent: "main"
+    message: "No new testing or Guest Mode work until auth recovery decision. Fresh preview, if explicitly approved, must not delete any existing data and is NOT historical-account recovery. Backend-first register/me/logout/login persistence tests required once configured; UI testing still needs user permission."
+
+## Current task — Offline-capable Guest Mode entry
+user_problem_statement: "User requested Guest Mode on signup/login so tapping enters the app, then approved the recommended approach with 'Do what's good'. Implement genuine unauthenticated local browsing, not a fake account or server guest login. Previous UI-testing preference was manual; new frontend testing permission is pending."
+
+frontend:
+  - task: "Continue as Guest enters existing five tabs without backend authentication"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/auth.tsx; app/index.tsx; app/_layout.tsx; app/(tabs)/_layout.tsx; src/components/GuestExperience.tsx; src/context/AuthContext.tsx; src/utils/guest-access.ts; src/utils/api.ts; src/components/OfflineBanner.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added Continue as Guest above fields in both auth modes, >=48px target and safe bottom padding. Local guest boolean persisted separately, user=null and authToken=null; no API call on guest entry/restoration. Existing server guestLogin untouched as an available authenticated method but not used by this button. Session version + storage queue protect against late login/restore overriding guest and stale saved flags. Real successful auth clears guest; logout clears both. Index recognizes guests. Existing Stack/Tabs use screenLayout boundaries: original member screens never mount in guest mode; private deep links show account-required state. Existing tabs/icons remain, no member features removed. Guest Connect has real bundled language-directory search; Profile has local theme toggle and exit. Other sections explain account requirements with real auth/navigation buttons; no fake users/feeds/calls. API helper rejects protected requests while guest and fails clearly when API URL missing. Guest bypasses the offline overlay, private unread badges, and daily check-in. ESLint passes; tsc still has same32 pre-existing errors, no new diagnostics. UI runtime verification pending user consent."
+
+backend:
+  - task: "Guest access policy and unchanged auth API boundary — non-UI validation"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/utils/guest-access.ts and existing backend/routes/auth.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "No backend/.env/credential/database changes. Test pure guest policy functions in Node without rendering UI or mocking live app auth: guest rejects protected GET/POST/PUT/PATCH/DELETE, permits exact POST auth entry paths, rejects route/path lookalikes; root guest allowlist only index/welcome/auth/(tabs); normal mode leaves requests to existing backend authentication. Read-only check backend availability once; known missing MONGO_URL still blocks worker import. Never create credentials, seed, change env or run browser tests. Static-check auth storage and late-result guards, same32 TSC baseline."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Non-UI guest access policy unit tests and backend boundary inspection"
+  stuck_tasks:
+    - "Live signup/login still blocked by missing original environment"
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "BACKEND AGENT: no frontend/browser/Playwright tests; user permission pending. Run pure guest-access.ts policy unit checks via Node/TS transpilation and static session/navigation review. No mocked authenticated sessions, new accounts, .env writes, Mongo changes, or git writes. Backend GET health only then stop on known outage. UI behavior MUST stay NA until user or authorized UI agent verifies. Update this current-task section only; preserve protocol/history."
+
 ## Current task — Gender-based profile navbar icon + recurring authentication outage
 user_problem_statement: "Use the first uploaded profile icon for saved gender male and the second for female. User approved implementation and selected B to test the UI themselves. User also reports signup/login error or getting stuck. B is NOT authorization to reconfigure authentication or create a new database."
 

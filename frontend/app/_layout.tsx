@@ -41,6 +41,7 @@ import { NetworkProvider, useNetwork } from "@/src/context/NetworkContext";
 import { NotificationsProvider } from "@/src/context/NotificationsContext";
 import { RoomSessionProvider } from "@/src/context/RoomSessionContext";
 import { ThemeProvider, useTheme } from "@/src/context/ThemeContext";
+import { GuestRouteBoundary } from "@/src/components/GuestExperience";
 import { OfflineBanner } from "@/src/components/OfflineBanner";
 import { useIconFonts } from "@/src/hooks/use-icon-fonts";
 import { bindNetworkTelemetry } from "@/src/utils/api";
@@ -115,6 +116,9 @@ function ThemedApp() {
           <RoomSessionProvider>
             <StatusBar style={mode === "dark" ? "light" : "dark"} />
             <Stack
+              screenLayout={({ children, route }) => (
+                <GuestRouteBoundary name={route.name}>{children}</GuestRouteBoundary>
+              )}
               screenOptions={{
                 headerShown: false,
                 contentStyle: { backgroundColor: colors.surface },
