@@ -6,7 +6,7 @@ import json
 import httpx
 import websockets
 
-BASE = "https://expo-fix-12.preview.emergentagent.com"
+BASE = "https://elevate-familiar.preview.emergentagent.com"
 API = f"{BASE}/api"
 WS = BASE.replace("https", "wss") + "/api/ws"
 

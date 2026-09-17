@@ -10,7 +10,7 @@ import asyncio
 import json
 from playwright.async_api import async_playwright
 
-BASE = "https://expo-fix-12.preview.emergentagent.com"
+BASE = "https://elevate-familiar.preview.emergentagent.com"
 EMAIL = "mei@demo.com"
 PASSWORD = "Demo1234!"
 MOBILE = {"width": 390, "height": 844}

@@ -10,7 +10,7 @@ import re
 import time
 from playwright.async_api import async_playwright
 
-BASE = "https://expo-fix-12.preview.emergentagent.com"
+BASE = "https://elevate-familiar.preview.emergentagent.com"
 
 
 async def login(page, email, password):

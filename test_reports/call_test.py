@@ -9,7 +9,7 @@ import uuid
 import requests
 from playwright.async_api import async_playwright, Dialog
 
-BASE = "https://expo-fix-12.preview.emergentagent.com"
+BASE = "https://elevate-familiar.preview.emergentagent.com"
 API = BASE + "/api"
 
 DEMO = ("demo@demo.com", "Demo1234!")

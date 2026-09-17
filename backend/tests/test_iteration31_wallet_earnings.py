@@ -17,7 +17,7 @@ import uuid
 import pytest
 import requests
 
-BASE = os.environ.get("EXPO_BACKEND_URL", "https://expo-fix-12.preview.emergentagent.com").rstrip("/") + "/api"
+BASE = os.environ.get("EXPO_BACKEND_URL", "https://elevate-familiar.preview.emergentagent.com").rstrip("/") + "/api"
 
 MEI = ("mei@demo.com", "Demo1234!")
 DIEGO = ("diego@demo.com", "Demo1234!")

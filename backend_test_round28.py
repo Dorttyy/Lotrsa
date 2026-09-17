@@ -11,7 +11,7 @@ import time
 from typing import Optional
 
 # Backend URL from frontend/.env
-BASE_URL = "https://expo-fix-12.preview.emergentagent.com/api"
+BASE_URL = "https://elevate-familiar.preview.emergentagent.com/api"
 
 # Test credentials
 MEI_EMAIL = "mei@demo.com"
