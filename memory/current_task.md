@@ -9,7 +9,14 @@ User speaks Bengali. They approved best-judgment work, requested onboarding insp
 - Frontend api.ts references missing `EXPO_PUBLIC_BACKEND_URL`.
 - Two read-only troubleshooting investigations found no recoverable original configuration. Do not repeat searches unless configuration changes.
 - Auth playbook reviewed: preserve accounts/contracts/hashes; no guessed DB URL, new database, or JWT rotation without explicit authorization.
-- No application code or environment files modified in these audit turns. Signup remains BLOCKED, not fixed. No current API/functional UI tests completed.
+- Authentication code, database, and environment files remain unchanged. Signup remains BLOCKED. Backend-only testing confirmed GET /api/ connection failure; no working registration/login was verified.
+
+## Delivered increment — gender-based profile navbar icon
+- User approved the implementation and selected B = they will test the UI themselves. This B does NOT authorize database reprovisioning or signing-key rotation.
+- Main tabs now pass saved `user?.gender` to MeIcon. Male uses the exact first uploaded PNG, female uses the second; null/unknown retains original neutral SVG.
+- Uploaded PNGs are bundled as base64 in `frontend/src/assets/profile-nav-icons.json`; no network image download on navigation. RN Image tintColor follows tab theme and active/inactive colors. Existing spring, icon size, safe area, unread dot, and actual avatar unchanged.
+- Modified code: `frontend/src/ui/NavIcons.tsx`, `frontend/app/(tabs)/_layout.tsx` only. No other icons/routes or API contracts altered.
+- ESLint passes. TypeScript shows 32 pre-existing compatibility errors; testing agent confirmed no new diagnostics caused by this change. Automated UI testing declined by user; only a non-interactive welcome screenshot captured. Runtime gender icon verification remains for user once authenticated access is restored.
 
 ## Existing auth contracts to preserve
 POST /api/auth/register {email,password,name} -> {token,user}; POST /api/auth/login {email,password} -> {token,user}; GET /api/auth/me Bearer token -> user. New users route to /onboarding, existing configured users to /(tabs)/connect. Existing credentials in test_credentials.md are historical, unverified on this environment.

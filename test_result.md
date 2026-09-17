@@ -101,6 +101,67 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+## Current task — Gender-based profile navbar icon + recurring authentication outage
+user_problem_statement: "Use the first uploaded profile icon for saved gender male and the second for female. User approved implementation and selected B to test the UI themselves. User also reports signup/login error or getting stuck. B is NOT authorization to reconfigure authentication or create a new database."
+
+frontend:
+  - task: "Main profile tab uses exact uploaded icon based on saved account gender"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/ui/NavIcons.tsx, frontend/app/(tabs)/_layout.tsx, frontend/src/assets/profile-nav-icons.json"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Original first/short-hair PNG -> male, second/longer-hair PNG -> female. Both original PNG bytes bundled as base64 data URIs, no runtime URL downloads. MeIcon receives user?.gender from existing AuthContext; unknown/null retains existing neutral glyph. Existing animation, tintColor, tab sizes/insets and notification dot preserved. Onboarding already PUTs gender and setUser(updated), no backend changes required. No profile photo or other screens changed. ESLint passes both modified TSX files; global tsc reports existing ColorValue/absoluteFillObject compatibility issues requiring baseline comparison. User explicitly DECLINED automated UI testing; DO NOT run browser interactions or mock an authenticated account. User will manually verify UI."
+      - working: "NA"
+        agent: "testing"
+        comment: "STATIC ANALYSIS COMPLETED (user declined automated UI testing). CHANGES VERIFIED: (1) NavIcons.tsx modified to support raster images, MeIcon accepts gender prop (male/female/null), renders base64 PNG from profile-nav-icons.json based on gender, falls back to neutral glyph. (2) _layout.tsx modified to pass user?.gender to MeIcon. (3) profile-nav-icons.json created with two base64 PNG data URIs. TYPESCRIPT DIAGNOSTICS: tsc --noEmit reports 32 total errors (27 ColorValue, 5 StyleSheet.absoluteFillObject). BASELINE COMPARISON: Modified file app/(tabs)/_layout.tsx has 5 ColorValue errors in SAME locations as original version (tabBarIcon color prop). Other 22 ColorValue errors in UNMODIFIED files (lessons/premium/pro/learn tab layouts). All 5 absoluteFillObject errors in UNMODIFIED files. CONCLUSION: Navbar icon changes did NOT introduce new TypeScript errors. All 32 errors are pre-existing. Runtime verification deferred to user per explicit request."
+      - working: "NA"
+        agent: "main"
+        comment: "Reviewed raw TypeScript output and testing-agent diff. Correction to numeric breakdown above: 21 ColorValue diagnostics and 11 absoluteFillObject diagnostics (32 total). None are new to the scoped navbar change. No automated frontend testing performed per user's selection."
+
+backend:
+  - task: "Signup/login remains unavailable because original environment configuration is absent"
+    implemented: true
+    working: false
+    file: "backend/db.py, backend/auth_utils.py, frontend/src/utils/api.ts; missing backend/.env and frontend/.env"
+    stuck_count: 4
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "Repeated signup/login errors; wants smooth real account creation/login. Chose restoring original configuration earlier."
+      - working: false
+        agent: "main"
+        comment: "Rechecked: both .env files absent. Backend import fails db.py13 KeyError MONGO_URL; required DB_NAME/JWT_SECRET missing too. Frontend EXPO_PUBLIC_BACKEND_URL missing. Supervisor parent RUNNING does not mean API is listening. Troubleshooter reconfirmed no frontend patch can restore backend authentication. No secrets changed, no new DB, no seed, no fake success or mocked accounts. Request backend-only read-only health validation to establish current failure; do not repeat secret searches or try to recreate config."
+      - working: false
+        agent: "testing"
+        comment: "READ-ONLY VALIDATION COMPLETED. ENVIRONMENT FILES: /app/backend/.env DOES NOT EXIST, /app/frontend/.env DOES NOT EXIST. BACKEND STATUS: Supervisor shows RUNNING (misleading - only parent process running). Backend worker CRASHED on import with KeyError: 'MONGO_URL' at db.py:13 (confirmed in stderr log). Required variables missing: MONGO_URL, DB_NAME, JWT_SECRET (backend), EXPO_PUBLIC_BACKEND_URL (frontend). API REACHABILITY: GET http://localhost:8001/api/ - CONNECTION FAILED (HTTP 000). Backend API completely unreachable, no worker process listening. CONCLUSION: Unable to verify runtime authentication. Signup/login completely blocked pending restoration of original environment configuration files. No code changes made, no .env files created, no database provisioning attempted per strict instructions."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Read-only validation of current authentication outage (no frontend tests)"
+    - "Static comparison of baseline TypeScript diagnostics in touched navbar files"
+  stuck_tasks:
+    - "Signup/login blocked pending original environment restoration"
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Backend test agent: user selected self-testing of UI. Do NOT run Playwright, browser interactions, render fixtures, or frontend tests. Verify backend GET /api/ availability and observed configuration/log failure only; avoid POSTs if worker unreachable. Do not create/change .env, credentials, users, DB, files outside test report, or code fixes. Read memory/test_credentials.md (historical unverified). Optional static analysis only: global tsc reports ColorValue mismatch in all existing tab layouts and StyleSheet.absoluteFillObject errors in unrelated screens. Compare original files via READ-ONLY git show (no git writes) or compiler overlay if feasible; report baseline vs introduced diagnostics without modifying application files. Report navbar runtime verification as deferred to user, not passed."
+  - agent: "testing"
+    message: "READ-ONLY VALIDATION COMPLETED. BACKEND AUTHENTICATION OUTAGE: Both .env files missing (backend/.env, frontend/.env). Backend worker crashed on import (KeyError: 'MONGO_URL' at db.py:13). Supervisor misleadingly shows RUNNING (parent only). API completely unreachable (GET /api/ connection failed). Unable to verify runtime authentication - signup/login blocked pending original environment restoration. NAVBAR ICON STATIC ANALYSIS: Changes verified (NavIcons.tsx supports gender-based PNG rendering, _layout.tsx passes user?.gender, profile-nav-icons.json contains base64 PNGs). TypeScript: 32 total errors (27 ColorValue, 5 absoluteFillObject) - ALL PRE-EXISTING. Modified file has same 5 ColorValue errors as original version. Other 27 errors in unmodified files. Navbar changes introduced ZERO new TypeScript errors. Runtime UI verification deferred to user per explicit request. No code changes, no .env writes, no database provisioning per strict instructions."
+
 ## Test Run — Chat message action sheet (Pin / Save / Practice / Manual Correction / Multi-select delete)
 user_problem_statement: HelloTalk-style long-press message popup. New backend actions must fully persist. Added endpoints to chats router.
 

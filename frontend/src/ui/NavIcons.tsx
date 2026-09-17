@@ -13,18 +13,20 @@
  *   4. Voice    → duotone microphone (shared MicShape, see src/ui/MicGlyph):
  *                 translucent capsule with two curved dashes inside, wrapped
  *                 by a thick U-bracket — identical to every in-app mic icon.
- *   5. Me       → minimal person: solid head circle + full solid ellipse body.
+ *   5. Me       → the user's two uploaded PNGs, chosen by saved gender;
+ *                 the neutral head-and-shoulders glyph is the fallback.
  *
- * Every glyph renders in the single `color` the tab bar passes in (brand tint
+ * Every glyph uses the single `color` the tab bar passes in (brand tint
  * when active, muted tint when inactive) with a gentle spring pop on focus.
- * Knockouts and overlap gaps use SVG masks so they stay transparent on any
+ * SVG knockouts and uploaded PNG transparency remain transparent on any
  * bar background (light or dark mode).
  */
 
 import React from "react";
-import { Animated, View } from "react-native";
+import { Animated, Image, StyleSheet, View } from "react-native";
 import Svg, { Circle, Ellipse, G, Mask, Path, Rect } from "react-native-svg";
 
+import profileNavIcons from "@/src/assets/profile-nav-icons.json";
 import { MicShape } from "@/src/ui/MicGlyph";
 
 export interface NavIconProps {
@@ -38,35 +40,34 @@ function Shell({
   focused,
   size = 26,
   children,
+  raster = false,
 }: {
   focused: boolean;
   size?: number;
   children: React.ReactNode;
+  raster?: boolean;
 }) {
   const anim = React.useRef(new Animated.Value(focused ? 1 : 0)).current;
   React.useEffect(() => {
-    Animated.spring(anim, {
+    const animation = Animated.spring(anim, {
       toValue: focused ? 1 : 0,
       useNativeDriver: true,
       friction: 5,
       tension: 180,
-    }).start();
+    });
+    animation.start();
+    return () => animation.stop();
   }, [focused, anim]);
   const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] });
 
   return (
-    <View
-      style={{
-        width: size + 6,
-        height: size + 4,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
+    <View style={[styles.shell, { width: size + 6, height: size + 4 }]}>
       <Animated.View style={{ transform: [{ scale }] }}>
-        <Svg width={size} height={size} viewBox="0 0 24 24">
-          {children}
-        </Svg>
+        {raster ? children : (
+          <Svg width={size} height={size} viewBox="0 0 24 24">
+            {children}
+          </Svg>
+        )}
       </Animated.View>
     </View>
   );
@@ -179,13 +180,49 @@ export function VoiceIcon({ focused, color, size }: NavIconProps) {
   );
 }
 
-/* ── 5 · Me — head circle + full ellipse body ──────────────────────────── */
+/* ── 5 · Me — uploaded artwork selected by the saved account gender ────── */
 
-export function MeIcon({ color, focused, size }: NavIconProps) {
+export interface MeIconProps extends NavIconProps {
+  gender?: "male" | "female" | null;
+}
+
+// Original uploads are bundled as data URIs, not downloaded when tabs mount.
+const profileSources = {
+  male: { uri: profileNavIcons.male },
+  female: { uri: profileNavIcons.female },
+};
+
+export function MeIcon({ color, focused, size = 26, gender }: MeIconProps) {
+  const source = gender === "male" || gender === "female"
+    ? profileSources[gender]
+    : null;
+
   return (
-    <Shell focused={focused} size={size}>
-      <Circle cx="12" cy="7" r="4.6" fill={color} />
-      <Ellipse cx="12" cy="17.4" rx="7.5" ry="5" fill={color} />
+    <Shell focused={focused} size={size} raster={!!source}>
+      {source ? (
+        <Image
+          source={source}
+          style={[styles.profileImage, { width: size, height: size, tintColor: color }]}
+          fadeDuration={0}
+          accessible={false}
+          testID={`profile-nav-icon-${gender}`}
+        />
+      ) : (
+        <G testID="profile-nav-icon-neutral">
+          <Circle cx="12" cy="7" r="4.6" fill={color} />
+          <Ellipse cx="12" cy="17.4" rx="7.5" ry="5" fill={color} />
+        </G>
+      )}
     </Shell>
   );
 }
+
+const styles = StyleSheet.create({
+  shell: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  profileImage: {
+    resizeMode: "contain",
+  },
+});

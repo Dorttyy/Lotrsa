@@ -164,7 +164,12 @@ export default function TabsLayout() {
           tabBarButtonTestID: "tab-profile",
           tabBarIcon: ({ focused, color, size }) => (
             <View>
-              <MeIcon focused={focused} size={size + 2} color={color} />
+              <MeIcon
+                focused={focused}
+                size={size + 2}
+                color={color}
+                gender={user?.gender}
+              />
               {profileUnread > 0 && (
                 <View
                   testID="profile-tab-dot"
