@@ -1,0 +1,79 @@
+[
+  {
+    "route": "/learn/vocabulary",
+    "viewport": [
+      844,
+      390
+    ],
+    "status": "PASS",
+    "text_len": 390,
+    "button_count": 10,
+    "sample": "All Items\nBienvenido\nWelcome \u2014 used to greet arrivals.\nNew\nBEGINNER\nAmistad\nFriendship.\nNew\nBEGINNER\nAventura\nAdventure.\nNew\nBEGINNER\nSonris"
+  },
+  {
+    "route": "/learn/set-goal",
+    "viewport": [
+      844,
+      390
+    ],
+    "status": "PASS",
+    "text_len": 242,
+    "button_count": 8,
+    "sample": "Set goal\nYour Spanish goal\nBasic\n1\u20133 months\nBrain training or for fun\n7 Activities per week\nLearning for\n15 minutes/day\nStay on track with 7"
+  },
+  {
+    "route": "/create-group",
+    "viewport": [
+      844,
+      390
+    ],
+    "status": "PASS",
+    "text_len": 74,
+    "button_count": 10,
+    "sample": "Choose\nCreate\nRecommend\n\u099a\n\u099a\u099a\u09a4\nID\nBN\nJ\nJack\nPT\nEN\nJ\nJack\nPT\nAR\nJ\nJack\nSV\nEN"
+  },
+  {
+    "route": "/learn/onboarding",
+    "viewport": [
+      768,
+      1024
+    ],
+    "status": "PASS",
+    "text_len": 261,
+    "button_count": 7,
+    "sample": "Learn\nLanguages\nAnytime, Easily\nAnywhere\nBuild a learning habit and make it part of your day.\n\u2b50\ufe0f\nSpeak\nWith\nConfidence\nReal-time voice pract"
+  },
+  {
+    "route": "/learn/settings",
+    "viewport": [
+      768,
+      1024
+    ],
+    "status": "PASS",
+    "text_len": 566,
+    "button_count": 10,
+    "sample": "Learn Settings\nLEARNING\nMy Language\nChange your target language\nWeekly goal\n7 activities \u00b7 15 min/day\nLevel assessment\nRetake to update your"
+  },
+  {
+    "route": "/learn/tutors",
+    "viewport": [
+      768,
+      1024
+    ],
+    "status": "PASS",
+    "text_len": 123,
+    "button_count": 8,
+    "sample": "Tutors for private online lessons\nFilters\nTop tutors for your level\nNo tutors match.\nHome\nLessons\nVocabulary\nTutors\nProfile"
+  },
+  {
+    "route": "/learn/goal",
+    "viewport": [
+      320,
+      568
+    ],
+    "status": "PASS",
+    "text_len": 120,
+    "button_count": 1,
+    "sample": "Unmatched Route\nPage could not be found.\nhttps://elevate-familiar.preview.emergentagent.com/learn/goal\nGo back\n\u2022\nSitemap"
+  }
+]

@@ -12,7 +12,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { AppSwitch } from "@/src/components/AppSwitch";
 import { RoundFlag as CountryFlagIcon, RoundFlag as FlagIcon } from "@/src/components/RoundFlag";

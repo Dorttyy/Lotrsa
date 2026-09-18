@@ -14,7 +14,7 @@ import {
   View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -48,7 +48,7 @@ export default function AddSheet() {
     try {
       await Share.share({
         message:
-          "Join me on LinguaConnect — practice languages with native speakers! " +
+          "Join me on Mello — practice languages with native speakers! " +
           `My ID is ${myId}.`,
       });
     } catch {

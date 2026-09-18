@@ -17,6 +17,7 @@ import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, w
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { WelcomeArtwork } from "@/src/components/welcome/WelcomeArtwork";
+import { AppLogo } from "@/src/components/AppLogo";
 import { fonts } from "@/src/theme";
 import { Ionicons } from "@/src/ui/icons";
 
@@ -123,8 +124,8 @@ export function WelcomeIntroScreen() {
         <View style={styles.column}>
           <View style={styles.header}>
             <View style={styles.brand}>
-              <View style={styles.brandMark}><Ionicons name="chatbubbles" size={19} color="#B6E5FC" /></View>
-              <Text style={styles.brandName}>LinguaConnect</Text>
+              <AppLogo size={31} testID="welcome-app-logo" />
+              <Text testID="welcome-app-name" style={styles.brandName}>Mello</Text>
             </View>
             <Text style={styles.pageCounter} testID="welcome-page-count">0{page + 1}<Text style={styles.counterMuted}> / 03</Text></Text>
           </View>
@@ -171,7 +172,7 @@ export function WelcomeIntroScreen() {
             <Pressable
               testID="get-started-btn"
               accessibilityRole="button"
-              accessibilityHint="Create your LinguaConnect account"
+              accessibilityHint="Create your Mello account"
               onPress={() => router.push({ pathname: "/auth", params: { mode: "register" } })}
               style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
             >

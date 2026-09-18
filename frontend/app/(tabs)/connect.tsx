@@ -13,7 +13,8 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
+import { useSheetBounds } from "@/src/hooks/use-screen-space";
 
 import { FlagIcon } from "@/src/components/FlagIcon";
 import { IconChip } from "@/src/components/IconChip";
@@ -39,6 +40,7 @@ export default function Connect() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const sheetBounds = useSheetBounds();
   const styles = React.useMemo(() => makeStyles(colors), [colors]);
   const [partners, setPartners] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -367,7 +369,7 @@ export default function Connect() {
         onRequestClose={() => setAddLangOpen(false)}
       >
         <View style={styles.modalBackdrop}>
-          <View style={[styles.modalCard, { paddingBottom: insets.bottom + spacing.xxl }]}>
+          <View testID="connect-add-language-sheet" style={[styles.modalCard, sheetBounds, { paddingBottom: insets.bottom + spacing.xxl }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
                 {needsVipForMore ? "VIP Feature" : "Add a learning language"}
@@ -402,7 +404,7 @@ export default function Connect() {
                 </Pressable>
               </View>
             ) : (
-              <ScrollView style={{ maxHeight: 320 }}>
+              <ScrollView style={{ maxHeight: 320, flexShrink: 1 }}>
                 <View style={styles.langGrid}>
                   {LANGUAGES.filter(
                     (l) =>
@@ -436,7 +438,7 @@ export default function Connect() {
         onRequestClose={() => setCatSheet(null)}
       >
         <View style={styles.modalBackdrop}>
-          <View style={[styles.modalCard, { paddingBottom: insets.bottom + spacing.xxl }]}>
+          <View testID="connect-category-sheet" style={[styles.modalCard, sheetBounds, { paddingBottom: insets.bottom + spacing.xxl }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
                 {catSheet === "gender" ? "Filter by gender" : "Filter by location"}
@@ -494,7 +496,7 @@ export default function Connect() {
                 })}
               </View>
             ) : (
-              <ScrollView style={{ maxHeight: 360 }}>
+              <ScrollView style={{ maxHeight: 360, flexShrink: 1 }}>
                 <View style={{ gap: spacing.sm }}>
                   <Pressable
                     testID="city-opt-any"

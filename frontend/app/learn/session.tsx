@@ -14,7 +14,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { fonts } from "@/src/theme";
 import { api } from "@/src/utils/api";

@@ -12,7 +12,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { api, assetUrl } from "@/src/utils/api";
 

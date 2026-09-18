@@ -9,7 +9,7 @@ import {
     Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 import { AppSwitch } from "@/src/components/AppSwitch";
 
 import { useTheme } from "@/src/context/ThemeContext";

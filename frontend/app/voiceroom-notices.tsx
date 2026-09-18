@@ -1,6 +1,6 @@
 import { Ionicons } from "@/src/ui/icons";
-import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -11,9 +11,12 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { Avatar } from "@/src/components/Avatar";
+import { VoiceroomAvatar } from "@/src/components/VoiceroomAvatar";
+import { MicGlyph } from "@/src/ui/MicGlyph";
+import { useChatSocket } from "@/src/hooks/use-chat-socket";
 import { SpeakingBars } from "@/src/components/SpeakingBars";
 import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -42,7 +45,7 @@ const timeLabel = (iso: string) => {
     .padStart(2, "0")}`;
 };
 
-/** "Live & Voiceroom" system feed — cards for rooms started by hosts you follow. */
+/** Read-only Voiceroom notices — no user message composer. */
 export default function VoiceroomNotices() {
   const router = useRouter();
   const { user } = useAuth();
@@ -51,7 +54,7 @@ export default function VoiceroomNotices() {
   const [items, setItems] = useState<RoomNotice[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (!user) return;
     api
       .get<RoomNotice[]>("/rooms/notices/list")
@@ -59,6 +62,10 @@ export default function VoiceroomNotices() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user]);
+  useFocusEffect(load);
+  useChatSocket(useCallback((event) => {
+    if (event.type === "voiceroom_notice") load();
+  }, [load]));
 
   const joinRoom = useCallback(
     async (notice: RoomNotice) => {
@@ -70,9 +77,10 @@ export default function VoiceroomNotices() {
       try {
         await api.post(`/rooms/${notice.room.id}/join`);
         router.push(`/room/${notice.room.id}`);
-      } catch {
-        if (Platform.OS === "web") window.alert("This Voiceroom has ended.");
-        else Alert.alert("Voiceroom", "This Voiceroom has ended.");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Could not join this Voiceroom.";
+        if (Platform.OS === "web") window.alert(message);
+        else Alert.alert("Voiceroom", message);
       }
     },
     [router],
@@ -85,8 +93,8 @@ export default function VoiceroomNotices() {
           <Ionicons name="chevron-back" size={26} color={colors.onSurface} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Live & Voiceroom</Text>
-          <Text style={styles.subtitle}>Online: Just now</Text>
+          <Text testID="voiceroom-notices-title" style={styles.title}>Voiceroom</Text>
+          <Text testID="voiceroom-notices-subtitle" style={styles.subtitle}>Room notifications</Text>
         </View>
         <Ionicons name="ellipsis-horizontal" size={22} color={colors.onSurface} />
       </View>
@@ -103,7 +111,7 @@ export default function VoiceroomNotices() {
           ListEmptyComponent={
             <View style={styles.center}>
               <View style={styles.bigMic}>
-                <Ionicons name="mic" size={34} color="#FFFFFF" />
+                <MicGlyph testID="vn-empty-mic" size={34} color={colors.onBrand} />
               </View>
               <Text style={styles.emptyTitle}>No Voiceroom notices yet</Text>
               <Text style={styles.emptySub}>
@@ -116,16 +124,9 @@ export default function VoiceroomNotices() {
             <View>
               <Text style={styles.timeSep}>{timeLabel(item.created_at)}</Text>
               <View style={styles.noticeRow}>
-                <View style={styles.micAvatarWrap}>
-                  <View style={styles.micAvatar}>
-                    <Ionicons name="mic" size={18} color="#FFFFFF" />
-                  </View>
-                  <View style={styles.verifiedBadge}>
-                    <Ionicons name="checkmark" size={8} color="#FFFFFF" />
-                  </View>
-                </View>
+                <VoiceroomAvatar testID={`vn-avatar-${item.id}`} size={38} />
                 <View style={styles.bubble}>
-                  <Text style={styles.bubbleTitle}>
+                  <Text testID={`vn-message-${item.id}`} style={styles.bubbleTitle}>
                     {item.room.is_live
                       ? "The host you follow is live"
                       : "The host you follow started a new Voiceroom"}
@@ -152,7 +153,7 @@ export default function VoiceroomNotices() {
                         </View>
                       ) : null}
                     </View>
-                    <Text style={styles.roomTitle} numberOfLines={1}>
+                    <Text testID={`vn-room-title-${item.id}`} style={styles.roomTitle} numberOfLines={1}>
                       {item.room.title || "Voiceroom"}
                     </Text>
                     <View style={styles.hostRow}>
@@ -225,7 +226,7 @@ const makeStyles = (colors: ThemeColors) =>
       width: 64,
       height: 64,
       borderRadius: 32,
-      backgroundColor: "#3B9DF8",
+      backgroundColor: colors.brand,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -245,28 +246,6 @@ const makeStyles = (colors: ThemeColors) =>
       marginVertical: spacing.sm,
     },
     noticeRow: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.md },
-    micAvatarWrap: { width: 40 },
-    micAvatar: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
-      backgroundColor: "#3B9DF8",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    verifiedBadge: {
-      position: "absolute",
-      bottom: -2,
-      left: -2,
-      width: 14,
-      height: 14,
-      borderRadius: 7,
-      backgroundColor: "#22C55E",
-      borderWidth: 1.5,
-      borderColor: colors.surface,
-      alignItems: "center",
-      justifyContent: "center",
-    },
     bubble: {
       flex: 1,
       backgroundColor: colors.surfaceSecondary,

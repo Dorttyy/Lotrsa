@@ -8,6 +8,7 @@ import { useAuth } from "@/src/context/AuthContext";
 import { useNotifications } from "@/src/context/NotificationsContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts } from "@/src/theme";
+import { useTabContentHeight } from "@/src/hooks/use-screen-space";
 import {
   ChatsIcon,
   ConnectIcon,
@@ -26,6 +27,7 @@ interface CheckInReward {
 export default function TabsLayout() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const tabContentHeight = useTabContentHeight();
   const { user, loading } = useAuth();
   const { chatUnread, momentsUnread, profileUnread } = useNotifications();
   const [reward, setReward] = useState<CheckInReward | null>(null);
@@ -89,7 +91,7 @@ export default function TabsLayout() {
           backgroundColor: colors.surface,
           borderTopColor: colors.divider,
           borderTopWidth: StyleSheet.hairlineWidth,
-          height: 64 + bottomGap,
+          height: tabContentHeight + bottomGap,
           paddingBottom: bottomGap,
           paddingTop: 4,
           ...Platform.select({

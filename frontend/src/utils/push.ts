@@ -20,7 +20,7 @@ export async function getPushPermissionStatus(): Promise<PushPermissionStatus> {
 export async function sendTokenToBackend(): Promise<void> {
   if (!Notifications) return;
   if (Platform.OS === "android") await Notifications.setNotificationChannelAsync("default", {
-    name: "Messages, calls and activity", importance: Notifications.AndroidImportance.HIGH,
+    name: "Messages, calls and activity", importance: Notifications.AndroidImportance.MAX,
     sound: "default", vibrationPattern: [0, 200, 150, 200],
     lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
   });

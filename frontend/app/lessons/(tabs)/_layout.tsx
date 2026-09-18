@@ -5,9 +5,11 @@ import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { lessonColors, lessonFonts } from "@/src/lessons/theme";
+import { useTabContentHeight } from "@/src/hooks/use-screen-space";
 
 export default function LessonsTabsLayout() {
   const insets = useSafeAreaInsets();
+  const tabContentHeight = useTabContentHeight();
   const bottomGap = Math.max(insets.bottom, 10) + 6;
   return (
     <Tabs
@@ -16,13 +18,15 @@ export default function LessonsTabsLayout() {
         tabBarActiveTintColor: lessonColors.green,
         tabBarInactiveTintColor: lessonColors.inkFaint,
         tabBarHideOnKeyboard: true,
-        tabBarLabelStyle: { fontFamily: lessonFonts.bold, fontSize: 10.5, marginTop: 2 },
-        tabBarItemStyle: { paddingTop: 8 },
+        tabBarLabelStyle: { fontFamily: lessonFonts.bold, fontSize: 10.5, marginTop: 2, lineHeight: 16, minHeight: 16, flexShrink: 0 },
+        tabBarItemStyle: { paddingTop: 2, paddingBottom: 2 },
+        tabBarIconStyle: { height: 32 },
+        tabBarLabelPosition: "below-icon",
         tabBarStyle: {
           backgroundColor: lessonColors.surface,
           borderTopColor: lessonColors.border,
           borderTopWidth: 2,
-          height: 60 + bottomGap,
+          height: tabContentHeight + bottomGap,
           paddingBottom: bottomGap,
           ...Platform.select({
             ios: { shadowColor: lessonColors.shadow, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } },

@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class RegisterRequest(BaseModel):
@@ -72,7 +72,17 @@ class StickerCreate(BaseModel):
 
 
 class MessageReactionCreate(BaseModel):
-    emoji: str = Field(min_length=1, max_length=8)
+    emoji: str = Field(min_length=1, max_length=64)
+
+    @field_validator("emoji")
+    @classmethod
+    def single_emoji(cls, value: str) -> str:
+        import regex
+        if not regex.fullmatch(r"\X", value) or not regex.search(
+            r"\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Modifier}|\u20e3", value
+        ):
+            raise ValueError("Choose a single emoji reaction.")
+        return value
 
 
 class ConversationCreate(BaseModel):
@@ -112,8 +122,16 @@ class CommentCreate(BaseModel):
 
 
 class TranslateRequest(BaseModel):
-    text: str = Field(min_length=1, max_length=2000)
-    target_language: str
+    text: str = Field(min_length=1, max_length=12000)
+    target_language: Optional[str] = Field(default=None, max_length=64)
+    source_language: Optional[str] = Field(default="auto", max_length=64)
+
+    @field_validator("text")
+    @classmethod
+    def text_must_not_be_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Enter some text to translate.")
+        return value
 
 
 class CorrectRequest(BaseModel):

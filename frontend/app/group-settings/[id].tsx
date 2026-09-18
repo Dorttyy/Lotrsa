@@ -13,8 +13,8 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardAvoidingView } from "@/src/components/layout/KeyboardAvoidingView";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 import { AppSwitch } from "@/src/components/AppSwitch";
 
 import { Avatar } from "@/src/components/Avatar";
@@ -360,7 +360,7 @@ export default function GroupSettings() {
           <Pressable style={styles.modalBackdrop} onPress={() => setRenameOpen(false)} />
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            keyboardVerticalOffset={16}
+            keyboardVerticalOffset={0}
           >
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Group Name</Text>

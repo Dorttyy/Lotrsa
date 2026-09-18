@@ -1,0 +1,1496 @@
+{
+  "meta": {
+    "base_url": "https://elevate-familiar.preview.emergentagent.com",
+    "run_ts": 1789741553,
+    "credentials": "QA1",
+    "viewports": [
+      {
+        "name": "mobile_portrait",
+        "width": 320,
+        "height": 568
+      },
+      {
+        "name": "mobile_landscape",
+        "width": 844,
+        "height": 390
+      },
+      {
+        "name": "tablet_portrait",
+        "width": 768,
+        "height": 1024
+      }
+    ]
+  },
+  "branding": [
+    {
+      "screen": "/welcome",
+      "logo_visible": true,
+      "name_text": "Mello"
+    },
+    {
+      "screen": "/auth",
+      "logo_visible": true,
+      "name_text": "Mello"
+    },
+    {
+      "screen": "/profile settings",
+      "logo_visible": true,
+      "name_text": "Mello"
+    }
+  ],
+  "route_matrix": [
+    {
+      "route": "/learn/onboarding",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 7,
+      "status": "PASS",
+      "details": "text_len=261, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/dashboard",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 16,
+      "status": "PASS",
+      "details": "text_len=361, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/settings",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=566, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/lessons",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 9,
+      "status": "PASS",
+      "details": "text_len=4299, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/tutors",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 8,
+      "status": "PASS",
+      "details": "text_len=123, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/library",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 4,
+      "status": "PASS",
+      "details": "text_len=342, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/grammar",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 5,
+      "status": "PASS",
+      "details": "text_len=400, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/vocabulary",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=390, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/set-goal",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 8,
+      "status": "PASS",
+      "details": "text_len=242, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/goal",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 1,
+      "status": "PASS",
+      "details": "text_len=120, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 8,
+      "status": "PASS",
+      "details": "text_len=422, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/home",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 8,
+      "status": "PASS",
+      "details": "text_len=422, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/learn",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 13,
+      "status": "PASS",
+      "details": "text_len=480, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/progress",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=187, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/tutors",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 14,
+      "status": "PASS",
+      "details": "text_len=135, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/profile",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=201, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 18,
+      "status": "PASS",
+      "details": "text_len=165, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/learn",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 18,
+      "status": "PASS",
+      "details": "text_len=165, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/quests",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=165, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/shop",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 8,
+      "status": "PASS",
+      "details": "text_len=276, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/leaderboard",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 11,
+      "status": "PASS",
+      "details": "text_len=169, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/profile",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 12,
+      "status": "PASS",
+      "details": "text_len=174, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 12,
+      "status": "PASS",
+      "details": "text_len=119, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/chats",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 12,
+      "status": "PASS",
+      "details": "text_len=119, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/connect",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 25,
+      "status": "PASS",
+      "details": "text_len=523, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/moments",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 30,
+      "status": "PASS",
+      "details": "text_len=827, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/voice",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=148, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/profile",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 14,
+      "status": "PASS",
+      "details": "text_len=404, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/profile",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 49,
+      "status": "PASS",
+      "details": "text_len=466, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/store",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 20,
+      "status": "PASS",
+      "details": "text_len=483, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/coins",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 12,
+      "status": "PASS",
+      "details": "text_len=559, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/translate",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 16,
+      "status": "PASS",
+      "details": "text_len=131, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/search",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 14,
+      "status": "PASS",
+      "details": "text_len=147, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/store-cart",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 3,
+      "status": "PASS",
+      "details": "text_len=29, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/share-to-chat",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 6,
+      "status": "PASS",
+      "details": "text_len=96, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/create-group",
+      "viewport": [
+        320,
+        568
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=74, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/onboarding",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 7,
+      "status": "PASS",
+      "details": "text_len=261, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/dashboard",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 16,
+      "status": "PASS",
+      "details": "text_len=361, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/settings",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=566, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/lessons",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 9,
+      "status": "PASS",
+      "details": "text_len=4299, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/tutors",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 8,
+      "status": "PASS",
+      "details": "text_len=123, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/library",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 4,
+      "status": "PASS",
+      "details": "text_len=342, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/grammar",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 5,
+      "status": "PASS",
+      "details": "text_len=400, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/vocabulary",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": true,
+      "scroll_bottom_reached": true,
+      "button_count": 0,
+      "status": "FAIL",
+      "details": "text_len=0, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/set-goal",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": true,
+      "scroll_bottom_reached": true,
+      "button_count": 8,
+      "status": "FAIL",
+      "details": "text_len=0, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/goal",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 1,
+      "status": "PASS",
+      "details": "text_len=120, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 8,
+      "status": "PASS",
+      "details": "text_len=422, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/home",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 8,
+      "status": "PASS",
+      "details": "text_len=422, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/learn",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 13,
+      "status": "PASS",
+      "details": "text_len=480, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/progress",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=187, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/tutors",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 14,
+      "status": "PASS",
+      "details": "text_len=135, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/profile",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=201, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 18,
+      "status": "PASS",
+      "details": "text_len=165, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/learn",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 18,
+      "status": "PASS",
+      "details": "text_len=165, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/quests",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=165, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/shop",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 8,
+      "status": "PASS",
+      "details": "text_len=276, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/leaderboard",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 11,
+      "status": "PASS",
+      "details": "text_len=169, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/profile",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 12,
+      "status": "PASS",
+      "details": "text_len=174, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 12,
+      "status": "PASS",
+      "details": "text_len=119, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/chats",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 12,
+      "status": "PASS",
+      "details": "text_len=119, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/connect",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 25,
+      "status": "PASS",
+      "details": "text_len=523, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/moments",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 30,
+      "status": "PASS",
+      "details": "text_len=827, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/voice",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=148, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/profile",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 14,
+      "status": "PASS",
+      "details": "text_len=404, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/profile",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 49,
+      "status": "PASS",
+      "details": "text_len=466, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/store",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 20,
+      "status": "PASS",
+      "details": "text_len=483, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/coins",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 12,
+      "status": "PASS",
+      "details": "text_len=559, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/translate",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 16,
+      "status": "PASS",
+      "details": "text_len=131, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/search",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 14,
+      "status": "PASS",
+      "details": "text_len=147, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/store-cart",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 3,
+      "status": "PASS",
+      "details": "text_len=29, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/share-to-chat",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 6,
+      "status": "PASS",
+      "details": "text_len=96, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/create-group",
+      "viewport": [
+        844,
+        390
+      ],
+      "loaded": true,
+      "blank_or_error": true,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "FAIL",
+      "details": "text_len=0, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/onboarding",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": true,
+      "scroll_bottom_reached": true,
+      "button_count": 0,
+      "status": "FAIL",
+      "details": "text_len=0, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/dashboard",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 16,
+      "status": "PASS",
+      "details": "text_len=361, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/settings",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": true,
+      "scroll_bottom_reached": true,
+      "button_count": 0,
+      "status": "FAIL",
+      "details": "text_len=0, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/lessons",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 9,
+      "status": "PASS",
+      "details": "text_len=4299, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/tutors",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": true,
+      "scroll_bottom_reached": true,
+      "button_count": 0,
+      "status": "FAIL",
+      "details": "text_len=0, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/library",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 4,
+      "status": "PASS",
+      "details": "text_len=342, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/grammar",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 5,
+      "status": "PASS",
+      "details": "text_len=400, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/vocabulary",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=390, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/set-goal",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 8,
+      "status": "PASS",
+      "details": "text_len=242, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/learn/goal",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 1,
+      "status": "PASS",
+      "details": "text_len=120, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 8,
+      "status": "PASS",
+      "details": "text_len=422, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/home",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 8,
+      "status": "PASS",
+      "details": "text_len=422, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/learn",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 13,
+      "status": "PASS",
+      "details": "text_len=480, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/progress",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=187, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/tutors",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 14,
+      "status": "PASS",
+      "details": "text_len=135, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/pro/profile",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=201, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 18,
+      "status": "PASS",
+      "details": "text_len=165, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/learn",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 18,
+      "status": "PASS",
+      "details": "text_len=165, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/quests",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=165, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/shop",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 8,
+      "status": "PASS",
+      "details": "text_len=276, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/leaderboard",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 11,
+      "status": "PASS",
+      "details": "text_len=169, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/lessons/profile",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 12,
+      "status": "PASS",
+      "details": "text_len=174, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 12,
+      "status": "PASS",
+      "details": "text_len=119, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/chats",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 12,
+      "status": "PASS",
+      "details": "text_len=119, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/connect",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 25,
+      "status": "PASS",
+      "details": "text_len=523, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/moments",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 30,
+      "status": "PASS",
+      "details": "text_len=827, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/voice",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=148, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/premium/profile",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 14,
+      "status": "PASS",
+      "details": "text_len=404, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/profile",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 49,
+      "status": "PASS",
+      "details": "text_len=466, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/store",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 20,
+      "status": "PASS",
+      "details": "text_len=483, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/coins",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 12,
+      "status": "PASS",
+      "details": "text_len=559, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/translate",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 16,
+      "status": "PASS",
+      "details": "text_len=131, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/search",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 14,
+      "status": "PASS",
+      "details": "text_len=147, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/store-cart",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 3,
+      "status": "PASS",
+      "details": "text_len=29, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/share-to-chat",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 6,
+      "status": "PASS",
+      "details": "text_len=96, scroll_max_before=0, scroll_max_after=0"
+    },
+    {
+      "route": "/create-group",
+      "viewport": [
+        768,
+        1024
+      ],
+      "loaded": true,
+      "blank_or_error": false,
+      "scroll_bottom_reached": true,
+      "button_count": 10,
+      "status": "PASS",
+      "details": "text_len=74, scroll_max_before=0, scroll_max_after=0"
+    }
+  ],
+  "sheet_interactions": [
+    {
+      "flow": "learn-lessons-filters",
+      "viewport": [
+        320,
+        350
+      ],
+      "status": "PASS",
+      "details": "sheet_closed=True"
+    },
+    {
+      "flow": "learn-lessons-filters",
+      "viewport": [
+        844,
+        390
+      ],
+      "status": "PASS",
+      "details": "sheet_closed=True"
+    },
+    {
+      "flow": "learn-tutors-filters",
+      "viewport": [
+        320,
+        350
+      ],
+      "status": "PASS",
+      "details": "sheet_closed=True"
+    },
+    {
+      "flow": "learn-tutors-filters",
+      "viewport": [
+        844,
+        390
+      ],
+      "status": "PASS",
+      "details": "sheet_closed=True"
+    },
+    {
+      "flow": "learn-onboarding-rotate-cta",
+      "status": "PASS",
+      "details": "cta_before='Chose a Language', cta_visible_after_rotate=True, dots_detected=4"
+    },
+    {
+      "flow": "learn-set-goal-bottom-scroll",
+      "status": "PASS",
+      "details": "next_visible_at_bottom=True"
+    }
+  ],
+  "notes": []
+}

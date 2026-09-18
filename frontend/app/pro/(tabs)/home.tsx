@@ -18,7 +18,7 @@ import Animated, {
   withTiming,
   cancelAnimation,
 } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { useAuth } from "@/src/context/AuthContext";
 import { api } from "@/src/utils/api";

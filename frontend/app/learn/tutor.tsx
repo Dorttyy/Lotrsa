@@ -10,8 +10,8 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardAvoidingView } from "@/src/components/layout/KeyboardAvoidingView";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { fonts } from "@/src/theme";
 import { learnColors } from "@/src/learn/theme";

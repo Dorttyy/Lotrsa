@@ -88,7 +88,7 @@ export default function TopicDetail() {
   const progressPct = topic.word_count ? (topic.words_learned / topic.word_count) * 100 : 0;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingLeft: insets.left, paddingRight: insets.right, paddingBottom: insets.bottom }}>
       {/* Header */}
       <View style={[s.topBar, { paddingTop: insets.top + 8 }]}>
         <Pressable onPress={() => router.back()} style={s.roundBtn}>

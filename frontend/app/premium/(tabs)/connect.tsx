@@ -22,7 +22,8 @@ import { useAuth } from "@/src/context/AuthContext";
 import { fonts } from "@/src/theme";
 import { api, Conversation, User } from "@/src/utils/api";
 import { premiumColors, premiumRadius } from "@/src/premium/theme";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
 
 // Fixed popular languages shown as tabs. The 6 languages most Premium
 // members will look for teachers in. Order matters — most-searched first.
@@ -357,7 +358,7 @@ export default function PremiumConnect() {
         onRequestClose={() => setApplyOpen(false)}
       >
         <Pressable style={styles.modalBackdrop} onPress={() => setApplyOpen(false)}>
-          <Pressable style={[styles.modalSheet, { paddingBottom: 30 + insets.bottom }]} onPress={() => {}}>
+          <BoundedSheet testID="premium-teach-sheet" style={[styles.modalSheet, { paddingBottom: 30 + insets.bottom }]}>
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Teach on Premium</Text>
             <Text style={styles.modalBody}>
@@ -402,7 +403,7 @@ export default function PremiumConnect() {
             >
               <Text style={styles.modalDoneText}>Done</Text>
             </Pressable>
-          </Pressable>
+          </BoundedSheet>
         </Pressable>
       </Modal>
     </SafeAreaView>

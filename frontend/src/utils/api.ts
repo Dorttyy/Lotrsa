@@ -32,6 +32,7 @@ async function request<T>(
   method: string,
   path: string,
   body?: unknown,
+  options?: { signal?: AbortSignal },
 ): Promise<T> {
   if (!API_URL) {
     throw new Error("Account services are unavailable right now. Please try again shortly.");
@@ -40,6 +41,7 @@ async function request<T>(
   try {
     res = await fetch(`${API_URL}/api${path}`, {
       method,
+      signal: options?.signal,
       headers: {
         "Content-Type": "application/json",
         ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
@@ -49,7 +51,7 @@ async function request<T>(
   } catch (err) {
     // Fetch throws only for network-level failures (DNS, offline, CORS).
     // Signal the NetworkProvider and rethrow so callers can still react.
-    netFailureReporter();
+    if (!options?.signal?.aborted) netFailureReporter();
     throw err instanceof Error ? err : new Error("Network request failed");
   }
   // Server reachable — clear any lingering offline state.
@@ -71,7 +73,7 @@ async function request<T>(
 
 export const api = {
   get: <T>(path: string) => request<T>("GET", path),
-  post: <T>(path: string, body?: unknown) => request<T>("POST", path, body),
+  post: <T>(path: string, body?: unknown, options?: { signal?: AbortSignal }) => request<T>("POST", path, body, options),
   put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body),
   patch: <T>(path: string, body?: unknown) => request<T>("PATCH", path, body),
   delete: <T>(path: string) => request<T>("DELETE", path),
@@ -326,6 +328,24 @@ export interface RoomPomodoro {
   running: boolean;
   remaining_sec?: number | null;
   ends_at?: string | null;
+}
+
+export interface RoomTimeBudget {
+  used_seconds: number;
+  remaining_seconds: number | null;
+  active_rooms: number;
+  deadline_at: string | null;
+}
+
+export interface RoomTimeAllowance {
+  date: string;
+  timezone: string;
+  resets_at: string;
+  server_time: string;
+  is_unlimited: boolean;
+  limit_seconds: number | null;
+  host: RoomTimeBudget;
+  listener: RoomTimeBudget;
 }
 
 export interface Room {

@@ -11,7 +11,8 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
@@ -68,6 +69,7 @@ export default function GroupName() {
           )}
         </Pressable>
       </View>
+      <KeyboardAwareScrollView testID="group-name-scroll" keyboardShouldPersistTaps="handled" bottomOffset={16}>
       <View style={styles.inputWrap}>
         <TextInput
           testID="gn-input"
@@ -83,6 +85,7 @@ export default function GroupName() {
           </Pressable>
         )}
       </View>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }

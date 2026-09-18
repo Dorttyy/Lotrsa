@@ -21,7 +21,9 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { KeyboardAvoidingView } from "@/src/components/layout/KeyboardAvoidingView";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
+import { useSheetBounds } from "@/src/hooks/use-screen-space";
 import { AppSwitch } from "@/src/components/AppSwitch";
 
 import { Avatar } from "@/src/components/Avatar";
@@ -41,7 +43,7 @@ import { WaitingForStage } from "@/src/components/room/WaitingForStage";
 import { RemovedFromRoom } from "@/src/components/room/RemovedFromRoom";
 import { api, Conversation, Room, RoomGift, RoomMember, RoomMessage } from "@/src/utils/api";
 import { webrtcAvailable } from "@/src/utils/webrtc";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
 
 const QUICK_REPLIES = [
   "Hey, everyone! 👋",
@@ -76,6 +78,7 @@ const MAX_LISTENERS_SHOWN = 6;
 
 export default function RoomScreen() {
   const insets = useSafeAreaInsets();
+  const sheetBounds = useSheetBounds();
   const { height: screenHeight } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -309,12 +312,15 @@ export default function RoomScreen() {
         setRoomNotice(`${event.name} ${event.accepted ? "accepted" : "rejected"} your ${event.kind === "moderator" ? "moderator" : "stage"} invitation.`);
       } else if (event.type === "room_stage_request_rejected" && event.room_id === id) {
         setRoomNotice("Your stage request was rejected.");
-      } else if ((event.type === "room_ended" || event.type === "room_kicked") && event.room_id === id) {
+      } else if ((event.type === "room_ended" || event.type === "room_kicked" ||
+        (event.type === "room_left" && (event.reason === "daily_listener_limit" || event.reason === "disconnected"))) && event.room_id === id) {
         setMemberSheet(null); setHandModalOpen(false); setAudienceModalOpen(false);
         setHostPickOpen(false); setExitSheetOpen(false); setMenuOpen(false);
         endedRef.current = true;
         session.endSession();
-        if (event.type === "room_kicked") setRemoved(true);
+        if (event.reason === "daily_host_limit" || event.reason === "daily_listener_limit" || event.reason === "disconnected") {
+          router.replace("/(tabs)/voice");
+        } else if (event.type === "room_kicked") setRemoved(true);
         else setEnded(true);
       }
     });
@@ -546,7 +552,7 @@ export default function RoomScreen() {
   const shareInvite = async () => {
     try {
       await Share.share({
-        message: `Join "${room?.title}" — a live voice room on LinguaConnect! 🎙️`,
+        message: `Join "${room?.title}" — a live voice room on Mello! 🎙️`,
       });
     } catch {
       // user cancelled
@@ -923,10 +929,12 @@ export default function RoomScreen() {
           style={{ flex: 1 }}
           behavior={Platform.OS === "web" ? undefined : "translate-with-padding"}
         >
-          {/* Stage is fixed (no scrolling) — only the chat area below scrolls.
-              Tapping it dismisses the keyboard so the composer icons come back. */}
-          <View
-            style={styles.stageFixed}
+          {/* Stage keeps its usual size; short/keyboard layouts can scroll it. */}
+          <ScrollView
+            testID="room-stage-scroll"
+            style={{ flexGrow: 0, flexShrink: 1, maxHeight: "48%" }}
+            contentContainerStyle={styles.stageFixed}
+            keyboardShouldPersistTaps="handled"
             onStartShouldSetResponder={() => {
               if (inputFocused) dismissComposer();
               return false;
@@ -974,7 +982,7 @@ export default function RoomScreen() {
                 </>
               )}
             </View>
-          </View>
+          </ScrollView>
 
           <View style={styles.chatSection}>
             {/* Right rail — promo carousel · VIP (audience only) · raise-hand */}
@@ -1419,7 +1427,7 @@ export default function RoomScreen() {
           />
           {memberSheet && (
             <ScrollView
-              style={[styles.msPanel, { height: Math.min(screenHeight * 0.64, 540) }]}
+              style={[styles.msPanel, sheetBounds, { height: Math.min(screenHeight * 0.64, 540) }]}
               contentContainerStyle={{ padding: 20, paddingBottom: 24 + insets.bottom }}
               testID="room-member-sheet"
             >
@@ -1988,7 +1996,7 @@ export default function RoomScreen() {
             style={styles.modalBackdrop}
             onPress={() => setAudienceModalOpen(false)}
           >
-            <Pressable style={styles.menuSheet} onPress={() => {}}>
+            <Pressable testID="room-audience-sheet" style={[styles.menuSheet, sheetBounds]} onPress={() => {}}>
               <Text testID="room-audience-title" style={styles.menuTitle}>Audience · {listeners.length}</Text>
               <ScrollView style={{ maxHeight: 360, flexShrink: 1 }}>
                 {listeners.map((m) => (
@@ -2027,9 +2035,9 @@ export default function RoomScreen() {
           onRequestClose={() => setGiftOpen(false)}
         >
           <Pressable style={styles.modalBackdrop} onPress={() => setGiftOpen(false)}>
-            <Pressable
+            <BoundedSheet
+              testID="room-gift-sheet"
               style={[styles.giftSheet, { paddingBottom: spacing.xl + insets.bottom }]}
-              onPress={() => {}}
             >
               <View style={styles.giftHeader}>
                 <Text style={styles.menuTitle}>
@@ -2067,7 +2075,7 @@ export default function RoomScreen() {
                   </Pressable>
                 ))}
               </View>
-            </Pressable>
+            </BoundedSheet>
           </Pressable>
         </Modal>
       </SafeAreaView>

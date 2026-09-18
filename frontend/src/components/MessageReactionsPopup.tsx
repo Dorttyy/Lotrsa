@@ -1,9 +1,10 @@
 import { Ionicons, MaterialCommunityIcons } from "@/src/ui/icons";
+import { TranslationIcon } from "@/src/ui/TranslationIcon";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import React from "react";
 import {
-  Dimensions,
+  ScrollView,
   Image,
   Modal,
   Platform,
@@ -15,6 +16,9 @@ import {
 import Animated, { FadeOut, ZoomIn } from "react-native-reanimated";
 
 import { useTheme } from "@/src/context/ThemeContext";
+import { usePopupLayout } from "@/src/hooks/use-popup-layout";
+import { MessageReactionBar, REACTION_OPTIONS } from "@/src/components/MessageReactionBar";
+import { MessageEmojiPicker } from "@/src/components/MessageEmojiPicker";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
 
 /**
@@ -30,12 +34,11 @@ import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
  *   • [own message] Recall
  *   • Pin (or Unpin) · Multi-select
  *
- * The list is NOT scrollable — every relevant option is always visible. Very
- * long messages shrink their font in the highlight pill so they always fit
- * fully on-screen without overlapping the action card.
+ * On short screens the list scrolls, keeping every action reachable without
+ * changing its artwork, text sizes or action order.
  */
 
-export const QUICK_REACTIONS = ["❤️", "😂", "😮", "😢", "🙏", "👍", "🔥"];
+export const QUICK_REACTIONS = REACTION_OPTIONS.map(item => item.emoji);
 
 const formatDuration = (ms?: number | null): string => {
   const totalSec = Math.max(1, Math.round((ms || 0) / 1000));
@@ -72,13 +75,13 @@ interface Props {
   messageText?: string;
   voiceDurationMs?: number | null;
   imageUri?: string;
-  currentReaction?: string; // kept for API compat; not shown in this design
+  currentReaction?: string;
   pinned?: boolean;
   saved?: boolean;
   practiced?: boolean;
   hasManualCorrection?: boolean;
   onClose: () => void;
-  onReact: (emoji: string) => void; // kept for API compat
+  onReact: (emoji: string) => void;
   onAction: (action: MsgMenuAction) => void;
 }
 
@@ -92,18 +95,22 @@ export function MessageReactionsPopup({
   messageText,
   voiceDurationMs,
   imageUri,
+  currentReaction,
   pinned,
   saved,
   practiced,
   hasManualCorrection,
   onClose,
+  onReact,
   onAction,
 }: Props) {
   const { colors, mode } = useTheme();
+  const [emojiPickerOpen, setEmojiPickerOpen] = React.useState(false);
   const styles = React.useMemo(() => makeStyles(colors), [colors]);
   const ACCENT = colors.brand;
   const INK = colors.onSurface;
-  const { width: screenW, height: screenH } = Dimensions.get("window");
+  const layout = usePopupLayout();
+  const { width: screenW, height: screenH } = layout;
 
   const RoundBtn = ({
     testID,
@@ -179,7 +186,8 @@ export function MessageReactionsPopup({
   // ── Card sizing ────────────────────────────────────────────────────────
   // Slightly narrower than before so the sheet feels compact next to the
   // pressed bubble (matches the HelloTalk reference).
-  const CARD_WIDTH = Math.min(258, screenW - 48);
+  const CARD_WIDTH = layout.cardWidth;
+  const cardLeft = layout.left(mine ? anchor.x + anchor.width - CARD_WIDTH : anchor.x, CARD_WIDTH);
   // Estimated height (no scroll): 4 round buttons row + up to 8 list rows.
   const rowCount = isImage
     ? 3 // AI Vocab + Extract text & translate + multi-select
@@ -227,28 +235,9 @@ export function MessageReactionsPopup({
       : Math.min(screenH * 0.45, 22 + Math.min(estimatedPillLines, 14) * (pillFontSize * 1.4));
 
   // ── Layout: pill sits above the card. Everything is clamped on-screen. ─
-  const GAP = 14;
-  const TOP_SAFE = 60;
-  const BOTTOM_SAFE = 40;
-  const availableH = screenH - TOP_SAFE - BOTTOM_SAFE;
-  const totalH = PILL_HEIGHT + GAP + CARD_HEIGHT;
-
-  let pillTop: number;
-  let cardTop: number;
-  if (totalH <= availableH) {
-    // Try to keep the pill near its original y; nudge up/down if needed.
-    let desiredPillTop = anchor.y;
-    // Clamp so both pill and card fit above BOTTOM_SAFE and below TOP_SAFE.
-    const minPillTop = TOP_SAFE;
-    const maxPillTop = screenH - BOTTOM_SAFE - GAP - CARD_HEIGHT - PILL_HEIGHT;
-    desiredPillTop = Math.max(minPillTop, Math.min(desiredPillTop, maxPillTop));
-    pillTop = desiredPillTop;
-    cardTop = pillTop + PILL_HEIGHT + GAP;
-  } else {
-    // Not enough room even after shrinking — center everything in the viewport.
-    pillTop = TOP_SAFE;
-    cardTop = pillTop + PILL_HEIGHT + GAP;
-  }
+  const { pillTop, pillHeight, accessoryTop, cardTop, cardMaxHeight } = layout.vertical(
+    anchor.y, PILL_HEIGHT, CARD_HEIGHT * layout.fontScale, 68,
+  );
 
   // Horizontal alignment: keep the message on the same side (mine → right,
   // partner → left), fall back to a centered pill for very long messages.
@@ -261,16 +250,10 @@ export function MessageReactionsPopup({
           PILL_MAX_W,
           Math.max(80, pillLabel.length * pillFontSize * 0.62 + 28),
         );
-  const pillLeftFromAnchor = mine
-    ? anchor.x + anchor.width - pillWidth
-    : anchor.x;
-  const pillLeft = Math.max(16, Math.min(pillLeftFromAnchor, screenW - pillWidth - 16));
-
-  // Card horizontal: align to the pressed message's side, clamped on-screen.
-  let cardLeft = mine
-    ? anchor.x + anchor.width - CARD_WIDTH
-    : anchor.x;
-  cardLeft = Math.max(16, Math.min(cardLeft, screenW - CARD_WIDTH - 16));
+  // One shared edge: original message above the aligned reaction bar + menu.
+  const pillLeft = cardLeft + (mine ? CARD_WIDTH - pillWidth - (isVoice ? 44 : 0) : 0);
+  const dismiss = () => { setEmojiPickerOpen(false); onClose(); };
+  const react = (emoji: string) => { setEmojiPickerOpen(false); onReact(emoji); onClose(); };
 
   const act = (a: MsgMenuAction) => {
     Haptics.selectionAsync().catch(() => {});
@@ -278,8 +261,9 @@ export function MessageReactionsPopup({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
+    <Modal visible={visible} transparent statusBarTranslucent navigationBarTranslucent animationType="none"
+      onRequestClose={emojiPickerOpen ? () => setEmojiPickerOpen(false) : dismiss}>
+      <Pressable testID="msg-action-backdrop" style={styles.backdrop} onPress={emojiPickerOpen ? () => setEmojiPickerOpen(false) : dismiss}>
         <BlurView
           intensity={Platform.OS === "android" ? 40 : 32}
           tint={mode === "dark" ? "dark" : "light"}
@@ -287,16 +271,19 @@ export function MessageReactionsPopup({
         />
         <View style={styles.dim} pointerEvents="none" />
 
+        {emojiPickerOpen ? <MessageEmojiPicker current={currentReaction} onBack={() => setEmojiPickerOpen(false)} onSelect={react} /> : <>
         {/* Highlighted pill of the pressed message */}
         {isImage && imageUri ? (
           <View
+            testID="msg-highlight"
             pointerEvents="none"
             style={{
               position: "absolute",
               top: pillTop,
               left: pillLeft,
               width: imgW,
-              height: imgH,
+              height: pillHeight,
+              overflow: "hidden",
             }}
           >
             <Image
@@ -307,6 +294,7 @@ export function MessageReactionsPopup({
           </View>
         ) : isVoice ? (
           <View
+            testID="msg-highlight"
             pointerEvents="none"
             style={{
               position: "absolute",
@@ -315,6 +303,8 @@ export function MessageReactionsPopup({
               flexDirection: "row",
               alignItems: "center",
               gap: 10,
+              maxHeight: pillHeight,
+              overflow: "hidden",
             }}
           >
             <View style={[styles.voicePill, { width: pillWidth }]}>
@@ -334,6 +324,7 @@ export function MessageReactionsPopup({
           </View>
         ) : !!pillLabel ? (
           <View
+            testID="msg-highlight"
             pointerEvents="none"
             style={[
               styles.highlightPill,
@@ -342,6 +333,8 @@ export function MessageReactionsPopup({
                 left: pillLeft,
                 maxWidth: PILL_MAX_W,
                 minWidth: 60,
+                maxHeight: pillHeight,
+                overflow: "hidden",
               },
             ]}
           >
@@ -358,13 +351,20 @@ export function MessageReactionsPopup({
           </View>
         ) : null}
 
-        {/* Action card */}
+        <Animated.View testID="msg-reaction-bar" entering={ZoomIn.duration(170)}
+          style={[styles.reactionBar, { left: cardLeft, top: accessoryTop, width: CARD_WIDTH }]}>
+          <MessageReactionBar current={currentReaction} onReact={react} onMore={() => setEmojiPickerOpen(true)} />
+        </Animated.View>
+
+        {/* Existing action card, independently scrollable below reactions. */}
         <Animated.View
           entering={ZoomIn.duration(170)}
           exiting={FadeOut.duration(120)}
-          style={[styles.card, { left: cardLeft, top: cardTop, width: CARD_WIDTH }]}
+          testID="msg-action-card"
+          style={[styles.card, { left: cardLeft, top: cardTop, width: CARD_WIDTH, maxHeight: cardMaxHeight }]}
         >
-          <Pressable onPress={(e) => e.stopPropagation?.()} style={{ borderRadius: 26 }}>
+          <ScrollView testID="msg-action-scroll" style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled">
+          <Pressable testID="msg-action-content" onPress={(e) => e.stopPropagation?.()} style={{ borderRadius: 26 }}>
             {/* Top row of round quick-action buttons */}
             <View style={styles.roundRow}>
               <RoundBtn
@@ -396,13 +396,13 @@ export function MessageReactionsPopup({
 
             <View style={styles.divider} />
 
-            {/* Labelled action list — everything visible, no scroll */}
+            {/* Labelled actions retain their original order. */}
             <View>
               {hasText && (
                 <ListRow
                   testID="msg-list-translate"
                   onPress={() => act("translate")}
-                  left={<Text style={styles.glyph}>文A</Text>}
+                  left={<TranslationIcon testID="msg-list-translate-icon" color={INK} />}
                   label="Translation"
                   ai
                 />
@@ -514,7 +514,9 @@ export function MessageReactionsPopup({
               />
             </View>
           </Pressable>
+          </ScrollView>
         </Animated.View>
+        </>}
       </Pressable>
     </Modal>
   );
@@ -570,6 +572,12 @@ const makeStyles = (colors: ThemeColors) =>
     shadowOffset: { width: 0, height: 10 },
     elevation: 16,
   },
+  reactionBar: {
+    position: "absolute", height: 56, borderRadius: 28,
+    backgroundColor: colors.surface, overflow: "hidden",
+    shadowColor: colors.onSurface, shadowOpacity: 0.12, shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 }, elevation: 16,
+  },
   roundRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -602,6 +610,7 @@ const makeStyles = (colors: ThemeColors) =>
     marginHorizontal: 8,
   },
   listRow: {
+    minHeight: 44,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
@@ -617,13 +626,9 @@ const makeStyles = (colors: ThemeColors) =>
     alignItems: "center",
   },
   listLabel: {
+    flexShrink: 1,
     fontFamily: fonts.textSemi,
     fontSize: 16,
-    color: colors.onSurface,
-  },
-  glyph: {
-    fontFamily: fonts.textBold,
-    fontSize: 15,
     color: colors.onSurface,
   },
   aiGlyph: {

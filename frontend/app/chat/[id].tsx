@@ -1,5 +1,6 @@
 import * as Clipboard from "expo-clipboard";
 import { Ionicons, MaterialCommunityIcons } from "@/src/ui/icons";
+import { TranslationIcon } from "@/src/ui/TranslationIcon";
 import { genderColors } from "@/src/theme";
 import { useExclusiveVoicePlayer } from "@/src/hooks/use-exclusive-voice-player";
 import {
@@ -31,11 +32,16 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { KeyboardAvoidingView } from "@/src/components/layout/KeyboardAvoidingView";
 import { StatusBar } from "expo-status-bar";
 
 import { Avatar } from "@/src/components/Avatar";
 import { BackButton } from "@/src/components/BackButton";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
+import { requestTranslation, translatedTextStyle } from "@/src/utils/translation";
+import { TranslationLanguagePicker } from "@/src/components/TranslationLanguagePicker";
+import { TRANSLATION_NAMES } from "@/src/constants/translation-languages";
+import { MessageReactionBadges } from "@/src/components/MessageReactionBadges";
 import { IconChip } from "@/src/components/IconChip";
 import { MessageReactionsPopup, MsgMenuAction } from "@/src/components/MessageReactionsPopup";
 import { RoomMomentCard } from "@/src/components/RoomMomentCard";
@@ -50,7 +56,7 @@ import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
 import { AppTitle } from "@/src/ui/AppTitle";
 import { premiumThemeColors } from "@/src/premium/theme";
 import { api, audioUrl, Conversation, Message, mediaUrl, User } from "@/src/utils/api";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
 
 /** RN-web's Alert.alert is a no-op — use window.alert on web so users always see feedback. */
 const notify = (title: string, message: string) => {
@@ -206,6 +212,8 @@ export default function ChatScreen() {
   const [trInput, setTrInput] = useState("");
   const [trResult, setTrResult] = useState<string | null>(null);
   const [trLoading, setTrLoading] = useState(false);
+  const [trError, setTrError] = useState<string | null>(null);
+  const [trMoreLanguages, setTrMoreLanguages] = useState(false);
   // Reaction popup state — anchor is measured on long press so we can point
   // the picker to the exact bubble on-screen (Instagram-style).
   const [reactionMsg, setReactionMsg] = useState<Message | null>(null);
@@ -238,6 +246,7 @@ export default function ChatScreen() {
   // Keeps the list pinned to the newest message. True until the reader
   // scrolls up to browse history, so we never yank them back down.
   const stickToEnd = useRef(true);
+  const bubblePressActive = useRef(false);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   useEffect(() => {
@@ -388,7 +397,8 @@ export default function ChatScreen() {
     try {
       await api.post(`/chats/${id}/messages/${target.id}/react`, { emoji });
     } catch (e) {
-      // Rollback would be complex; refetch instead.
+      notify("Reaction", e instanceof Error ? e.message : "Could not save reaction. Please retry.");
+      // Reconcile with saved server state after a failed optimistic update.
       try {
         const msgs = await api.get<Message[]>(`/chats/${id}/messages`);
         setMessages(msgs);
@@ -572,15 +582,16 @@ export default function ChatScreen() {
     const text = trInput.trim();
     if (!text || trLoading) return;
     setTrLoading(true);
+    setTrError(null);
     setTrResult(null);
     try {
-      const res = await api.post<{ translated: string }>("/ai/translate", {
+      const res = await requestTranslation({
         text,
         target_language: trTo,
       });
       setTrResult(res.translated);
     } catch (e) {
-      notify("Translate", e instanceof Error ? e.message : "Translation failed.");
+      setTrError(e instanceof Error ? e.message : "Translation failed. Please retry.");
     } finally {
       setTrLoading(false);
     }
@@ -1086,7 +1097,7 @@ export default function ChatScreen() {
     }
     setTranslating(msg.id);
     try {
-      const result = await api.post<{ translated: string }>("/ai/translate", {
+      const result = await requestTranslation({
         text: msg.transcript || msg.text,
         target_language: user?.native_language || "en",
       });
@@ -1542,7 +1553,7 @@ export default function ChatScreen() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "web" ? undefined : "translate-with-padding"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
+        keyboardVerticalOffset={0}
       >
         {loading ? (
           <View style={styles.center}>
@@ -1551,6 +1562,9 @@ export default function ChatScreen() {
         ) : (
           <FlatList
             ref={listRef}
+            testID="chat-message-list"
+            style={{ flex: 1, minHeight: 0 }}
+            keyboardShouldPersistTaps="handled"
             data={messages}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.messageList}
@@ -1565,7 +1579,7 @@ export default function ChatScreen() {
             onContentSizeChange={() => {
               // Fires whenever bubbles/avatars/images finish measuring, so
               // the chat reliably opens pinned to the newest message.
-              if (stickToEnd.current) {
+              if (stickToEnd.current && !bubblePressActive.current && !reactionMsg) {
                 listRef.current?.scrollToEnd({ animated: false });
               }
             }}
@@ -1711,14 +1725,18 @@ export default function ChatScreen() {
                     withAvatarRow(
                       <Pressable
                         ref={setBubbleRef}
+                        testID={`chat-sticker-bubble-${item.id}`}
                         onPress={() =>
                           selectMode ? toggleSelect(item.id) : openReactions()
                         }
                         onLongPress={openReactions}
+                        onPressIn={() => { bubblePressActive.current = true; }}
+                        onPressOut={() => { bubblePressActive.current = false; }}
                         delayLongPress={220}
                         style={[
                           styles.stickerMsg,
                           selected && styles.bubbleSelected,
+                          !!item.reactions?.length && styles.reactedBubble,
                         ]}
                       >
                         <Image
@@ -1726,6 +1744,7 @@ export default function ChatScreen() {
                           style={styles.stickerMsgImg}
                           contentFit="contain"
                         />
+                        <MessageReactionBadges messageId={item.id} reactions={item.reactions} mine={mine} />
                       </Pressable>,
                     )
                   ) : isCall ? (
@@ -1788,9 +1807,12 @@ export default function ChatScreen() {
                     <View style={styles.roomShareRow}>
                       <Pressable
                         ref={setBubbleRef}
+                        testID={`chat-room-bubble-${item.id}`}
                         onLongPress={openReactions}
+                        onPressIn={() => { bubblePressActive.current = true; }}
+                        onPressOut={() => { bubblePressActive.current = false; }}
                         delayLongPress={220}
-                        style={styles.roomShareBubble}
+                        style={[styles.roomShareBubble, !!item.reactions?.length && styles.reactedBubble]}
                       >
                         {item.text ? (
                           <Text style={styles.roomShareCaption}>{item.text}</Text>
@@ -1804,23 +1826,7 @@ export default function ChatScreen() {
                             }
                           }}
                         />
-                        {item.reactions && item.reactions.length > 0 && (
-                          <View
-                            style={[
-                              styles.reactionBadgeRow,
-                              mine ? styles.reactionBadgeMine : styles.reactionBadgeTheirs,
-                            ]}
-                          >
-                            {item.reactions.map((r) => (
-                              <View key={r.emoji} style={styles.reactionBadge}>
-                                <Text style={styles.reactionBadgeEmoji}>{r.emoji}</Text>
-                                {r.count > 1 && (
-                                  <Text style={styles.reactionBadgeCount}>{r.count}</Text>
-                                )}
-                              </View>
-                            ))}
-                          </View>
-                        )}
+                        <MessageReactionBadges messageId={item.id} reactions={item.reactions} mine={mine} />
                       </Pressable>
                     </View>
                   ) : (
@@ -1844,13 +1850,17 @@ export default function ChatScreen() {
                       ))}
                     <Pressable
                       ref={setBubbleRef}
+                      testID={`chat-message-bubble-${item.type || "text"}-${item.id}`}
                       onLongPress={openReactions}
+                      onPressIn={() => { bubblePressActive.current = true; }}
+                      onPressOut={() => { bubblePressActive.current = false; }}
                       onPress={onBubblePress}
                       delayLongPress={220}
                       style={[
                         styles.bubble,
                         mine ? styles.bubbleMine : styles.bubbleTheirs,
                         selected && styles.bubbleSelected,
+                        !!item.reactions?.length && styles.reactedBubble,
                       ]}
                     >
                     {item.reply_to && (
@@ -1916,7 +1926,7 @@ export default function ChatScreen() {
                     {trOpen && (
                       <View style={styles.aiTransBox}>
                         <Text style={styles.aiLabel}>AI</Text>
-                        <Text style={styles.aiTransText}>{translated}</Text>
+                        <Text testID={`message-translation-${item.id}`} style={[styles.aiTransText, translatedTextStyle(translated)]}>{translated}</Text>
                       </View>
                     )}
                     {correction && (
@@ -2002,23 +2012,7 @@ export default function ChatScreen() {
                         />
                       </View>
                     )}
-                    {item.reactions && item.reactions.length > 0 && (
-                      <View
-                        style={[
-                          styles.reactionBadgeRow,
-                          mine ? styles.reactionBadgeMine : styles.reactionBadgeTheirs,
-                        ]}
-                      >
-                        {item.reactions.map((r) => (
-                          <View key={r.emoji} style={styles.reactionBadge}>
-                            <Text style={styles.reactionBadgeEmoji}>{r.emoji}</Text>
-                            {r.count > 1 && (
-                              <Text style={styles.reactionBadgeCount}>{r.count}</Text>
-                            )}
-                          </View>
-                        ))}
-                      </View>
-                    )}
+                    <MessageReactionBadges messageId={item.id} reactions={item.reactions} mine={mine} />
                   </Pressable>
                     {!mine && !selectMode && (isVoice || (!isImage && !!item.text && (isLastPartnerMsg || !!translated))) &&
                       (isVoice ? (
@@ -2049,17 +2043,8 @@ export default function ChatScreen() {
                                   color={colors.brand}
                                 />
                               ) : (
-                                <Text
-                                  style={[
-                                    styles.sideGlyph,
-                                    {
-                                      fontSize: 13,
-                                      color: translated ? colors.brand : colors.onSurfaceSecondary,
-                                    },
-                                  ]}
-                                >
-                                  文A
-                                </Text>
+                                <TranslationIcon testID={`side-translate-icon-${item.id}`} size={17}
+                                  color={translated ? colors.brand : colors.onSurfaceSecondary} />
                               )}
                             </Pressable>
                             </>}
@@ -2162,11 +2147,7 @@ export default function ChatScreen() {
                             {translating === item.id ? (
                               <ActivityIndicator size="small" color={colors.brand} />
                             ) : (
-                              <Text
-                                style={[styles.sideGlyph, { color: colors.onSurface }]}
-                              >
-                                文A
-                              </Text>
+                              <TranslationIcon testID={`side-translate-icon-${item.id}`} color={colors.onSurface} />
                             )}
                           </Pressable>
                         </View>
@@ -2292,7 +2273,7 @@ export default function ChatScreen() {
                 </Pressable>
               </View>
             )}
-          <View style={styles.inputArea}>
+          <ScrollView testID="chat-composer-scroll" style={{ flexGrow: 0, flexShrink: 0, maxHeight: "70%" }} contentContainerStyle={styles.inputArea} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
             {practiceLocked && (
               <View style={styles.practiceBar} testID="practice-unlock-bar">
                 <View style={styles.practiceIconWrap}>
@@ -2456,7 +2437,8 @@ export default function ChatScreen() {
                 onPress={() => setPanel((p) => (p === "translate" ? null : "translate"))}
                 style={styles.toolIcon}
               >
-                <Text style={[styles.translateGlyph, panel === "translate" && { color: colors.brand }]}>文A</Text>
+                <TranslationIcon testID="tool-translate-icon" size={24}
+                  color={panel === "translate" ? colors.brand : colors.onSurface} />
               </Pressable>
               <Pressable
                 testID="tool-templates"
@@ -2671,14 +2653,15 @@ export default function ChatScreen() {
             {panel === "translate" && (
               <View style={styles.translatePanel}>
                 <View style={styles.translateHeaderRow}>
-                  <Text style={styles.translateTitle}>Translate to...</Text>
+                  <Text testID="chat-translation-target" style={[styles.translateTitle, { flexShrink: 1 }]}>{TRANSLATION_NAMES[trTo] || trTo}</Text>
                   <View style={styles.langChips}>
                     {["en", "es", "pt", "fr", "ja"].map((lng) => (
                       <Pressable
                         key={lng}
                         testID={`tr-lang-${lng}`}
                         style={[styles.langChip, trTo === lng && styles.langChipActive]}
-                        onPress={() => setTrTo(lng)}
+                        disabled={trLoading}
+                        onPress={() => { setTrTo(lng); setTrResult(null); setTrError(null); }}
                       >
                         <Text style={[styles.langChipText, trTo === lng && styles.langChipTextActive]}>
                           {lng.toUpperCase()}
@@ -2687,6 +2670,13 @@ export default function ChatScreen() {
                     ))}
                   </View>
                 </View>
+                <Pressable testID="tr-more-languages" disabled={trLoading}
+                  onPress={() => setTrMoreLanguages(value => !value)}
+                  style={{ minHeight: 44, justifyContent: "center" }}>
+                  <Text style={styles.translateUseHint}>{trMoreLanguages ? "Hide language search" : "More languages"}</Text>
+                </Pressable>
+                {trMoreLanguages && <TranslationLanguagePicker prefix="chat-translation-language" value={trTo}
+                  disabled={trLoading} onChange={value => { setTrTo(value); setTrResult(null); setTrError(null); setTrMoreLanguages(false); }} />}
                 <View style={styles.translateInputRow}>
                   <TextInput
                     testID="tr-input"
@@ -2702,7 +2692,7 @@ export default function ChatScreen() {
                     testID="tr-run"
                     style={styles.translateRunBtn}
                     onPress={runPanelTranslate}
-                    disabled={trLoading}
+                    disabled={trLoading || !trInput.trim()}
                   >
                     {trLoading ? (
                       <ActivityIndicator size="small" color={colors.onBrand} />
@@ -2711,6 +2701,8 @@ export default function ChatScreen() {
                     )}
                   </Pressable>
                 </View>
+                {trError && <Text testID="chat-translation-error" accessibilityRole="alert"
+                  style={[styles.translateUseHint, { color: colors.error }]}>{trError}</Text>}
                 {trResult ? (
                   <Pressable
                     testID="tr-result"
@@ -2720,7 +2712,7 @@ export default function ChatScreen() {
                       setPanel(null);
                     }}
                   >
-                    <Text style={styles.translateResultText}>{trResult}</Text>
+                    <Text testID="tr-result-text" style={[styles.translateResultText, translatedTextStyle(trResult)]}>{trResult}</Text>
                     <Text style={styles.translateUseHint}>Tap to use →</Text>
                   </Pressable>
                 ) : null}
@@ -2769,7 +2761,7 @@ export default function ChatScreen() {
                 </Pressable>
               </View>
             )}
-          </View>
+          </ScrollView>
           </>
         )}
       </KeyboardAvoidingView>
@@ -2813,7 +2805,7 @@ export default function ChatScreen() {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
           <Pressable style={{ flex: 1 }} onPress={() => setCorrectingMsg(null)} />
-          <View style={[styles.modalCard, { paddingBottom: spacing.xl + insets.bottom }]}>
+          <BoundedSheet testID="chat-correction-sheet" style={[styles.modalCard, { paddingBottom: spacing.xl + insets.bottom }]}>
             <View style={styles.menuHeader}>
               <Text style={styles.modalTitle}>Correction</Text>
               <Pressable testID="correction-close" onPress={() => setCorrectingMsg(null)} hitSlop={8}>
@@ -2857,7 +2849,7 @@ export default function ChatScreen() {
                 <Text style={styles.modalSaveText}>Save correction</Text>
               )}
             </Pressable>
-          </View>
+          </BoundedSheet>
         </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
@@ -3462,10 +3454,6 @@ const makeStyles = (colors: ThemeColors) =>
     sideBtnActive: {
       backgroundColor: colors.brandTertiary,
     },
-    sideGlyph: {
-      fontFamily: fonts.textBold,
-      fontSize: 14,
-    },
     micWrap: {
       flexDirection: "row",
       alignItems: "flex-start",
@@ -3612,6 +3600,7 @@ const makeStyles = (colors: ThemeColors) =>
       color: colors.onSurface,
       marginBottom: 6,
     },
+    reactedBubble: { marginBottom: 22, overflow: "visible" },
     reactionBadgeRow: {
       flexDirection: "row",
       gap: 4,
@@ -3775,11 +3764,6 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    translateGlyph: {
-      fontFamily: fonts.textBold,
-      fontSize: 18,
-      color: colors.onSurface,
-    },
     emojiBar: {
       maxHeight: 52,
       marginBottom: spacing.sm,
@@ -3872,8 +3856,8 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: Platform.OS === "web" ? 8 : 6,
     },
     sendBtn: {
-      width: 42,
-      height: 42,
+      width: 44,
+      height: 44,
       borderRadius: radius.pill,
       backgroundColor: colors.brand,
       alignItems: "center",
@@ -4092,9 +4076,13 @@ const makeStyles = (colors: ThemeColors) =>
     },
     langChips: {
       flexDirection: "row",
+      flexShrink: 1,
+      flexWrap: "wrap",
       gap: 6,
     },
     langChip: {
+      minHeight: 44,
+      justifyContent: "center",
       paddingHorizontal: 10,
       paddingVertical: 5,
       borderRadius: radius.pill,

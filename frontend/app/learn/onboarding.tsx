@@ -1,9 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@/src/ui/icons";
 import { useRouter } from "expo-router";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Dimensions,
+  useWindowDimensions,
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -20,9 +20,7 @@ import { fonts } from "@/src/theme";
 import { api, User } from "@/src/utils/api";
 import { learnColors, learnRadius } from "@/src/learn/theme";
 import { FlagIcon } from "@/src/components/FlagIcon";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-
-const { width } = Dimensions.get("window");
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
 
 // Illustrative emojis stand in for the mascots from the reference design.
 // Keeps the module self-contained (no image assets) while preserving the
@@ -65,16 +63,25 @@ const SLIDES = [
 
 export default function LearnOnboarding() {
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  const width = windowWidth - insets.left - insets.right;
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
   const [index, setIndex] = useState(0);
   const [langPickerOpen, setLangPickerOpen] = useState(false);
   const { user, setUser } = useAuth();
   const styles = useMemo(() => makeStyles(), []);
+  const previousWidth = useRef(width);
+  useEffect(() => {
+    if (previousWidth.current !== width) {
+      scrollRef.current?.scrollTo({ x: index * width, animated: false });
+      previousWidth.current = width;
+    }
+  }, [width, index]);
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const i = Math.round(e.nativeEvent.contentOffset.x / width);
-    if (i !== index) setIndex(i);
+    if (i !== index) setIndex(Math.max(0, Math.min(SLIDES.length - 1, i)));
   };
 
   const finish = async () => {
@@ -100,9 +107,11 @@ export default function LearnOnboarding() {
 
   return (
     <View style={[styles.root, { backgroundColor: slide.bg }]}>
-      <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+      <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom", "left", "right"]}>
         <ScrollView
           ref={scrollRef}
+          testID="learn-onboarding-pager"
+          style={{ flex: 1 }}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
@@ -110,9 +119,11 @@ export default function LearnOnboarding() {
           keyboardShouldPersistTaps="handled"
         >
           {SLIDES.map((s) => (
-            <View
+            <ScrollView
               key={s.key}
-              style={[styles.slide, { width, backgroundColor: s.bg }]}
+              testID={`learn-onboarding-slide-${s.key}`}
+              style={{ width, backgroundColor: s.bg }}
+              contentContainerStyle={styles.slide}
             >
               <View style={styles.textBlock}>
                 <View style={styles.titleRow}>
@@ -170,7 +181,7 @@ export default function LearnOnboarding() {
                   style={styles.floatingSparkle}
                 />
               </View>
-            </View>
+            </ScrollView>
           ))}
         </ScrollView>
 
@@ -222,7 +233,8 @@ export default function LearnOnboarding() {
         onRequestClose={() => setLangPickerOpen(false)}
       >
         <Pressable
-          style={styles.backdrop}
+          testID="learn-onboarding-picker-backdrop"
+          style={[styles.backdrop, { paddingTop: insets.top + 12, paddingLeft: insets.left, paddingRight: insets.right }]}
           onPress={() => setLangPickerOpen(false)}
         >
           <Pressable
@@ -234,7 +246,7 @@ export default function LearnOnboarding() {
             <Text style={styles.sheetSub}>
               You can change this later from the Learn dashboard.
             </Text>
-            <ScrollView style={{ maxHeight: 360 }}>
+            <ScrollView style={{ maxHeight: 360, flexShrink: 1 }}>
               {LANGUAGES.slice(0, 12).map((l) => (
                 <Pressable
                   key={l.code}
@@ -277,10 +289,10 @@ const makeStyles = () =>
   StyleSheet.create({
     root: { flex: 1 },
     slide: {
-      flex: 1,
+      flexGrow: 1,
       paddingHorizontal: 28,
       paddingTop: 40,
-      paddingBottom: 100,
+      paddingBottom: 20,
     },
     textBlock: { gap: 2 },
     titleRow: {
@@ -361,10 +373,7 @@ const makeStyles = () =>
       left: "18%",
     },
     bottomBar: {
-      position: "absolute",
-      left: 0,
-      right: 0,
-      bottom: 0,
+      flexShrink: 0,
       paddingHorizontal: 20,
       paddingBottom: 16,
       gap: 12,
@@ -406,6 +415,8 @@ const makeStyles = () =>
       backgroundColor: "rgba(0,0,0,0.45)",
     },
     sheet: {
+      maxHeight: "100%",
+      flexShrink: 1,
       backgroundColor: learnColors.surface,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,

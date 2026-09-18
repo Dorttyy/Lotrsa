@@ -1,0 +1,41 @@
+{
+  "summary": "Frontend-only focused regression for removepermanenttimeUI passed on public preview using QA1 VIP and QA2 free accounts. After confirmed voice list settled state (/api/rooms resource completed + loading spinner gone), no room-time counters/labels were shown in voice list or inside own private rooms for either account.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/artifacts/iteration_46/qa1/voice_list_qa1.jpeg",
+    "/app/test_reports/artifacts/iteration_46/qa1/room_inside_qa1.jpeg",
+    "/app/test_reports/artifacts/iteration_46/qa2/voice_list_qa2.jpeg",
+    "/app/test_reports/artifacts/iteration_46/qa2/room_inside_qa2.jpeg",
+    "/root/.emergent/automation_output/20260918_132643/console_20260918_132643.log",
+    "/root/.emergent/automation_output/20260918_132718/console_20260918_132718.log"
+  ],
+  "action_items": [
+    "No app-code changes required for this scoped regression.",
+    "Pending separately (not implemented/claimed): future VIP+disabled ad coming-soon limit card."
+  ],
+  "critical_code_review_comments": [
+    "Verified in current source: app/(tabs)/voice.tsx has no RoomTimePanel import/state/loading panel/header/styles for room-time allowance, and app/room/[id].tsx has no room-time-badge rendering path.",
+    "frontend/app/room/[id].tsx remains very large (>700 lines), which increases regression risk despite this pass."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_46.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (explicitly skipped per request)",
+    "frontend": "100% for requested scoped checks"
+  },
+  "seed_data_creation": "Created 2 temporary private fixture rooms via UI (QA1 and QA2) with private toggle enabled (share_to_moments effectively false). Ended both created rooms via host close flow; no delete_many or existing data cleanup operations used.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "test_credentials used: /app/memory/test_credentials.md (qa_tester_b40dc299@linguatest.com / QATest2026!, qa_guest_removal_67403793@linguatest.com / QATest2026!). Explicit absence verification after load: no text nodes for Today's room time, Hosting time continues, remaining time, UTC reset, Unlimited; and selector counts were 0 for [data-testid='voice-time-allowance'] and [data-testid='room-time-badge'] on list + inside room for QA1 and QA2. Overflow checks passed at 320 and 390 widths. Room create/join/leave-end flow remained functional.",
+  "rca_of_issue": "No new failure detected in this focused regression. Non-blocking known environment log warning remains: Expo runtime ENOENT for /app/frontend/sounds asset path in supervisor expo.err.log (pre-existing, unrelated to removepermanenttimeUI behavior)."
+}

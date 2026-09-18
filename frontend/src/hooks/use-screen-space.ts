@@ -1,5 +1,6 @@
-import { BottomTabBarHeightContext } from "@react-navigation/bottom-tabs";
+import { BottomTabBarHeightContext } from "expo-router/js-tabs";
 import { useContext } from "react";
+import { useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { spacing } from "@/src/theme";
@@ -17,6 +18,33 @@ import { spacing } from "@/src/theme";
 /** True when the current screen renders inside a bottom-tab navigator. */
 export const useInsideTabs = () =>
   useContext(BottomTabBarHeightContext) !== undefined;
+
+/** Live dimensions: rotation, split screen and accessibility changes reflow.
+ * Modal bounds deliberately do NOT use tab context (modals cover the tabs).
+ */
+export function useScreenSpace() {
+  const window = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  return {
+    ...window,
+    insets,
+    safeWidth: Math.max(0, window.width - insets.left - insets.right),
+    safeHeight: Math.max(0, window.height - insets.top - insets.bottom),
+  };
+}
+
+/** Grow the existing icon/label row only when system text is enlarged. */
+export function useTabContentHeight(baseHeight = 64) {
+  const { fontScale } = useWindowDimensions();
+  return baseHeight + Math.ceil(16 * Math.max(0, fontScale - 1));
+}
+
+/** For sheets already containing a FlatList/ScrollView: avoid nested scrolling. */
+export function useSheetBounds() {
+  const { safeHeight, insets } = useScreenSpace();
+  return { maxHeight: Math.max(0, safeHeight - 16), flexShrink: 1,
+    marginLeft: insets.left, marginRight: insets.right };
+}
 
 /**
  * Padding to append to a scroll container so its last item can always be

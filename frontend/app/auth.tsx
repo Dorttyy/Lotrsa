@@ -21,7 +21,8 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { KeyboardAvoidingView } from "@/src/components/layout/KeyboardAvoidingView";
+import { AppLogo } from "@/src/components/AppLogo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BackButton } from "@/src/components/BackButton";
@@ -137,7 +138,10 @@ export default function AuthScreen() {
             else router.replace("/welcome");
           }}
         />
-        <Text style={styles.wordmark}>LinguaConnect</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 }}>
+          <AppLogo size={28} testID="auth-app-logo" />
+          <Text style={styles.wordmark}>Mello</Text>
+        </View>
         <View style={styles.headerBalance} />
       </View>
 

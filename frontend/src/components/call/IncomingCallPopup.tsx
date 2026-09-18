@@ -7,6 +7,7 @@ import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, ThemeColors } from "@/src/theme";
 import { Ionicons } from "@/src/ui/icons";
 import { User } from "@/src/utils/api";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
 
 /** Only a top request card while ringing; full call UI opens after acceptance. */
 export function IncomingCallPopup({ peer, outgoing, ringing, expiresAt, onAccept, onReject }: {
@@ -18,8 +19,8 @@ export function IncomingCallPopup({ peer, outgoing, ringing, expiresAt, onAccept
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(timer); }, [expiresAt]);
   const remaining = Math.max(0, Math.ceil((expiresAt - now) / 1000));
-  return <View testID="call-overlay" style={[s.backdrop, { paddingTop: insets.top + 16 }]}>
-    <View testID={outgoing ? "outgoing-call-popup" : "incoming-call-popup"} style={s.card} accessibilityViewIsModal>
+  return <View testID="call-overlay" style={[s.backdrop, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }]}>
+    <BoundedSheet testID={outgoing ? "outgoing-call-popup" : "incoming-call-popup"} style={s.card} accessibilityViewIsModal>
       <View style={s.topRow}>
         <View style={s.kind}><Ionicons name="call" color={colors.brand} size={15} /><Text testID="call-request-title" style={s.kindText}>{outgoing ? "CALL REQUEST" : "INCOMING CALL"}</Text></View>
         <View style={[s.countdown, remaining <= 10 && { backgroundColor: colors.surfaceSecondary }]}><Ionicons name="time-outline" size={14} color={remaining <= 10 ? colors.error : colors.brand} /><Text testID="call-ring-countdown" accessibilityLabel={`${remaining} seconds remaining`} style={[s.countText, remaining <= 10 && { color: colors.error }]}>{remaining}s</Text></View>
@@ -33,7 +34,7 @@ export function IncomingCallPopup({ peer, outgoing, ringing, expiresAt, onAccept
         {!outgoing && <Pressable testID="call-accept-btn" accessibilityLabel="Accept call" disabled={remaining === 0} onPress={onAccept} style={({ pressed }) => [s.action, s.accept, { opacity: pressed || remaining === 0 ? 0.65 : 1 }]}><Ionicons name="call" size={20} color={colors.onBrand} /><Text style={[s.actionText, { color: colors.onBrand }]}>Accept</Text></Pressable>}
       </View>
       <Text testID="call-request-note" style={s.note}>{outgoing ? "The call screen opens when your partner accepts." : "Accept to open the call screen and turn on your microphone."}</Text>
-    </View>
+    </BoundedSheet>
   </View>;
 }
 const styles = (c: ThemeColors) => StyleSheet.create({
@@ -44,5 +45,5 @@ const styles = (c: ThemeColors) => StyleSheet.create({
   person: { flexDirection: "row", gap: 14, alignItems: "center" }, identity: { flex: 1, minWidth: 0, gap: 4 }, name: { fontFamily: fonts.displaySemi, fontSize: 17, lineHeight: 23, color: c.onSurface }, description: { fontFamily: fonts.text, fontSize: 12, lineHeight: 18, color: c.onSurfaceSecondary },
   progressTrack: { height: 3, borderRadius: 2, backgroundColor: c.surfaceSecondary, overflow: "hidden" }, progress: { height: 3, backgroundColor: c.brand, borderRadius: 2 },
   actions: { flexDirection: "row", gap: 12 }, action: { minHeight: 48, flex: 1, borderRadius: 24, alignItems: "center", justifyContent: "center", gap: 8, flexDirection: "row" }, accept: { backgroundColor: c.brand }, reject: { backgroundColor: c.surfaceSecondary }, rejectIcon: { transform: [{ rotate: "135deg" }] },
-  actionText: { fontSize: 14, fontFamily: fonts.textBold }, note: { fontSize: 10, lineHeight: 16, textAlign: "center", color: c.onSurfaceSecondary, fontFamily: fonts.text, marginTop: -4 },
+  actionText: { flexShrink: 1, fontSize: 14, fontFamily: fonts.textBold }, note: { fontSize: 10, lineHeight: 16, textAlign: "center", color: c.onSurfaceSecondary, fontFamily: fonts.text, marginTop: -4 },
 });

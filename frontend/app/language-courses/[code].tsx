@@ -21,7 +21,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { FlagIcon } from "@/src/components/FlagIcon";
 import { IconChip } from "@/src/components/IconChip";
@@ -212,9 +212,9 @@ export default function LanguageCourses() {
           >
             <View style={{ flex: 1 }}>
               <View style={styles.aiChatBubble}>
-                <Text style={styles.aiChatBubbleText}>Let's Speak</Text>
+                <Text style={styles.aiChatBubbleText}>{"Let's Speak"}</Text>
               </View>
-              <Text style={styles.aiHeadline}>Let's Speak</Text>
+              <Text style={styles.aiHeadline}>{"Let's Speak"}</Text>
               <Text style={[styles.aiHeadlineAccent, { color: palette.accent }]}>{name}</Text>
             </View>
             <Ionicons name="chatbubbles" size={72} color="rgba(255,255,255,0.6)" />

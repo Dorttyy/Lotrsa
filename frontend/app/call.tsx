@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { ActivityIndicator, LayoutAnimation, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -34,7 +34,7 @@ export default function CallScreen() {
   return <SafeAreaView style={s.root} testID="call-screen">
     <View style={s.header}>
       <Pressable testID="call-back-btn" accessibilityLabel="Back" onPress={() => router.back()} style={s.iconBtn}><Ionicons name="chevron-back" size={24} color={colors.onSurface} /></Pressable>
-      <AppTitle testID="call-page-title" variant="page" style={s.heading}>Call</AppTitle>
+      <AppTitle testID="call-page-title" variant="navigation" style={s.heading}>Practice</AppTitle>
       <Pressable testID="call-voice-rooms-btn" onPress={() => router.push("/(tabs)/voice")} style={s.rooms}><Ionicons name="mic" size={17} color={colors.onBrandSecondary} /><Text style={s.link}>Voice rooms</Text></Pressable>
     </View>
     <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>

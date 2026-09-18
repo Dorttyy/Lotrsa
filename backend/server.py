@@ -2,6 +2,7 @@ import logging
 import asyncio
 import os
 from contextlib import asynccontextmanager
+from contextlib import suppress
 
 from dotenv import load_dotenv
 from pathlib import Path
@@ -34,6 +35,8 @@ from routes.call_practice import router as call_practice_router  # noqa: E402
 from routes.room_stage import router as room_stage_router  # noqa: E402
 from routes.room_moderators import router as room_moderators_router  # noqa: E402
 import rtc_core  # noqa: E402
+import room_time  # noqa: E402
+import translation_service  # noqa: E402
 from routes.pro import router as pro_router, seed_pro_tutors  # noqa: E402
 from routes.lessons import router as lessons_router  # noqa: E402
 from routes.users import router as users_router  # noqa: E402
@@ -58,8 +61,17 @@ async def lifespan(app: FastAPI):
     if os.environ.get("SEED_DEMO_TUTORS", "true").lower() == "true":
         await seed_pro_tutors()
     await seed_vocab_content()
-    yield
-    client.close()
+    await room_time.initialize()
+    await translation_service.initialize()
+    quota_task = asyncio.create_task(room_time.watchdog())
+    try:
+        yield
+    finally:
+        quota_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await quota_task
+        await translation_service.shutdown()
+        client.close()
 
 
 async def backfill_usernames():
@@ -105,12 +117,12 @@ async def seed_admin():
     logger.info("Seeded admin account %s", email)
 
 
-app = FastAPI(title="LinguaConnect API", lifespan=lifespan)
+app = FastAPI(title="Mello API", lifespan=lifespan)
 
 
 @app.get("/api/")
 async def root():
-    return {"message": "LinguaConnect API"}
+    return {"message": "Mello API"}
 
 
 # 1-to-1 call signaling (bound to an authenticated call session) and voice-room

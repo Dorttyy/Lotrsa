@@ -1,0 +1,66 @@
+{
+  "summary": "Targeted iteration-51 increment testing completed for reaction popup alignment, full emoji picker behavior, floating badges, and backend Unicode validation. Backend passed fully (3/3). Frontend direct-locator popup flow now opens reliably and width/edge alignment checks passed across required viewports, but same-emoji remove toggle could not be deterministically re-validated in automation follow-up due modal/overlay interaction state.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Message reaction same-emoji toggle remove (UI automation)",
+        "issue": "After successful add via full picker, repeated same-emoji remove flow was not consistently confirmable in browser automation follow-up; one run hit overlay interception and one run did not reach expected hidden assertion state for message-reaction-<id>-🦄.",
+        "testID": "message-reaction-<id>-🦄",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Bubble press -> popup -> full picker -> same emoji reselect remove",
+        "issue": "Popup open itself is now reproducibly working with direct locator flow (scroll_into_view_if_needed + click delay=350), so previous long-press popup-open blocker is effectively CLOSED. Remaining instability is the repeated remove confirmation path under modal overlay state transitions.",
+        "affected_testIDs": [
+          "chat-message-bubble-text-<id>",
+          "msg-reaction-more",
+          "emoji-option-1F984",
+          "message-reaction-<id>-🦄"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration51_reaction_unicode_catalog.py",
+    "/app/test_reports/pytest/iteration51_unicode_reactions.xml",
+    "/app/test_reports/artifacts/iteration_51_ui/alignment_844x390.jpeg",
+    "/app/test_reports/artifacts/iteration_51_ui/final_reaction_state.jpeg",
+    "/app/test_reports/artifacts/iteration_51_ui/followup_final.jpeg",
+    "/app/test_reports/artifacts/iteration_51_ui/followup_failure.jpeg",
+    "/app/test_reports/artifacts/iteration_51_ui/final_toggle_voice_sticker_failure.jpeg",
+    "/root/.emergent/automation_output/20260918_155026/console_20260918_155026.log",
+    "/root/.emergent/automation_output/20260918_155056/console_20260918_155056.log",
+    "/root/.emergent/automation_output/20260918_155156/console_20260918_155156.log"
+  ],
+  "action_items": [
+    "Investigate and stabilize UI same-emoji remove flow around modal overlay transitions after picker selection; ensure deterministic close/reopen state before second selection.",
+    "Re-verify voice-bubble popup alignment and sticker/image popup in a dedicated pass once remove-flow interaction is stable (voice/sticker checks were queued but not completed due loop-prevention stop after repeated failure path).",
+    "Optional UX hardening: add deterministic test hook/state signal when reaction popup fully closes to avoid race/interception on immediate re-open actions."
+  ],
+  "critical_code_review_comments": [
+    "MessageReactionCreate validator in backend/models.py correctly enforces single grapheme emoji and supports complex ZWJ/skin reactions with max_length=64 guard.",
+    "MessageReactionsPopup shared CARD_WIDTH and cardLeft logic produced expected exact width/edge parity in tested viewports (390x844 -> 320, 320x568 -> 288, 320x350 -> 288, 844x390 -> 320).",
+    "MessageReactionBadges floating placement (bottom:-13 with bubble margin reserve) visually rendered outside bubble border in measured UI geometry."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration51_reaction_unicode_catalog.py",
+    "/app/test_reports/iteration_51.json"
+  ],
+  "success_rate": {
+    "backend": "100% (3/3 tests passed)",
+    "frontend": "~80% targeted increment checks passed (core alignment/picker/badge geometry passed; same-emoji remove confirmation remains unstable)"
+  },
+  "seed_data_creation": "Backend test created and auto-cleaned TEST_iter51_reaction_unicode_<id> message in conversation 98ea1271-de38-4a76-8be9-c24210657858.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use direct locator flow only: capture last text bubble testID, scroll_into_view_if_needed(), click(delay=350). This closed prior popup-open blocker. For remaining remove-flow issue, wait for popup fully closed before reopening same bubble and reselection. Picker checks already passed: unicorn search (emoji-option-1F984), flags/skin queries, empty state, Smileys/Nature categories, rotate while open.",
+  "rca_of_issue": "RCA (frontend instability): same-emoji remove verification failure appears tied to modal overlay state and timing between picker selection and immediate bubble re-open, not core backend reaction semantics. Reproduction: open popup via last text bubble -> full picker -> select unicorn (adds badge) -> quickly attempt reopen/reselction for remove; observed either pointer interception by popup subtree or non-hidden assertion mismatch. Mitigation: wait for msg-action-card/backdrop hidden event before next bubble interaction and add deterministic popup-state guard for tests."
+}

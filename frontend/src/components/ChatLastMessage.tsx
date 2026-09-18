@@ -17,7 +17,7 @@ export function inboxPreview(message: ChatMessagePreview | null) {
       return { icon: "call", text: text.replace(/^📞\s*/u, "") ||
         (message.call_status === "missed" ? "Missed call" : "Call") } as const;
     case "room":
-      return { icon: "room", text: text.replace(/^🎙\uFE0F?\s*/u, "") || "Voice room" } as const;
+      return { icon: "room", text: "Voiceroom" } as const;
     default:
       return { icon: null, text: text || "Say hello 👋" };
   }

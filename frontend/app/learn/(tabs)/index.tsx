@@ -55,7 +55,7 @@ export default function VocabHome() {
   const streak = stats?.streak ?? 0;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingLeft: insets.left, paddingRight: insets.right }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{

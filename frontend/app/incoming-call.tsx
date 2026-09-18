@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCall } from "@/src/context/CallContext";
 import { useAuth } from "@/src/context/AuthContext";

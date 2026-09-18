@@ -1,0 +1,74 @@
+{
+  "summary": "Frontend-only retest for call-tones iteration42 executed on public preview with dual-session auth fix (post-login wait on connect-header-title). Ordinary call flows (start/cancel/reject/accept) were exercised with media instrumentation. Practice-call reserved flow and unanswered 45s loop verification remain blocked/not fully verifiable.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Ordinary unanswered call 45s timeout loop validation",
+        "issue": "Could not prove 22s outgoing MP3 loop at runtime: repeated sampled currentTime stayed 0.0 during unanswered call window in instrumentation run, so loop continuity assertion failed.",
+        "affected_testIDs": [
+          "chat-call-btn",
+          "call-overlay",
+          "call-connection-status"
+        ]
+      },
+      {
+        "flow": "Practice reserved call via /call",
+        "issue": "QA2-targeted practice call button testID practice-call-4d54db47-1a80-47b1-bcf7-ea76d748c671 never appeared; random-partner fallback also did not match within wait window, so WAV-only popup behavior could not be validated end-to-end.",
+        "affected_testIDs": [
+          "practice-availability-switch",
+          "practice-call-4d54db47-1a80-47b1-bcf7-ea76d748c671",
+          "start-random-match-btn",
+          "outgoing-call-popup",
+          "incoming-call-popup",
+          "call-cancel-request-btn"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/artifacts_iter43_load/frontend_load_390.jpeg",
+    "/app/test_reports/artifacts_iter43_ui_run2/test1_overlay_390.jpeg",
+    "/app/test_reports/artifacts_iter43_ui_run2/test3_connected_390.jpeg",
+    "/app/test_reports/artifacts_iter43_ui_run2/final_qa1.jpeg",
+    "/app/test_reports/artifacts_iter43_ui_run2/final_qa2.jpeg",
+    "/app/test_reports/artifacts_iter43_ui_practice/practice_not_matched_qa1.jpeg",
+    "/app/test_reports/artifacts_iter43_ui_practice/practice_not_matched_qa2.jpeg",
+    "/root/.emergent/automation_output/20260918_111215/console_20260918_111215.log",
+    "/root/.emergent/automation_output/20260918_111358/console_20260918_111358.log"
+  ],
+  "action_items": [
+    "Investigate unanswered outgoing ringtone runtime loop observability/behavior: in test run, outgoing-call.mp3 source+volume+loop config were correct but loop progression could not be demonstrated from currentTime samples.",
+    "Provide deterministic QA fixture for practice reserved call pairing (or guaranteed QA2 availability in partner list) so practice WAV-only popup assertions can run reliably.",
+    "Re-run iteration43 practice scenario once deterministic pairing is available; keep using actual media.src instrumentation rather than guessed /assets URLs."
+  ],
+  "critical_code_review_comments": [
+    "RCA login blocker from iteration42 is resolved in retest approach: waiting for connect-header-title after auth-submit-btn works; app route lands at /connect (not /(tabs) path).",
+    "Static review still aligns with expected routing logic in use-call-tones.ts: ordinary outgoing selects outgoing-call.mp3 at volume 0.16, incoming uses ringtone.wav at 0.35, practice outgoing uses ringtone.wav.",
+    "Call overlay controls behaved correctly in ordinary flow: cancel, reject, accept, and end transitions closed overlays and paused ringtone refs."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_43.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (frontend-only retest as requested)",
+    "frontend": "60% (3/5 critical flows passed; 2/5 blocked/failed)"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_followup": {
+    "ordinary_loop_timeout": "PASS real two-browser screenshot_tool20260918_111923: selected actual playing MP3 ref, currentTime0.213784 then>20 then0.012094 after natural22.224sloop. srcMetro-resolvedMP3,volume.16,looptrue,ready4,errornull. ReceiverWAVcurrentTime.033215volume.35. Both overlays hidden at unanswereddeadline and ALLtone refs paused. No app code fix required.",
+    "random_practice": "PASS real two-browser screenshot_tool20260918_112128: login->Chats Call shortcut->Alllanguages,clearfilters,availabilityON both, bothRandomPartner buttons. ActualWAVonly:incomingcurrentTime.104215volume.35,outgoing.277421volume.16,looptrue. ZERO MP3refs both. Cancelrequest pausesbothtones. QAavailability switched OFF duringcleanup.",
+    "evidence": ["/root/.emergent/automation_output/20260918_111923/console_20260918_111923.log", "/root/.emergent/automation_output/20260918_112128/console_20260918_112128.log", "tone-real-playing.jpeg", "practice-original-tone.jpeg"],
+    "limitations": "Observed actual media playback progression in mobile-sized browser, not physical native speaker/microphone output. No API/audio mocking, no production debug hooks. Historicaltestergaps retained above; now resolved by main runtime tests."
+  },
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Verified credentials from memory file. Dual contexts with microphone permission and post-login connect-header-title wait succeed repeatedly. Ordinary call tests passed for start/cancel/reject/accept transitions and expected source strings: caller outgoing-call.mp3, receiver ringtone.wav; expected volumes 0.16/0.35 observed. Remaining gaps: (1) unanswered-loop proof failed (sampled currentTime remained 0 during timeout run), (2) practice call pairing was not obtainable via direct QA2 partner button or random queue within runtime budget.",
+  "rca_of_issue": "RCA-1 (resolved): Prior auth failure was a test wait condition bug, not login outage; waiting on /connect readiness via connect-header-title is correct and stable. RCA-2 (open): Practice call validation blocked by non-deterministic matchmaking/partner visibility, preventing reserved popup assertions. RCA-3 (open): 45s unanswered loop assertion inconclusive because runtime sampling did not show currentTime progression despite correct media source/volume config; requires deeper runtime telemetry or app-side diagnostic events for ring playback state." 
+}

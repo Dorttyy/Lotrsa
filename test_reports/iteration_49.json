@@ -1,0 +1,75 @@
+{
+  "summary": "Backend+frontend translation/push readiness regression run completed on public preview. Backend local translation mostly passes (12/13) with one real output regression. Frontend chat panel translation core flow passed, but long-press translation menu and inline error path could not be cleanly validated in automation due gesture/reload instability.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/ai/translate",
+        "issue": "Emoji preservation regression: input 'Order #12345 is ready ✅🙂' to Spanish returns 'Orden #12345 está listo' (emoji removed). Requirement says emoji/numbers should remain valid.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "POST /api/ai/translate",
+        "issue": "One flaky infra 502 (Cloudflare bad gateway) observed once during long-input test; immediate retry passed."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Chat message long-press translation action",
+        "issue": "Could not open long-press action sheet reliably in web automation; msg-list-translate did not appear after multiple hold attempts.",
+        "testID": "msg-list-translate",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Chat panel translation inline error+retry",
+        "issue": "Controlled request abort was tested as a MOCKED browser interception; expected inline chat-translation-error did not surface before Metro/web runtime disconnect noise. Retry path later returned translated output.",
+        "affected_testIDs": [
+          "chat-translation-error",
+          "tr-run",
+          "tr-result-text"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration49_translation_and_push_readiness.py",
+    "/app/test_reports/pytest/iteration49_backend.xml",
+    "/app/test_reports/artifacts/iteration_49_load/frontend_load_375.jpg",
+    "/app/test_reports/artifacts/iteration_49_ui_run2/final_ui_state.jpg",
+    "/app/test_reports/artifacts/iteration_49_ui_run3/ui_failure.jpg",
+    "/root/.emergent/automation_output/20260918_150751/console_20260918_150751.log",
+    "/root/.emergent/automation_output/20260918_150845/console_20260918_150845.log"
+  ],
+  "action_items": [
+    "Fix local translation post-processing to retain emoji symbols while preserving numbers/punctuation.",
+    "Investigate long-press gesture path for chat bubbles on web preview so msg-list-translate reliably opens in automated/mobile-web interactions.",
+    "Stabilize/verify inline translation error UX (chat-translation-error) under real network failures; current controlled abort test had runtime disconnect noise.",
+    "Push build-readiness mismatch to requested target: app.json currently uses android package + iOS bundle com.emergent.communityspeak.z97eev, not the requested com.emergent.lingua / unchanged iOS ID from checklist."
+  ],
+  "critical_code_review_comments": [
+    "frontend/app/learn/goal.tsx now correctly redirects legacy /learn/goal to /learn/set-goal.",
+    "Push guardrail behavior is correct in backend/routes/push.py: /api/register-push returns 503 when EMERGENT_PUSH_KEY is placeholder and overrides spoofed user_id with authenticated user.",
+    "backend translation modules reviewed: no httpx import in local_text_translation.py / translation_service.py / routes/ai.py (no external translation client in this path).",
+    "app.json identifiers do not align with the requested native push package/bundle constraints in this review request."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration49_translation_and_push_readiness.py",
+    "/app/test_reports/iteration_49.json"
+  ],
+  "success_rate": {
+    "backend": "92.3% (12/13 tests passed)",
+    "frontend": "Partial run (core chat panel translation passed; long-press and controlled-error paths not fully validated)"
+  },
+  "seed_data_creation": "Sent one Bengali QA message in existing chat 98ea1271-de38-4a76-8be9-c24210657858 during UI verification.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Confirmed: public app load, auth login, chat panel translation (tr-more-languages search/select bn+ar, tr-input/tr-run/tr-result-text Tap to use), translation target switch clears prior result, /learn/goal code-level redirect exists, audio assets 200 at /assets/media/sounds/ringtone.wav and outgoing-call.mp3, TSC noEmit passed. Not fully validated in this run: reliable long-press action menu path and real inline error rendering due web runtime instability during controlled abort.",
+  "rca_of_issue": "Emoji loss RCA: local translation output strips emoji tokens for at least en->es path while keeping numeric token (#12345). Repro: QA login -> POST /api/ai/translate body {text:'Order #12345 is ready ✅🙂', target_language:'es'} -> 200 with translated text missing emoji. Mitigation candidate: preserve/safeguard non-linguistic glyphs (emoji) before model pass and restore after translation or configure tokenizer handling."
+}

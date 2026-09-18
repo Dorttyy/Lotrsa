@@ -1,0 +1,78 @@
+{
+  "summary": "Frontend-only route matrix + branding audit completed on public preview with QA1 login. Executed 108 route+viewport checks across 320x568, 844x390, 768x1024, plus new BoundedSheet interactions at 320x350/844x390. Branding testIDs and Mello name passed on welcome/auth/profile settings. One route is invalid (/learn/goal -> Unmatched Route), tutor booking remains untestable due missing tutor data, and one transient public 502 availability event occurred during rerun.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Learn route",
+        "issue": "Direct route /learn/goal renders Unmatched Route (Page could not be found).",
+        "testID": "N/A",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Learn tutors -> booking flow",
+        "issue": "No tutor dataset available in tested account/session (screen shows 'No tutors match.'), so booking path could not be validated with real data.",
+        "affected_testIDs": [
+          "learn-tutors-screen",
+          "learn-tutors-filters-open"
+        ]
+      },
+      {
+        "flow": "Public preview availability",
+        "issue": "Observed transient Cloudflare 502 host error during targeted rerun; subsequent run recovered and checks continued.",
+        "affected_testIDs": [
+          "N/A"
+        ]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Adaptive icon static check",
+        "issues": [
+          "Asset dimensions are correct (1080x1080), but sampled non-background pixels are present outside Android 66/108 safe-circle boundary (likely corner clipping risk under circular mask)."
+        ]
+      }
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/artifacts/iteration_48/route_matrix_results.json",
+    "/app/test_reports/artifacts/iteration_48/failing_routes_recheck2.json",
+    "/app/test_reports/artifacts/iteration_48/load_check/public_load_390.jpeg",
+    "/app/test_reports/artifacts/iteration_48/matrix/final_state.jpeg",
+    "/app/test_reports/artifacts/iteration_48/fail_recheck2/recheck_6.jpeg",
+    "/root/.emergent/automation_output/20260918_142457/console_20260918_142457.log",
+    "/root/.emergent/automation_output/20260918_142552/console_20260918_142552.log",
+    "/root/.emergent/automation_output/20260918_143131/console_20260918_143131.log"
+  ],
+  "action_items": [
+    "If /learn/goal is expected by product routing, add/restore route or update links to /learn/set-goal.",
+    "Provide QA-safe tutor/course fixture data to validate tutor booking path end-to-end.",
+    "Review adaptive icon safe-zone composition against Android circular mask requirement (66/108 central safe-circle).",
+    "Investigate recurring Expo log warning for missing '/app/frontend/sounds' asset path (pre-existing noise)."
+  ],
+  "critical_code_review_comments": [
+    "Source branding wiring is consistent: app.json name=Mello, icon/adaptive/splash/favicon/notification paths present, and welcome/auth/settings use logo testIDs.",
+    "Route /learn/goal is not defined in Expo Router tree and currently resolves to Unmatched Route; this should not be exposed as a navigable path.",
+    "Supervisor Expo logs still show repeated ENOENT scandir '/app/frontend/sounds' warnings, indicating stale asset references at runtime."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_48.json",
+    "/app/test_reports/artifacts/iteration_48/route_matrix_results.json",
+    "/app/test_reports/artifacts/iteration_48/failing_routes_recheck2.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (explicitly skipped per request)",
+    "frontend": "97% (route matrix and sheet flows pass; one invalid route and data-availability blocker remain)"
+  },
+  "seed_data_creation": "None. Reused existing QA1 account/session and existing app data.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Executed 108 checks: 36 routes x 3 viewports (320x568, 844x390, 768x1024). New shared-sheet flows passed: learn-lessons-filters open/select/apply/close at 320x350 and 844x390; learn-tutors-filters equivalent passed. Learn onboarding rotate/CTA remained reachable; learn set-goal picker bottom-scroll and Next reachability passed. Branding testIDs verified: welcome-app-logo+welcome-app-name Mello, auth-app-logo Mello, settings-app-logo+settings-app-name Mello. /learn/goal specifically shows Unmatched Route. /learn/tutors had no tutor entries in tested data, so booking remains untested-by-data.",
+  "rca_of_issue": "RCA-1 Route mismatch: /learn/goal is not an implemented route; screenshot confirms Expo Unmatched Route page. Mitigation: align deep links/navigation targets to /learn/set-goal or add explicit route file. RCA-2 Availability blip: one test run hit Cloudflare 502 host error while app host restarted; subsequent run succeeded, suggesting transient infra/runtime restart rather than deterministic app-page crash."
+}

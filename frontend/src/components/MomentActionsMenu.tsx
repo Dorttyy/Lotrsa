@@ -4,12 +4,14 @@ import React from "react";
 import {
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 
 import { useTheme } from "@/src/context/ThemeContext";
+import { useScreenSpace } from "@/src/hooks/use-screen-space";
 import { fonts, radius, spacing } from "@/src/theme";
 
 export type MomentAction =
@@ -69,7 +71,11 @@ export const MomentActionsMenu: React.FC<Props> = ({
   onAction,
 }) => {
   const { colors } = useTheme();
+  const { width, height, insets, safeHeight, safeWidth, fontScale } = useScreenSpace();
   const items = isOwner ? ownerItems : viewerItems;
+  const cardWidth = Math.min(260, safeWidth - 32);
+  const top = Math.max(insets.top + 12, Math.min(anchorTop,
+    height - insets.bottom - 12 - Math.min(safeHeight - 24, items.length * 56 * fontScale)));
 
   const handlePress = (key: MomentAction) => {
     Haptics.selectionAsync();
@@ -87,16 +93,21 @@ export const MomentActionsMenu: React.FC<Props> = ({
     >
       <Pressable style={styles.backdrop} onPress={onClose} testID="moment-menu-backdrop">
         <View
+          testID="moment-menu-card"
           style={[
             styles.card,
             {
-              right: anchorRight,
-              top: anchorTop,
+              width: cardWidth,
+              minWidth: 0,
+              maxHeight: height - insets.bottom - top - 12,
+              right: Math.max(insets.right + 16, Math.min(anchorRight, width - insets.left - cardWidth - 16)),
+              top,
               backgroundColor: colors.surfaceTertiary,
               shadowColor: "#000",
             },
           ]}
         >
+          <ScrollView testID="moment-menu-scroll" style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled">
           {items.map((it, idx) => (
             <Pressable
               key={it.key}
@@ -123,6 +134,7 @@ export const MomentActionsMenu: React.FC<Props> = ({
               </Text>
             </Pressable>
           ))}
+          </ScrollView>
         </View>
       </Pressable>
     </Modal>
@@ -152,6 +164,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   label: {
+    flexShrink: 1,
     fontFamily: fonts.textSemi,
     fontSize: 15.5,
   },

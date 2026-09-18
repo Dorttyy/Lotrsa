@@ -1,4 +1,5 @@
 import { VIcon } from "@/src/learn/Icon";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -94,7 +95,7 @@ export default function VocabTutors() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View testID="learn-tutors-screen" style={{ flex: 1, backgroundColor: colors.bg, paddingLeft: insets.left, paddingRight: insets.right }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -105,7 +106,7 @@ export default function VocabTutors() {
       >
         <Text style={s.title}>Tutors for private online lessons</Text>
 
-        <Pressable style={s.filtersBtn} onPress={() => setFiltersOpen(true)}>
+        <Pressable testID="learn-tutors-filters-open" style={s.filtersBtn} onPress={() => setFiltersOpen(true)}>
           <VIcon name="options-outline" size={18} color={colors.onLight} />
           <Text style={s.filtersText}>Filters</Text>
           {activeFilters > 0 && (
@@ -223,12 +224,12 @@ function TutorFiltersModal({
   const s = makeStyles(colors);
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={s.sheetBackdrop} onPress={onClose} />
-      <View style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+      <Pressable testID="learn-tutors-filters-backdrop" style={s.sheetBackdrop} onPress={onClose} />
+      <BoundedSheet testID="learn-tutors-filters-sheet" style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
         <View style={s.sheetHandle} />
         <View style={s.sheetHeader}>
           <Text style={s.sheetTitle}>Filters</Text>
-          <Pressable onPress={() => { setSort("top"); setMinRating(null); setAccent(null); }}>
+          <Pressable testID="learn-tutors-filters-reset" hitSlop={12} onPress={() => { setSort("top"); setMinRating(null); setAccent(null); }}>
             <Text style={s.sheetReset}>Reset</Text>
           </Pressable>
         </View>
@@ -238,6 +239,7 @@ function TutorFiltersModal({
           {[["top", "Top rated"], ["most-lessons", "Most lessons"], ["newest", "Newest"]].map(([v, l]) => (
             <Pressable
               key={v}
+              testID={`learn-tutors-sort-${v}`}
               onPress={() => setSort(v as SortMode)}
               style={[s.chip, sort === v && s.chipActive]}
             >
@@ -251,6 +253,7 @@ function TutorFiltersModal({
           {[3, 4, 5].map((r) => (
             <Pressable
               key={r}
+              testID={`learn-tutors-rating-${r}`}
               onPress={() => setMinRating(minRating === r ? null : r)}
               style={[s.chip, minRating === r && s.chipActive]}
             >
@@ -266,6 +269,7 @@ function TutorFiltersModal({
               {accents.map((a) => (
                 <Pressable
                   key={a}
+                  testID={`learn-tutors-accent-${a}`}
                   onPress={() => setAccent(accent === a ? null : a)}
                   style={[s.chip, accent === a && s.chipActive]}
                 >
@@ -276,10 +280,10 @@ function TutorFiltersModal({
           </>
         )}
 
-        <Pressable style={s.applyBtn} onPress={onClose}>
+        <Pressable testID="learn-tutors-filters-apply" style={s.applyBtn} onPress={onClose}>
           <Text style={s.applyText}>Apply</Text>
         </Pressable>
-      </View>
+      </BoundedSheet>
     </Modal>
   );
 }
@@ -309,7 +313,7 @@ const makeStyles = (c: LearnPalette) =>
     avatar: { width: 52, height: 52, borderRadius: 26 },
     tutorName: { color: c.onLight, fontSize: 18, fontWeight: "800" },
     tutorRole: { color: "#2A2A34", fontSize: 13, fontWeight: "500", marginTop: 2 },
-    metaRow: { flexDirection: "row", gap: 20, alignItems: "center", marginTop: 4, marginBottom: 6 },
+    metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 20, alignItems: "center", marginTop: 4, marginBottom: 6 },
     metaItem: { flexDirection: "row", alignItems: "center", gap: 6 },
     metaText: { color: "#0B0B0F", fontSize: 13, fontWeight: "600" },
     actionRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
@@ -337,6 +341,7 @@ const makeStyles = (c: LearnPalette) =>
     sheetLabel: { color: c.textDim, fontSize: 13, fontWeight: "700", marginTop: 12, marginBottom: 8, textTransform: "uppercase" },
     sheetRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
     chip: {
+      minHeight: 44, justifyContent: "center",
       paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
       backgroundColor: c.surfaceRaised, borderWidth: 1,
       borderColor: c.mode === "light" ? c.border : "transparent",

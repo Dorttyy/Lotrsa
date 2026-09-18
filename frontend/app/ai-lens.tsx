@@ -25,7 +25,8 @@ import Animated, {
 import { langName } from "@/src/constants/languages";
 import { useAuth } from "@/src/context/AuthContext";
 import { api, assetUrl } from "@/src/utils/api";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
 
 const LANG_CYCLE = ["en", "es", "fr", "de", "ja", "ko", "zh", "ar", "hi", "bn", "pt", "ru"];
 
@@ -320,7 +321,7 @@ export default function AiLens() {
             style={styles.lsBackdrop}
             onPress={() => setSettingsOpen(false)}
           />
-          <View style={[styles.lsSheet, { paddingBottom: 30 + insets.bottom }]} testID="ai-lens-lang-sheet">
+          <BoundedSheet style={[styles.lsSheet, { paddingBottom: 30 + insets.bottom }]} testID="ai-lens-lang-sheet">
             <Text style={styles.lsTitle}>Language Settings</Text>
             <View style={styles.lsCard}>
               <Pressable
@@ -371,7 +372,7 @@ export default function AiLens() {
             >
               <Text style={styles.lsConfirmText}>Confirm</Text>
             </Pressable>
-          </View>
+          </BoundedSheet>
         </Modal>
       </SafeAreaView>
     </View>
@@ -412,6 +413,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   lsLabelRow: {
+    flexWrap: "wrap",
     flexDirection: "row",
     alignItems: "center",
     gap: 7,

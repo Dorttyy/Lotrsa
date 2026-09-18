@@ -2,7 +2,8 @@ import { Ionicons } from "@/src/ui/icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useScreenSpace } from "@/src/hooks/use-screen-space";
 import Animated, {
   FadeInDown,
   useAnimatedStyle,
@@ -32,6 +33,7 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
   onClose,
 }) => {
   const { colors } = useTheme();
+  const { safeHeight, insets } = useScreenSpace();
   const styles = React.useMemo(() => makeStyles(colors), [colors]);
   const flameScale = useSharedValue(0);
   const coinScale = useSharedValue(0);
@@ -58,8 +60,9 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <Animated.View entering={FadeInDown.springify().damping(14)} style={styles.card}>
+      <View testID="checkin-backdrop" style={[styles.backdrop, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}>
+        <Animated.View entering={FadeInDown.springify().damping(14)} style={[styles.card, { maxHeight: safeHeight - spacing.xl * 2 }]}>
+          <ScrollView testID="checkin-content" style={{ flexShrink: 1 }}>
           <LinearGradient
             colors={["#F59E0B", "#F97316"]}
             start={{ x: 0, y: 0 }}
@@ -90,6 +93,7 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
               <Text style={styles.btnText}>Awesome!</Text>
             </Pressable>
           </View>
+          </ScrollView>
         </Animated.View>
       </View>
     </Modal>

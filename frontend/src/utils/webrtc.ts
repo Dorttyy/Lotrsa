@@ -19,6 +19,7 @@ export const FALLBACK_ICE = {
 
 /** Voice-optimised capture: echo cancellation, noise suppression, AGC. */
 export const AUDIO_CONSTRAINTS = {
+  video: false,
   audio: {
     echoCancellation: true,
     noiseSuppression: true,
@@ -166,7 +167,7 @@ export const getMicStream = async (): Promise<any> => {
     return await rtc.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
   } catch (err: any) {
     if (err?.name === "OverconstrainedError" || err?.name === "TypeError") {
-      return rtc.mediaDevices.getUserMedia({ audio: true });
+      return rtc.mediaDevices.getUserMedia({ audio: true, video: false });
     }
     throw err;
   }

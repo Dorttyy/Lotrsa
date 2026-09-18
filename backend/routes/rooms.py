@@ -6,18 +6,19 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from auth_utils import CurrentUser
-from config_utils import get_app_config
 from db import db, follows_col, moments_col, room_messages_col, rooms_col, users_col
+from chat_previews import MessagePreview
 from models import (
     RoomCreate,
     RoomGiftCreate,
     RoomMessageCreate,
     RoomRoleUpdate,
     RoomUserAction,
-    _vip_active,
     user_card,
 )
 import rtc_core
+import room_time
+from room_time_clock import RoomTimeAllowance
 from ws_manager import manager
 from room_permissions import can_manage, require_manager, manager_query, protect_member
 
@@ -225,6 +226,7 @@ async def _share_room_to_moments(doc: dict, user_id: str, caption: str | None = 
         "text": text,
         "image_id": None,
         "room_id": doc["_id"],
+        "tags": ["voiceroom"],
         "likes": [],
         "comment_count": 0,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -255,6 +257,7 @@ async def share_room_to_moments(
 
 
 @router.post("", status_code=201)
+@room_time.serialized
 async def create_room(body: RoomCreate, current_user: CurrentUser):
     if not rtc_core.limiter.allow(
         f"room_create:{current_user['_id']}", *rtc_core.ROOM_ACTION_LIMIT
@@ -262,21 +265,8 @@ async def create_room(body: RoomCreate, current_user: CurrentUser):
         raise HTTPException(
             status_code=429, detail="Too many rooms created. Please slow down."
         )
-    # Free users: configurable rooms/day; VIP hosts unlimited rooms.
-    if not _vip_active(current_user):
-        limit = (await get_app_config())["free_rooms_per_day"]
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        usage = current_user.get("host_usage") or {}
-        count = usage.get("count", 0) if usage.get("date") == today else 0
-        if count >= limit:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Free users can host {limit} room(s) per day. Upgrade to VIP for unlimited rooms.",
-            )
-        await users_col.update_one(
-            {"_id": current_user["_id"]},
-            {"$set": {"host_usage": {"date": today, "count": count + 1}}},
-        )
+    # No daily room-count cap. All open rooms share the owner's time budget.
+    await room_time.require_time(current_user, "host")
     languages = (body.languages or [body.language])[:2]
     doc = {
         "_id": str(uuid.uuid4()),
@@ -301,7 +291,10 @@ async def create_room(body: RoomCreate, current_user: CurrentUser):
     }
     if body.mode == "study":
         doc["pomodoro"] = _pomodoro_defaults()
+    doc["time_tracking_started_at"] = doc["created_at"]
+    await room_time.leave_other_rooms(current_user["_id"], doc["_id"])
     await rooms_col.insert_one(doc)
+    await room_time.register_room(doc)
     if body.share_to_moments and not body.is_private:
         await _share_room_to_moments(doc, current_user["_id"])
     if not body.is_private:
@@ -313,7 +306,7 @@ voiceroom_notices_col = db["voiceroom_notices"]
 
 
 async def _notify_followers_of_room(room_doc: dict, host: dict) -> None:
-    """Drop a 'Live & Voiceroom' notice for every follower of the host."""
+    """Drop a 'Voiceroom' notice for every follower of the host."""
     followers = await follows_col.find({"following_id": host["_id"]}).to_list(500)
     if not followers:
         return
@@ -343,7 +336,7 @@ async def _notify_followers_of_room(room_doc: dict, host: dict) -> None:
 
 @router.get("/notices/unread")
 async def voiceroom_notices_unread(current_user: CurrentUser):
-    """Badge + preview for the 'Live & Voiceroom' chat-list row."""
+    """Badge + typed preview for the read-only Voiceroom inbox row."""
     uid = current_user["_id"]
     unread = await voiceroom_notices_col.count_documents({"user_id": uid, "read": False})
     last = (
@@ -353,24 +346,24 @@ async def voiceroom_notices_unread(current_user: CurrentUser):
     )
     preview = None
     if last:
-        host = await users_col.find_one({"_id": last[0]["host_id"]})
-        preview = {
-            "text": f"🎙 {(host or {}).get('name') or 'Someone'} started a Voiceroom!",
-            "created_at": last[0]["created_at"],
-        }
+        preview = MessagePreview(
+            text="Voiceroom", type="room", sender_id=last[0]["host_id"],
+            room_id=last[0]["room_id"], created_at=last[0]["created_at"],
+        ).model_dump(exclude_none=True)
     return {"unread": unread, "last": preview}
 
 
 @router.get("/notices/list")
 async def voiceroom_notices_list(current_user: CurrentUser):
-    """Full 'Live & Voiceroom' feed: one card per notice, newest last.
+    """Read-only Voiceroom feed: one card per notice, newest last.
     Room snapshot (live status / members) is computed at read time."""
     uid = current_user["_id"]
     docs = (
         await voiceroom_notices_col.find({"user_id": uid})
-        .sort("created_at", 1)
+        .sort("created_at", -1)
         .to_list(100)
     )
+    docs.reverse()
     room_ids = list({d["room_id"] for d in docs})
     rooms = await rooms_col.find({"_id": {"$in": room_ids}}).to_list(len(room_ids))
     rmap = {r["_id"]: r for r in rooms}
@@ -402,6 +395,24 @@ async def voiceroom_notices_list(current_user: CurrentUser):
     return out
 
 
+@router.get("/time-allowance", response_model=RoomTimeAllowance)
+@room_time.serialized
+async def time_allowance(current_user: CurrentUser):
+    await room_time.enforce_user(current_user)
+    return await room_time.allowance(current_user)
+
+
+@router.post("/{room_id}/heartbeat")
+@room_time.serialized
+async def room_heartbeat(room_id: str, current_user: CurrentUser):
+    doc = await get_live_room(room_id)
+    allowance = await room_time.heartbeat(doc, current_user)
+    fresh = await get_live_room(room_id)
+    if current_user["_id"] not in fresh.get("members", {}):
+        raise HTTPException(403, "Your room session has ended. Check your daily time allowance.")
+    return {"room": await room_detail(fresh, current_user["_id"]), "allowance": allowance.model_dump()}
+
+
 @router.get("/{room_id}")
 async def get_room(room_id: str, current_user: CurrentUser):
     doc = await get_live_room(room_id)
@@ -409,6 +420,7 @@ async def get_room(room_id: str, current_user: CurrentUser):
 
 
 @router.post("/{room_id}/join")
+@room_time.serialized
 async def join_room(room_id: str, current_user: CurrentUser):
     if not rtc_core.limiter.allow(
         f"room_join:{current_user['_id']}", *rtc_core.ROOM_ACTION_LIMIT
@@ -422,11 +434,16 @@ async def join_room(room_id: str, current_user: CurrentUser):
         raise HTTPException(
             status_code=403, detail="You have been removed from this room by the host"
         )
+    await room_time.require_time(current_user, "host" if uid == doc["host_id"] else "listener")
+    doc = await get_live_room(room_id)
+    await room_time.leave_other_rooms(uid, room_id)
     if uid not in doc["members"]:
-        doc["members"][uid] = {"role": "host" if uid == doc["host_id"] else "listener", "mic_on": False, "hand_raised": False}
+        doc["members"][uid] = {"role": "host" if uid == doc["host_id"] else "listener", "mic_on": False, "hand_raised": False,
+                                "joined_at": datetime.now(timezone.utc).isoformat()}
         await rooms_col.update_one(
             {"_id": room_id}, {"$set": {f"members.{uid}": doc["members"][uid]}}
         )
+        await room_time.register_room(doc)
         welcome = {
             "_id": str(uuid.uuid4()),
             "room_id": room_id,
@@ -442,32 +459,24 @@ async def join_room(room_id: str, current_user: CurrentUser):
             list(doc["members"].keys()),
             {"type": "room_message", "message": _message_public(welcome)},
         )
+    await room_time.register_room(doc)
     return await room_detail(doc, current_user["_id"])
 
 
 @router.post("/{room_id}/leave")
+@room_time.serialized
 async def leave_room(room_id: str, current_user: CurrentUser):
-    doc = await get_live_room(room_id)
-    uid = current_user["_id"]
-    if uid in doc["members"]:
-        doc["members"].pop(uid)
-        await rooms_col.update_one({"_id": room_id}, {"$unset": {f"members.{uid}": ""}})
-        # Ownership stays unchanged while the host is away. Empty rooms close.
-        await rooms_col.update_one({"_id": room_id, "members": {}}, {"$set": {"is_live": False}})
-        await broadcast_room(doc)
-        await manager.send_to_user(uid, {"type": "room_left", "room_id": room_id})
+    await get_live_room(room_id)
+    await room_time.remove_member(room_id, current_user["_id"])
     return {"ok": True}
 
 
 @router.post("/{room_id}/end")
+@room_time.serialized
 async def end_room(room_id: str, current_user: CurrentUser):
     doc = await get_live_room(room_id)
     require_manager(doc, current_user["_id"])
-    await rooms_col.update_one({"_id": room_id, **manager_query(current_user["_id"])}, {"$set": {"is_live": False}})
-    rtc_core.invalidate_room(room_id)
-    await manager.broadcast(
-        list(doc["members"].keys()), {"type": "room_ended", "room_id": room_id}
-    )
+    await room_time.close_room(room_id)
     return {"ok": True}
 
 
@@ -595,6 +604,7 @@ async def transfer_host(
 
 
 @router.post("/{room_id}/kick")
+@room_time.serialized
 async def kick_member(room_id: str, body: RoomUserAction, current_user: CurrentUser):
     """Host removes (and bans) a member from the room — HelloTalk style."""
     doc = await get_live_room(room_id)
@@ -603,6 +613,7 @@ async def kick_member(room_id: str, body: RoomUserAction, current_user: CurrentU
     if body.user_id == doc["host_id"]:
         raise HTTPException(status_code=400, detail="The host cannot be removed")
     if body.user_id in doc["members"]:
+        await room_time.finish_intervals({"room_id": room_id, "user_id": body.user_id, "bucket": "listener"})
         doc["members"].pop(body.user_id)
         await rooms_col.update_one(
             {"_id": room_id, **manager_query(current_user["_id"])},

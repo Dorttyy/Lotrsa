@@ -41,8 +41,9 @@ export default function VocabVocabulary() {
     col === "purple" ? colors.cardPurple : col === "lime" ? colors.cardLime : colors.cardMint;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingLeft: insets.left, paddingRight: insets.right }}>
       <ScrollView
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: insets.top + 12,

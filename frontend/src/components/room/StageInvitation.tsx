@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, ThemeColors } from "@/src/theme";
 import { api, Room } from "@/src/utils/api";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
 
 type Invitation = { id: string; from: string; expires_at: number; kind: "stage" | "moderators" };
 
@@ -64,11 +65,11 @@ export function StageInvitation({ room, userId, subscribe, onAccepted }: {
   const prefix = moderator ? "moderator-invitation" : "stage-invitation";
   return <Modal transparent visible={!!invitation && present} animationType="fade" onRequestClose={() => void respond(false)}>
     <View style={[s.overlay, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }]}>
-      <View testID={moderator ? "room-moderator-invitation" : "room-stage-invitation"} style={s.card} accessibilityViewIsModal>
+      <BoundedSheet testID={moderator ? "room-moderator-invitation" : "room-stage-invitation"} style={s.card} accessibilityViewIsModal>
         <Text testID={`${prefix}-title`} style={s.title}>{moderator ? "Become a room moderator?" : "Invite you to the stage"}</Text>
         {!!error && <Text testID={`${prefix}-error`} style={s.error}>{error}</Text>}
         <View style={s.actions}><Pressable testID={`${prefix}-reject`} disabled={busy} onPress={() => respond(false)} style={[s.button,s.reject]}><Text style={s.rejectText}>Reject</Text></Pressable><Pressable testID={`${prefix}-accept`} disabled={busy} onPress={() => respond(true)} style={[s.button,s.accept]}><Text style={s.acceptText}>{busy ? "Please wait…" : "Accept"}</Text></Pressable></View>
-      </View>
+      </BoundedSheet>
     </View>
   </Modal>;
 }

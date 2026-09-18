@@ -5,6 +5,7 @@ import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useLearnTheme } from "@/src/learn/ThemeContext";
+import { useTabContentHeight } from "@/src/hooks/use-screen-space";
 
 type IonIcon = keyof typeof Ionicons.glyphMap;
 
@@ -28,6 +29,7 @@ const TABS: TabDef[] = [
 export default function VocabTabsLayout() {
   const { colors } = useLearnTheme();
   const insets = useSafeAreaInsets();
+  const tabContentHeight = useTabContentHeight();
   const bottomGap = Math.max(insets.bottom, 8);
 
   return (
@@ -55,7 +57,7 @@ export default function VocabTabsLayout() {
           backgroundColor: colors.tabBg,
           borderTopColor: colors.border,
           borderTopWidth: colors.mode === "light" ? StyleSheet.hairlineWidth : 0,
-          height: 64 + bottomGap,
+          height: tabContentHeight + bottomGap,
           paddingBottom: bottomGap,
           paddingTop: 4,
           ...Platform.select({

@@ -1,0 +1,68 @@
+{
+  "summary": "Frontend-only P0 responsiveness/safe-area/keyboard audit executed on public preview with QA credential login. Multi-viewport smoke (320x568, 360x640, 390x844, 430x932, 844x390, 768x1024) passed for covered routes with no horizontal overflow findings, but two keyboard-simulation regressions remain in chat and moment detail composers at 390x350.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Chat composer",
+        "issue": "Send button becomes hidden/unreachable when viewport shrinks to 390x350 (simulated keyboard), while composer scroll remains visible.",
+        "testID": "chat-send-btn",
+        "priority": "CRITICAL"
+      },
+      {
+        "component": "Moment detail comment composer",
+        "issue": "Comment send button becomes hidden/unreachable when viewport shrinks to 390x350 (simulated keyboard).",
+        "testID": "comment-send-btn",
+        "priority": "CRITICAL"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Chat long-press message -> reaction popup reachability check",
+        "issue": "Could not validate in this run because selected conversation lacked automatable media bubble trigger and text-message bubbles do not expose stable testIDs for reliable long-press automation.",
+        "affected_testIDs": [
+          "msg-action-card",
+          "msg-action-backdrop"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/artifacts/iteration_47/public_load_390.jpeg",
+    "/app/test_reports/artifacts/iteration_47/failure.jpeg",
+    "/app/test_reports/artifacts/iteration_47/failure_run2.jpeg",
+    "/app/test_reports/artifacts/iteration_47/final_run3_390.jpeg",
+    "/root/.emergent/automation_output/20260918_140705/console_20260918_140705.log",
+    "/root/.emergent/automation_output/20260918_141027/console_20260918_141027.log",
+    "/root/.emergent/automation_output/20260918_141128/console_20260918_141128.log",
+    "/root/.emergent/automation_output/20260918_141223/console_20260918_141223.log"
+  ],
+  "action_items": [
+    "Fix chat composer layout so chat-send-btn always remains visible/reachable during short-height keyboard scenarios (390x350 and landscape constraints).",
+    "Fix moment detail composer layout so comment-send-btn remains visible/reachable in short-height keyboard scenarios.",
+    "Add stable testID on regular text message bubble wrappers in chat/[id] to enable deterministic long-press reaction regression automation.",
+    "After fixes, retest full viewport matrix and re-run chat/moment keyboard shrink-expand flow."
+  ],
+  "critical_code_review_comments": [
+    "frontend/app/chat/[id].tsx keeps composer controls inside a constrained scroll area (chat-composer-scroll maxHeight 70%), which likely contributes to send CTA clipping on short viewport keyboard simulation.",
+    "KeyboardAvoidingView web branch is a plain View (no avoid behavior), so web keyboard simulation depends entirely on viewport resizing and local layout ownership; composer rows must self-protect visibility.",
+    "Very large screens increase P0 regression risk: room/[id].tsx, chat/[id].tsx, and (tabs)/moments.tsx exceed modular size guidance (>700 lines)."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_47.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (explicitly skipped per request)",
+    "frontend": "85% (broad route/viewport smoke passed; 2 critical keyboard-visibility failures remain)"
+  },
+  "seed_data_creation": "Posted QA test messages/comments during validation (chat and moment detail). No auth/payment/backend behavior changed.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Covered routes: tabs/chats, tabs/connect, tabs/moments, tabs/voice, tabs/profile, chat/[id], connect gender/city sheets, moments filter sheet, moment/[id], moment-compose + topic sheet, room/[id], profile settings, pro/lessons/vocab routes. Overflow detector reported zero actionable overflows across tested viewport matrix (intentional horizontal carousels excluded). Native emulator-only checks (true native safe-area behavior, real keyboard overlays, font-scale 150% OS-level rendering, WebRTC audio transport) were NOT RUN in this web-only environment.",
+  "rca_of_issue": "RCA 1 (chat): reproduce by opening existing chat, typing message, then shrinking viewport to 390x350; chat-send-btn disappears while chat-composer-scroll remains present. Likely root cause is constrained composer region + short viewport without guaranteed CTA anchoring. RCA 2 (moment detail): open moment detail, type comment, shrink viewport to 390x350; comment-send-btn disappears. Likely root cause is bottom composer layout not preserving send control under short-height keyboard simulation."
+}

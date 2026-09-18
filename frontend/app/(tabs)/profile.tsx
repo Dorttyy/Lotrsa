@@ -16,7 +16,8 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
+import { AppLogo } from "@/src/components/AppLogo";
 
 import { Avatar } from "@/src/components/Avatar";
 import { GenderBadge, VipBadge } from "@/src/components/Badges";
@@ -159,7 +160,7 @@ export default function Profile() {
     try {
       await Share.share({
         message:
-          "I'm learning languages on LinguaConnect — chat with native speakers, get AI translations and make friends worldwide. Join me!",
+          "I'm learning languages on Mello — chat with native speakers, get AI translations and make friends worldwide. Join me!",
       });
     } catch {
       // dismissed
@@ -587,7 +588,7 @@ export default function Profile() {
         animationType="slide"
         onRequestClose={() => setSettingsOpen(false)}
       >
-        <SafeAreaView style={styles.modalScreen} edges={["top"]}>
+        <SafeAreaView style={styles.modalScreen} edges={["top", "bottom"]}>
           <View style={styles.modalHeader}>
             <Pressable
               testID="settings-close-btn"
@@ -781,10 +782,10 @@ export default function Profile() {
             <View style={styles.section}>
               <View style={styles.settingRow}>
                 <View style={styles.settingIcon}>
-                  <Ionicons name="chatbubbles" size={18} color={colors.brand} />
+                  <AppLogo size={28} testID="settings-app-logo" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.settingTitle}>LinguaConnect</Text>
+                  <Text testID="settings-app-name" style={styles.settingTitle}>Mello</Text>
                   <Text style={styles.settingSub}>
                     Version 1.2 · Language exchange, AI tools, voice rooms & calls
                   </Text>

@@ -102,6 +102,110 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
+## FINAL LATEST — narrow aligned emoji cards + one reaction per user/message
+user_problem_statement: "Final: both emoji/actioncards narrowerandidenticalWIDTH; text/voiceabove; floatingbadgeoutsideborder; all3979emojiwithpluspicker. One reaction per USER per MESSAGE, unlimiteddistinctmessages."
+frontend:
+  - task: "Final aligned258px reactioncards, fullpicker, floatingbadge, replace/remove/multiplemessages"
+    implemented: true
+    working: true
+    needs_retesting: false
+    priority: "high"
+    status_history:
+      - agent: "main"
+        working: true
+        comment: "Livebrowser173029waitedrealHTTPmutationacks:1reactionadd,replace,remove,independentmessagesPASS;text+voiceboth258.173038voice320x350finalaction+picker/backPASS. Earlier51overlaystatefalsereportclosedwithack+backdrophiddenwait/freshfixture. Backend19+3regressionsPASS. See /app/test_reports/P0_MELLO_FINAL_VERIFICATION.md. Nativepushactualdeliveryblockedbyplaceholderkey/buildcredentials, honestnotdeviceverified."
+  - task: "P0, Mello logo/name, free local Chat translation"
+    implemented: true
+    working: true
+    needs_retesting: false
+    priority: "high"
+    status_history:
+      - agent: "main"
+        working: true
+        comment: "Scopeverifiedwebmatrix+realAPI/UI; localM2M100nopaiddowngrade/fallback. NativeOSnotchkeyboardandactualpushstillphysicalbuildacceptance. NativeJSexports--no-bytecodePASS;notnativebinaryproof. DeferredP1untouched."
+
+## CURRENT P0 ONLY + uploaded app branding (historical section)
+user_problem_statement: "P0 করে ফেলো সম্পূর্ণটা. বাদ বাকিগুলো পরে. Additional approved: use uploaded xgnt8aha JPG for logo and app icon, keep gray background. No redesign, no P1 features."
+frontend:
+  - task: "Global responsive/safe-area/keyboard layout fixes"
+    implemented: true
+    working: "NA"
+    needs_retesting: true
+    priority: "high"
+    status_history:
+      - agent: "main"
+        working: true
+        comment: "Test47 core six-viewports no overflow. Main fixed actual chat FlatList starving composer (flex basis0/list, nonshrinking composer); real draft+trial Send PASS 390x350,320x350,844x390,768x1024,390x844. Comments same five viewports PASS, Send visible and hit-testable. Corrected earlier report checked empty draft AFTER sending. Text-bubble testIDs added; popup last msg-list-multi reachable at320x350 and backdrop closes. Evidence automation142107+141633. Need NEW remaining route families + sheets coverage, not rerun entire core flows."
+  - task: "Exact uploaded logo/icons"
+    implemented: true
+    working: "NA"
+    needs_retesting: true
+    priority: "high"
+    status_history:
+      - agent: "main"
+        working: true
+        comment: "Six derived PNGs stored/roundtrip hashes verified in managed storage; bundled icon/adaptive/splash/logo/favicon/notification. Source art/colors/background retained, crop gray margin only. Auth logo screenshot verified. Need Welcome/settings logo + native config/asset mask static check. No physical native binary available."
+test_plan:
+  current_focus:
+    - "NEW coverage: Learn, Pro, Premium, Lessons, auxiliary static routes and changed sheets, 320portrait/844landscape/768tablet; page by page record. Preserve actual data/auth; don't create new users or billing."
+    - "Brand logo welcome/settings and native Expo icon/config + Android safe circle; source/template audit only native not hardware."
+  test_all: false
+agent_communication:
+  - agent: "main"
+    message: "Use existing current QA creds. Public preview loads after old navigation context import fixed to expo-router/js-tabs. P0+logo only; remaining P1 deferred. Native notches/real OS keyboards NOT web proven. No appcode edits by tester; exact actionable viewport/bounds for defects. TSC zero; legacy eslint compiler warnings remain outside layout, two literal apostrophes fixed."
+
+## Latest active tasks — daily room quotas + all Send icons + Voiceroom/translation + Practice title
+user_problem_statement: "Bengali confirmed DAILY freehosting2h plusSEPARATElistener/speaker2h acrossunlimitedroomCOUNT;VIPunlimitedboth. LatestSendclarification: allmessagetextsendbuttonsuseuploadedicons8-send-512.png,NOTjustprivatechat. Practicecorrection: INNER/callpage titlePracticeandsmall;shortcutPracticebutnormalfont;Chatsunchanged. EarlierconfirmedVoiceroomnotificationsread-onlyoptionক,avatarbadgeatboundary,roomsharepreviewMic+Voiceroom,#voiceroomMomentsautotag,sharedMomentsTranslationIconeverywhere."
+backend:
+  - task: "Persistent daily UTC role time + server enforcement + room share tag"
+    implemented: true
+    working: "NA"
+    file: "backend/room_time.py; room_time_clock.py; routes/rooms.py; server.py"
+    needs_retesting: true
+    comment: "NewMongoledger(noinmemorycounters)uniqueopeninterval perroom/user/bucket. Hostcountsopenownedroomsevenaway; concurrentroomsSUM;listenerincludesstageroles;VIPskiplimit;expiredVIPfree_sinceexpiry.1swatchdogwarn5min/endhostrooms/removeonlylistenerwithoutban.75sofflinegraceandliveWSbackgroundrefresh.Heartbeatserver-only. Oldhost_usage/countgateignored;privateguardsretained;share_to_moments helper tagsvoiceroom. Lintclean+APIroot200. NeedrealAPI+boundary tests."
+frontend:
+  - task: "Uploaded global Send icon and compact Practice internal title"
+    implemented: true
+    working: true
+    needs_retesting: true
+    comment: "MainbrowserPASS: insidePractice18px,shortcutPractice11px,Chats28px; actualchatcomposerbuttonimagepoints to originalsend.png. Globalaliasbridgecoverssend/paperplane(outlineincluded),nohandlerchanges. Needrepresentativeactualsendfunctionaltest. SourcePNG7099bytesSHA28f7b1953f4ecc712c3acb86301ee5f375811393bdac5531b42000ce8d76784a."
+  - task: "QuotaUI, create-modal navigation, Voiceroomidentity/tag, sharedTranslationIcon"
+    implemented: true
+    working: "NA"
+    needs_retesting: true
+    comment: "Main390screenshotVIPunlimitedUIloads; newRoomTimePanel/Badge/Notice atroot forminimized. CreateModalunmounts beforeeffectnavigation. Roomlifecycleeventscloseaudio &navigateonquotaend. Noticesread-onlytitleVoiceroom; avatarfixedbounds; WSrefresh; latesttypedroompreview takespriorityoverlivepresence. All文Aad-hocglyphsreplacedwithsameLanguagesasMomentsdetail; existingcommenttranslatehandlerwiredinsteadnoops. DedicatedlintsPASS;TSCEXACTsame16baseline. ProjectCLIcompilerextra diagnosticspreexisting (refs/setState/staticnestedcomponents),notintroducedbythisincrement."
+test_plan:
+  current_focus:
+    - "BACKENDfirst:free2hseparatepools,Vipunlimited,oldroomcountignored,closedintervals/rejoin/roles/overlappingrooms,multiUTCday,boundaryautoend/kickwarn,protectedprivate/noquotaoverridebody. TestONLYQAfixturesandrestorealltheirflags/intervals."
+    - "ThenUI:QAfree/VIPcounters,createModalnav,quotaexhaustionnotice&audioend/minimized,Sendexactassetacrosschat/group/Moments/room andactualsend,preservedPractice,Voiceroombadgeand#tag&translateglyphactualpaths."
+  test_all: false
+agent_communication:
+  - agent: "main"
+    message: "UseknownQA1/QA2memorycreds;loginwaitconnect-header-titleNOT/(tabs)URL. Rootprevioussoundcomplete:iteration43+mainrealMP3loop45stimeoutandRandomPracticeWAVonlyPASS20260918_111923/112128. Don'tretestcallsorpaidintegrations. CurrentQA1readsVIPunlimited;canusetemporaryQAentitlementfixtureonlyrestoreexactly,noauthsignup/realpeopleedits. API/WSnotmocked. Needtestartifacts andreport44+."
+
+## Previous verified task — ordinary outgoing call uploaded ringback
+user_problem_statement: "User provided MP3 and confirmed হ্যাঁ ঠিক এভাবেই করো: play uploaded sound softly only to ordinary private/chat/profile caller; original incoming ringtone stays. Do NOT apply new MP3 to Random Practice. Stop on accept/reject/cancel/timeout."
+frontend:
+  - task: "Separate normal outgoing MP3 from unchanged incoming and Practice WAV"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/hooks/use-call-tones.ts; src/context/CallContext.tsx; assets/sounds/outgoing-call.mp3"
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Exact userMP3 bundled22.224s/888960bytes. Hook choosesMP3 onlystatusoutgoing&&!practice volume0.16; incoming/practiceexistingWAV0.35/0.16. Asyncseekguard preventslateplay aftercancel, syncstoponcallstatus/identitychange, phase-onlyringingcontinueswithoutrestart. Incomingnativevibration preserved. No other functionality changes."
+test_plan:
+  current_focus:
+    - "Two existingQA browser sessions: actual ordinary chat-call button -> callerMP3playing/loop0.16, receiverWAVplaying0.35, cancel+reject+accept bothstop, secondcallrewinds,45snoanswerstop. Instrument HTMLMediaElement play/pause with actual methods (observation only), realAPI/WS/RTC."
+    - "Practice reservedcall viaCallhub: oldWAV remains outgoing andincoming, NEVER MP3; cancelcleanup. VoiceRooms/voice-message source code unchanged."
+    - "Check uploaded filehash/exactservedbytes, incominghashunchanged, no render errors. No physical-device verification claim."
+  test_all: false
+agent_communication:
+  - agent: "main"
+    message: "Use existingQA1/QA2 credentials only; QA-only realcalltest records allowed. Clear only your own test call/room state, do not touch realpeople. No newaccounts/payments/paidAI/no networkmocks; fakebrowser microphone allowed and disclose mediafixture. testIDs chat-call-btn/call-overlay/call-connection-status/call-accept-btn/call-decline-btn/call-end-btn/call-cancel-request-btn. Browsercontexts throughpage.context.browser.new_context. Noappcodeedits."
+
 ## Latest current task — inbox preview icons ONLY
 user_problem_statement: "User explicitly narrowed earlier Do all: আপাতত শুধু Chats list latest preview beside each avatar/name: existing app mic for voice messages and voice-room shares, existing call artwork for missed/other calls. Preserve all other behavior."
 backend:

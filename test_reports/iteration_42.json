@@ -1,0 +1,65 @@
+{
+  "summary": "Iteration 42 completed backend smoke + asset integrity checks. Frontend real call-tone flow automation was blocked after 3 repeated login-navigation attempts in dual-context Playwright run, so full ordinary/practice ringing behavior could not be verified end-to-end.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Two-session real call-tone verification (ordinary/practice)",
+        "issue": "Automation blocked at login progression due repeated post-login URL wait mismatch in test run; full call accept/reject/cancel/timeout audio assertions not executed.",
+        "affected_testIDs": [
+          "login-btn",
+          "auth-email-input",
+          "auth-password-input",
+          "auth-submit-btn",
+          "chat-call-btn",
+          "call-accept-btn",
+          "call-decline-btn",
+          "call-end-btn",
+          "call-cancel-request-btn"
+        ]
+      },
+      {
+        "flow": "Browser metadata fetch for direct /assets/sounds/* path",
+        "issue": "Direct metadata loading by '/assets/sounds/*.mp3|wav' failed in web runtime; bundle path resolution likely required, so that specific browser-only metadata method was not usable.",
+        "affected_testIDs": []
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration42_call_tone_backend_smoke.py",
+    "/app/test_reports/pytest/iteration42_backend.xml",
+    "/app/tests/audio_asset_check.py",
+    "/app/test_reports/artifacts_iter42_load/frontend_load_390.jpeg",
+    "/app/test_reports/artifacts_iter42_ui_run"
+  ],
+  "action_items": [
+    "Re-run full two-session UI audio verification with corrected post-login routing expectation (/connect route indicator instead of /(tabs) URL pattern) and keep current media instrumentation.",
+    "Execute pending assertions not completed this run: ordinary Calling->Ringing continuity, caller-cancel, receiver-reject, receiver-accept tone stop, 45s timeout stop, and practice WAV-only routing.",
+    "Optional: expose stable post-login screen testID on Connect screen to make dual-context automation deterministic."
+  ],
+  "critical_code_review_comments": [
+    "Static review confirms ordinary-vs-practice selection logic in use-call-tones.ts is correctly gated by !incoming && !call.practice for outgoing MP3 use.",
+    "CallContext synchronous stop in setCall (status/callId/practice change) aligns with preventing stale async playback after transition.",
+    "No backend route changes detected in rtc.py/call_practice.py for this increment; backend behavior remained stable in smoke tests."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration42_call_tone_backend_smoke.py",
+    "/app/tests/audio_asset_check.py",
+    "/app/test_reports/iteration_42.json"
+  ],
+  "success_rate": {
+    "backend": "100% (3/3)",
+    "frontend": "20% (load + static/audio-file integrity checks only; key e2e call-tone flows not run)"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Actual passed: backend smoke 3/3; outgoing-call.mp3 exact hash d4ecc39c... bytes 888960 duration 22.224; ringtone.wav hash 380ff60a... unchanged. Not run: real two-session call UI/audio lifecycle validations (ordinary/proactice accept/reject/cancel/timeout and media stop assertions). Loop-prevention triggered after 3 failed login-flow automation attempts.",
+  "rca_of_issue": "Reproduction: dual-context Playwright run repeatedly stopped at post-login navigation wait; backend logs confirm login API returned 200, indicating test progression check was mismatched rather than auth outage. Mitigation: use a route-agnostic post-login readiness check (e.g., connect-screen testID/known tab control) before starting call tests."
+}

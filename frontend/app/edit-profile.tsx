@@ -22,8 +22,8 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { KeyboardAvoidingView } from "@/src/components/layout/KeyboardAvoidingView";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
 
 import { AppSwitch } from "@/src/components/AppSwitch";
 import { Avatar } from "@/src/components/Avatar";
@@ -754,7 +754,7 @@ export default function EditProfile() {
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 96 + insets.bottom }}
+        contentContainerStyle={{ paddingBottom: 96 + insets.bottom, paddingLeft: insets.left, paddingRight: insets.right }}
         showsVerticalScrollIndicator={false}
       >
         {/* Cover header */}
@@ -1176,7 +1176,7 @@ export default function EditProfile() {
       </ScrollView>
 
       {/* Bottom bar */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12, paddingLeft: insets.left + 20, paddingRight: insets.right + 20 }]}>
         <Pressable
           testID="preview-btn"
           style={styles.previewBtn}
@@ -1212,14 +1212,14 @@ export default function EditProfile() {
           style={styles.editorBackdrop}
         >
           <Pressable style={{ flex: 1 }} onPress={closeEditor} />
-          <View style={styles.editorSheet}>
+          <View testID="profile-editor-sheet" style={[styles.editorSheet, { maxHeight: "90%", flexShrink: 1, paddingBottom: insets.bottom + 16, marginLeft: insets.left, marginRight: insets.right }]}>
             <View style={styles.editorHandle} />
             <View style={styles.editorHeader}>
-              <Pressable onPress={closeEditor} disabled={busy}>
+              <Pressable testID="profile-editor-cancel" hitSlop={12} onPress={closeEditor} disabled={busy}>
                 <Text style={styles.editorCancel}>Cancel</Text>
               </Pressable>
               <Text style={styles.editorTitle}>{editor?.title}</Text>
-              <Pressable onPress={commit} disabled={busy}>
+              <Pressable testID="profile-editor-save" hitSlop={12} onPress={commit} disabled={busy}>
                 {busy ? (
                   <ActivityIndicator size="small" color={colors.brand} />
                 ) : (
@@ -1232,7 +1232,7 @@ export default function EditProfile() {
             ) : null}
 
             <ScrollView
-              style={{ maxHeight: 380 }}
+              style={{ maxHeight: 380, flexShrink: 1 }}
               contentContainerStyle={{ paddingBottom: spacing.md }}
               keyboardShouldPersistTaps="handled"
             >

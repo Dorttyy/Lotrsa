@@ -18,7 +18,7 @@
  */
 
 import React from "react";
-import type { StyleProp, TextStyle } from "react-native";
+import type { ColorValue, StyleProp, TextStyle } from "react-native";
 import {
   Activity,
   AlertCircle,
@@ -179,7 +179,6 @@ import {
   ScanFace,
   ScanLine,
   Search,
-  Send,
   Server,
   Settings,
   Share2,
@@ -238,15 +237,18 @@ import {
 } from "lucide-react-native";
 
 import { MicGlyph, MicOffGlyph } from "@/src/ui/MicGlyph";
+import { SendGlyph } from "@/src/ui/SendGlyph";
 import { resolveUploadedAction, UploadedActionIcon } from "@/src/ui/UploadedActionIcon";
 import { FilterGlyph } from "@/src/ui/FilterGlyph";
 import { genderColors } from "@/src/theme";
 
 type LucideCmp = React.ComponentType<{
   size?: number;
-  color?: string;
+  color?: ColorValue;
   strokeWidth?: number;
-  fill?: string;
+  fill?: ColorValue;
+  testID?: string;
+  accessibilityLabel?: string;
   // Lucide types style as ViewStyle while our legacy icon API used TextStyle;
   // both work at runtime (props land on an <Svg>), so keep it loose here.
   style?: any;
@@ -328,8 +330,6 @@ const MAP: Record<string, LucideCmp> = {
   "chat-processing": MessageCircle,
   mail: Mail,
   "mail-unread": Mail,
-  send: Send,
-  "paper-plane": Send,
   call: Phone,
   "call-outline": Phone,
   megaphone: Megaphone,
@@ -717,7 +717,8 @@ const NO_DUOTONE = new Set([
 // Soft interior tint (~15% of the stroke colour) that gives every icon the
 // signature "duotone" brand look. Only hex colours can be tinted reliably;
 // anything else (named colours, rgba strings) simply skips the tint.
-function duotoneTint(color: string): string | null {
+function duotoneTint(color: ColorValue): string | null {
+  if (typeof color !== "string") return null;
   if (/^#[0-9a-fA-F]{6}$/.test(color)) return `${color}26`;
   if (/^#[0-9a-fA-F]{3}$/.test(color)) {
     const [, r, g, b] = color;
@@ -737,7 +738,7 @@ function resolve(name?: string | null): LucideCmp {
 export interface IconProps {
   name?: string;
   size?: number;
-  color?: string;
+  color?: ColorValue;
   strokeWidth?: number;
   style?: StyleProp<TextStyle>;
   testID?: string;
@@ -755,6 +756,9 @@ function createFamily() {
     accessibilityLabel,
   }: IconProps) => {
     const filterName = (name || "").replace(/-(outline|sharp)$/i, "");
+    if (filterName === "send" || filterName === "paper-plane") {
+      return <SendGlyph size={size} color={color} style={style} testID={testID} accessibilityLabel={accessibilityLabel} />;
+    }
     if (filterName === "male") color = genderColors.male;
     if (filterName === "female") color = genderColors.female;
     if (["options", "filter", "funnel", "tune", "tune-variant", "tune-vertical"].includes(filterName)) {
@@ -785,7 +789,6 @@ function createFamily() {
         strokeWidth={strokeWidth ?? (isOutline ? 1.9 : 2.1)}
         fill={filled ? color : tint ?? "none"}
         style={style}
-        // @ts-expect-error forwarded to underlying Svg
         testID={testID}
         accessibilityLabel={accessibilityLabel}
       />

@@ -1,4 +1,5 @@
 import { Ionicons } from "@/src/ui/icons";
+import { TranslationIcon } from "@/src/ui/TranslationIcon";
 import { useExclusiveVoicePlayer } from "@/src/hooks/use-exclusive-voice-player";
 import {
   AudioModule,
@@ -24,8 +25,8 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardAvoidingView } from "@/src/components/layout/KeyboardAvoidingView";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { ActionSheetPopup, QuickAction, SheetHighlight, SheetRow } from "@/src/components/ActionSheetPopup";
 import { Avatar } from "@/src/components/Avatar";
@@ -181,9 +182,11 @@ export default function MomentDetail() {
     if (!text) return;
     try {
       const res = await api.post<{ translated: string }>("/ai/translate", { text });
-      Alert.alert("Translation", res.translated);
+      if (Platform.OS === "web") window.alert(`Translation\n${res.translated}`);
+      else Alert.alert("Translation", res.translated);
     } catch {
-      Alert.alert("Translate", "Translation failed. Please try again.");
+      if (Platform.OS === "web") window.alert("Translation failed. Please try again.");
+      else Alert.alert("Translate", "Translation failed. Please try again.");
     }
   };
 
@@ -648,6 +651,9 @@ export default function MomentDetail() {
           </View>
         ) : (
           <FlatList
+            testID="moment-comment-list"
+            style={{ flex: 1, minHeight: 0 }}
+            keyboardShouldPersistTaps="handled"
             data={rootComments}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
@@ -859,7 +865,7 @@ export default function MomentDetail() {
                 {moment.tags && moment.tags.length > 0 ? (
                   <View style={styles.tagRow}>
                     {moment.tags.map((t) => (
-                      <View key={t} style={styles.tagChip}>
+                      <View key={t} testID={`moment-detail-tag-${t}`} style={styles.tagChip}>
                         <Text style={styles.tagChipText}>#{t}</Text>
                       </View>
                     ))}
@@ -895,8 +901,8 @@ export default function MomentDetail() {
                       {translating ? (
                         <ActivityIndicator size="small" color={colors.brand} />
                       ) : (
-                        <Ionicons
-                          name="language"
+                        <TranslationIcon
+                          testID="moment-detail-translate-icon"
                           size={19}
                           color={translation ? colors.brand : colors.onSurfaceSecondary}
                         />
@@ -964,6 +970,8 @@ export default function MomentDetail() {
                       </Text>
                       <View style={styles.commentMsgRow}>
                         <Pressable
+                          testID={`comment-bubble-${item.id}`}
+                          style={{ flexShrink: 1, minWidth: 0 }}
                           ref={(n) => {
                             commentRefs.current[item.id] = n as View | null;
                           }}
@@ -988,13 +996,13 @@ export default function MomentDetail() {
                         </Pressable>
                         <Pressable
                           testID={`comment-translate-btn-${item.id}`}
-                          onPress={() => {
-                            /* translate placeholder */
-                          }}
-                          hitSlop={6}
-                          style={styles.transIconWrap}
+                          onPress={() => translateText(item.text)}
+                          disabled={!item.text}
+                          accessibilityLabel="Translate comment"
+                          hitSlop={11}
+                          style={[styles.transIconWrap, !item.text && styles.transIconDisabled]}
                         >
-                          <Text style={styles.transIconText}>文A</Text>
+                          <TranslationIcon testID={`comment-translate-icon-${item.id}`} size={13} color={colors.onBrand} />
                         </Pressable>
                       </View>
                       <View style={styles.commentBottomRow}>
@@ -1096,6 +1104,8 @@ export default function MomentDetail() {
                             ) : null}
                             <View style={styles.commentMsgRow}>
                               <Pressable
+                                testID={`comment-bubble-${r.id}`}
+                                style={{ flexShrink: 1, minWidth: 0 }}
                                 ref={(n) => {
                                   commentRefs.current[r.id] = n as View | null;
                                 }}
@@ -1117,13 +1127,13 @@ export default function MomentDetail() {
                               </Pressable>
                               <Pressable
                                 testID={`comment-translate-btn-${r.id}`}
-                                onPress={() => {
-                                  /* translate placeholder */
-                                }}
-                                hitSlop={6}
-                                style={styles.transIconWrap}
+                                onPress={() => translateText(r.text)}
+                                disabled={!r.text}
+                                accessibilityLabel="Translate reply"
+                                hitSlop={11}
+                                style={[styles.transIconWrap, !r.text && styles.transIconDisabled]}
                               >
-                                <Text style={styles.transIconText}>文A</Text>
+                                <TranslationIcon testID={`comment-translate-icon-${r.id}`} size={13} color={colors.onBrand} />
                               </Pressable>
                             </View>
                             <View style={styles.commentBottomRow}>
@@ -1245,7 +1255,7 @@ export default function MomentDetail() {
             </Pressable>
           </View>
         ) : (
-          <View style={styles.inputRow}>
+          <View testID="comment-composer-row" style={styles.inputRow}>
             <TextInput
               ref={composerRef}
               testID="comment-input"
@@ -1772,11 +1782,7 @@ const makeStyles = (colors: ThemeColors) =>
     justifyContent: "center",
     alignSelf: "center",
   },
-  transIconText: {
-    fontFamily: fonts.textBold,
-    fontSize: 9,
-    color: colors.onBrand,
-  },
+  transIconDisabled: { opacity: 0.4 },
   commentTime: {
     fontFamily: fonts.text,
     fontSize: 12,
@@ -1864,6 +1870,7 @@ const makeStyles = (colors: ThemeColors) =>
     color: colors.onSurface,
   },
   inputRow: {
+    flexShrink: 0,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
@@ -1884,8 +1891,8 @@ const makeStyles = (colors: ThemeColors) =>
     minHeight: 40,
   },
   sendBtn: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: radius.pill,
     backgroundColor: colors.brand,
     alignItems: "center",

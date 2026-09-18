@@ -20,8 +20,7 @@ import {
   Inter_700Bold,
 } from "@expo-google-fonts/inter";
 import { useFonts } from "expo-font";
-import * as Linking from "expo-linking";
-import { Stack, useRouter } from "expo-router";
+import { Stack } from "expo-router";
 import type { ErrorBoundaryProps } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -87,10 +86,12 @@ if (pushSupported && Notifications) {
 // push can arrive (created lazily inside a flow would be too late).
 if (pushSupported && Notifications && Platform.OS === "android") {
   Notifications.setNotificationChannelAsync("default", {
-    name: "Default",
+    name: "Messages, calls and activity",
     importance: Notifications.AndroidImportance.MAX,
     sound: "default",
-  });
+    vibrationPattern: [0, 200, 150, 200],
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
+  }).catch(() => {});
 }
 
 function ThemedApp() {
@@ -139,7 +140,6 @@ function ThemedApp() {
 }
 
 export default function RootLayout() {
-  const router = useRouter();
   const [iconsLoaded, iconsError] = useIconFonts();
   const [fontsLoaded, fontsError] = useFonts({
     Figtree_600SemiBold,
@@ -163,35 +163,8 @@ export default function RootLayout() {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
-  // Push notification tap handling — native only, and only where push is
-  // actually supported (see src/utils/push-native.ts).
-  useEffect(() => {
-    if (!pushSupported || !Notifications) return;
-
-    const openTarget = (data: Record<string, unknown>) => {
-      const url = (data.deeplink || data.action_url) as string | undefined;
-      if (!url) return;
-      if (url.startsWith("http")) Linking.openURL(url);
-      else router.push(url as never);
-    };
-
-    // Warm tap — user taps the notification while the app is open.
-    const tapSub = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        openTarget(response.notification.request.content.data || {});
-      },
-    );
-
-    // Cold-start tap — app was killed, user tapped the notification to open it.
-    Notifications.getLastNotificationResponseAsync().then((response) => {
-      if (!response) return;
-      openTarget(response.notification.request.content.data || {});
-    });
-
-    return () => {
-      tapSub.remove();
-    };
-  }, [router]);
+  // NativeNotificationBridge is the SINGLE warm/cold tap owner. It waits for
+  // authenticated state and deduplicates the response before opening a route.
 
   if (!ready) return null;
 

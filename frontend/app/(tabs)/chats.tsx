@@ -15,7 +15,8 @@ import {
 
 import { Avatar } from "@/src/components/Avatar";
 import { GroupAvatar } from "@/src/components/GroupAvatar";
-import { ChatLastMessage } from "@/src/components/ChatLastMessage";
+import { ChatLastMessage, inboxPreview } from "@/src/components/ChatLastMessage";
+import { VoiceroomAvatar } from "@/src/components/VoiceroomAvatar";
 import { SpeakingBars } from "@/src/components/SpeakingBars";
 import { VipBadge } from "@/src/components/Badges";
 import { countryToCode } from "@/src/constants/countries";
@@ -24,9 +25,10 @@ import { useTheme } from "@/src/context/ThemeContext";
 import { useChatSocket } from "@/src/hooks/use-chat-socket";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
 import { AppTitle } from "@/src/ui/AppTitle";
-import { api, Conversation } from "@/src/utils/api";
+import { api, Conversation, ChatMessagePreview } from "@/src/utils/api";
 import { timeAgo } from "@/src/utils/time";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
 
 interface Shortcut {
   key: string;
@@ -53,7 +55,7 @@ const SHORTCUTS: Shortcut[] = [
   },
   {
     key: "call",
-    label: "Call",
+    label: "Practice",
     icon: "call",
     color: "#FFB627",
     route: "/call",
@@ -130,7 +132,7 @@ export default function Chats() {
 
   const [vnInfo, setVnInfo] = useState<{
     unread: number;
-    last: { text: string; created_at: string } | null;
+    last: ChatMessagePreview | null;
   } | null>(null);
 
   const load = useCallback(async () => {
@@ -139,7 +141,7 @@ export default function Chats() {
       const data = await api.get<Conversation[]>("/chats");
       setConversations(data);
       api
-        .get<{ unread: number; last: { text: string; created_at: string } | null }>(
+        .get<{ unread: number; last: ChatMessagePreview | null }>(
           "/rooms/notices/unread",
         )
         .then(setVnInfo)
@@ -164,7 +166,7 @@ export default function Chats() {
   useChatSocket(
     useCallback(
       (event) => {
-        if (event.type === "new_message") load();
+        if (event.type === "new_message" || event.type === "voiceroom_notice") load();
       },
       [load],
     ),
@@ -181,7 +183,7 @@ export default function Chats() {
       list = list.filter((c) => {
         const name = ((c.is_group ? c.name : c.partner?.name) || "").toLowerCase();
         const snippet = (c.last_message?.text || "").toLowerCase();
-        return name.includes(q) || snippet.includes(q);
+        return name.includes(q) || snippet.includes(q) || inboxPreview(c.last_message).text.toLowerCase().includes(q);
       });
     }
     switch (chatFilter) {
@@ -237,7 +239,7 @@ export default function Chats() {
             <View style={[styles.shortcutIcon, { backgroundColor: s.color }]}>
               <Ionicons name={s.icon} size={20} color="#FFFFFF" />
             </View>
-            <Text style={styles.shortcutLabel} numberOfLines={1}>
+            <Text testID={`chats-shortcut-label-${s.key}`} style={styles.shortcutLabel} numberOfLines={1}>
               {s.label}
             </Text>
           </Pressable>
@@ -333,32 +335,28 @@ export default function Chats() {
               style={styles.row}
               onPress={() => router.push("/voiceroom-notices")}
             >
-              <View>
-                <View style={styles.vnAvatar}>
-                  <Ionicons name="mic" size={24} color="#FFFFFF" />
-                </View>
-                <View style={styles.vnVerified}>
-                  <Ionicons name="checkmark" size={8} color="#FFFFFF" />
-                </View>
-              </View>
+              <VoiceroomAvatar testID="chats-voiceroom-avatar" />
               <View style={styles.rowBody}>
                 <View style={styles.rowTop}>
                   <View style={styles.nameWrap}>
-                    <Text style={styles.rowName} numberOfLines={1}>
-                      Live & Voiceroom
+                    <Text testID="chats-voiceroom-title" style={styles.rowName} numberOfLines={1}>
+                      Voiceroom
                     </Text>
                   </View>
                   {vnInfo?.last ? (
-                    <Text style={styles.rowTime}>
+                    <Text testID="chats-voiceroom-time" style={styles.rowTime}>
                       {timeAgo(vnInfo.last.created_at)}
                     </Text>
                   ) : null}
                 </View>
                 <View style={styles.rowBottom}>
-                  <Text style={styles.rowSnippet} numberOfLines={1}>
-                    {vnInfo?.last?.text ||
-                      "Voiceroom alerts from hosts you follow"}
-                  </Text>
+                  {vnInfo?.last ? (
+                    <ChatLastMessage message={vnInfo.last} conversationId="voiceroom-notices" />
+                  ) : (
+                    <Text testID="chats-voiceroom-empty-preview" style={styles.rowSnippet} numberOfLines={1}>
+                      Voiceroom alerts from hosts you follow
+                    </Text>
+                  )}
                   {(vnInfo?.unread || 0) > 0 && (
                     <View style={styles.badge} testID="vn-unread-badge">
                       <Text style={styles.badgeText}>{vnInfo?.unread}</Text>
@@ -450,7 +448,7 @@ export default function Chats() {
                   </Text>
                 </View>
                 <View style={styles.rowBottom}>
-                  {item.partner?.in_voice_room ? (
+                  {item.partner?.in_voice_room && !item.last_message ? (
                     <View style={styles.roomStatusRow}>
                       <SpeakingBars color={colors.brand} />
                       <Text style={styles.roomStatus} numberOfLines={1}>
@@ -486,7 +484,7 @@ export default function Chats() {
           style={styles.moreBackdrop}
           onPress={() => setMoreOpen(false)}
         />
-        <View style={[styles.moreSheet, { paddingBottom: 34 + insets.bottom }]} testID="chats-more-sheet">
+        <BoundedSheet style={[styles.moreSheet, { paddingBottom: 34 + insets.bottom }]} testID="chats-more-sheet">
           <View style={styles.moreHandle} />
           <Text style={styles.moreTitle}>Explore</Text>
           <View style={styles.moreGrid}>
@@ -509,7 +507,7 @@ export default function Chats() {
               </Pressable>
             ))}
           </View>
-        </View>
+        </BoundedSheet>
       </Modal>
     </SafeAreaView>
   );
@@ -663,27 +661,6 @@ const makeStyles = (colors: ThemeColors) =>
     filterChipTextActive: {
       fontFamily: fonts.textBold,
       color: colors.brand,
-    },
-    vnAvatar: {
-      width: 54,
-      height: 54,
-      borderRadius: 27,
-      backgroundColor: "#3B9DF8",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    vnVerified: {
-      position: "absolute",
-      bottom: 0,
-      left: 0,
-      width: 15,
-      height: 15,
-      borderRadius: 8,
-      backgroundColor: "#22C55E",
-      borderWidth: 1.5,
-      borderColor: colors.surface,
-      alignItems: "center",
-      justifyContent: "center",
     },
     roomBadge: {
       position: "absolute",

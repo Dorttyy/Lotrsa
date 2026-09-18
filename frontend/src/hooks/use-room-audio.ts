@@ -150,7 +150,11 @@ export function useRoomAudio({
       const pending = (async () => { try {
         // Own the native audio session before opening the mic (iOS needs the
         // session configured first, otherwise capture can come up silent).
-        if (getRTC()?.native) audioSession.start(true);
+        if (getRTC()?.native) {
+          await audioSession.prepare();
+          if (!aliveRef.current || !iSpeakRef.current) return null;
+          audioSession.start(true);
+        }
         const stream = await getMicStream();
         if (!aliveRef.current || !iSpeakRef.current) {
           stream.getTracks().forEach((t: any) => t.stop());
@@ -452,8 +456,11 @@ export function useRoomAudio({
   useEffect(() => {
     const rtc = getRTC();
     if (!rtc?.native) return;
-    audioSession.start(true);
-    return () => audioSession.stop();
+    let mounted = true;
+    void audioSession.prepare().then(() => {
+      if (mounted) audioSession.start(true);
+    });
+    return () => { mounted = false; audioSession.stop(); };
   }, []);
 
   // Cleanup on unmount

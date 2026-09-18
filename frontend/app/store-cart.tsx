@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { fonts, radius, spacing } from "@/src/theme";
 import { AppTitle } from "@/src/ui/AppTitle";

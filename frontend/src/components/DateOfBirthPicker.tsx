@@ -10,6 +10,7 @@ import {
 } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSheetBounds } from "@/src/hooks/use-screen-space";
 
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, spacing } from "@/src/theme";
@@ -213,6 +214,7 @@ const PickerSheet = ({
 }) => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const sheetBounds = useSheetBounds();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <Modal
@@ -223,7 +225,8 @@ const PickerSheet = ({
     >
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable
-          style={[styles.sheet, { paddingBottom: spacing.xl + insets.bottom }]}
+          testID="dob-picker-sheet"
+          style={[styles.sheet, sheetBounds, { paddingBottom: spacing.xl + insets.bottom }]}
           onPress={(e) => e.stopPropagation?.()}
         >
           <View style={styles.sheetHeader}>
@@ -240,7 +243,7 @@ const PickerSheet = ({
             data={options}
             keyExtractor={(item) => item.key}
             initialNumToRender={20}
-            style={{ maxHeight: 360 }}
+            style={{ maxHeight: 360, flexShrink: 1 }}
             keyboardShouldPersistTaps="handled"
             renderItem={({ item }) => {
               const active = selectedKey === item.key;

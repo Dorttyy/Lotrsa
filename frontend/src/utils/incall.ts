@@ -1,4 +1,4 @@
-import { DeviceEventEmitter, NativeModules, Platform } from "react-native";
+import { DeviceEventEmitter, NativeModules, PermissionsAndroid, Platform } from "react-native";
 
 // Native routing only. Web/Expo Go cannot switch a phone's receiver/speaker;
 // never silently pretend a routing command succeeded on those platforms.
@@ -12,9 +12,29 @@ if (Platform.OS !== "web" && native && typeof native.setForceSpeakerphoneOn === 
 }
 let active = false;
 let externalRoute = false;
+let permissionPending: Promise<void> | null = null;
+
+async function prepareBluetooth() {
+  if (!InCall || Platform.OS !== "android" || Number(Platform.Version) < 31) return;
+  try {
+    const permission = PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT;
+    if (await PermissionsAndroid.check(permission)) return;
+    await PermissionsAndroid.request(permission, {
+      title: "Bluetooth audio",
+      message: "Use your Bluetooth headset for calls and voice rooms.",
+      buttonPositive: "Allow",
+      buttonNegative: "Use phone audio",
+    });
+  } catch { /* Headset permission is optional; phone mic/speaker still work. */ }
+}
 
 export const audioSession = {
   available: !!InCall,
+  async prepare() {
+    // Room capture and receive-only setup may start together: only one prompt.
+    if (!permissionPending) permissionPending = prepareBluetooth().finally(() => { permissionPending = null; });
+    await permissionPending;
+  },
   start(speaker: boolean) {
     if (!InCall || active) return;
     try {

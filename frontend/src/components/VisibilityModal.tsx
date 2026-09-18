@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/src/context/ThemeContext";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
 import { fonts, radius, spacing } from "@/src/theme";
 
 export type Visibility = "public" | "friends" | "private";
@@ -36,7 +37,7 @@ const OPTIONS: Option[] = [
     key: "public",
     icon: "earth",
     title: "Public",
-    subtitle: "Anyone on LinguaConnect can see this post",
+    subtitle: "Anyone on Mello can see this post",
   },
   {
     key: "friends",
@@ -91,8 +92,8 @@ export const VisibilityModal: React.FC<Props> = ({
       statusBarTranslucent
     >
       <Pressable style={styles.backdrop} onPress={onClose} testID="vis-backdrop">
-        <Pressable
-          onPress={() => {}}
+        <BoundedSheet
+          testID="visibility-sheet"
           style={[
             styles.sheet,
             { backgroundColor: colors.surface, paddingBottom: spacing.xl + insets.bottom },
@@ -160,7 +161,7 @@ export const VisibilityModal: React.FC<Props> = ({
               </Pressable>
             );
           })}
-        </Pressable>
+        </BoundedSheet>
       </Pressable>
     </Modal>
   );

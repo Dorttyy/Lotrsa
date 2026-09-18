@@ -2,7 +2,7 @@ import { Ionicons } from "@/src/ui/icons";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { Avatar } from "@/src/components/Avatar";
 import { api } from "@/src/utils/api";

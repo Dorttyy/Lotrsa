@@ -12,9 +12,10 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { Avatar } from "@/src/components/Avatar";
+import { KeyboardAvoidingView } from "@/src/components/layout/KeyboardAvoidingView";
 import { VipBadge } from "@/src/components/Badges";
 import { countryToCode } from "@/src/constants/countries";
 import { useAuth } from "@/src/context/AuthContext";
@@ -116,6 +117,7 @@ export default function CreateGroup() {
         </Pressable>
       </View>
 
+      <KeyboardAvoidingView testID="choose-keyboard-area" style={{ flex: 1 }}>
       <View style={styles.searchBar}>
         <Ionicons name="search" size={16} color={colors.onSurfaceSecondary} />
         <TextInput
@@ -191,6 +193,7 @@ export default function CreateGroup() {
           }
         />
       )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -291,6 +294,7 @@ const makeStyles = (colors: ThemeColors) =>
       gap: 6,
     },
     name: {
+      flexShrink: 1,
       fontFamily: fonts.textBold,
       fontSize: 16,
       color: colors.onSurface,

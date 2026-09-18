@@ -1,4 +1,5 @@
 import { VIcon } from "@/src/learn/Icon";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
@@ -46,8 +47,9 @@ export default function VocabLessons() {
   const activeFilters = (levelFilter ? 1 : 0) + (maxMinutes ? 1 : 0);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View testID="learn-lessons-screen" style={{ flex: 1, backgroundColor: colors.bg, paddingLeft: insets.left, paddingRight: insets.right }}>
       <ScrollView
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: insets.top + 12,
@@ -59,6 +61,7 @@ export default function VocabLessons() {
           <View style={s.searchPill}>
             <VIcon name="search" size={18} color="#7A7A85" />
             <TextInput
+              testID="learn-lessons-search"
               value={q}
               onChangeText={setQ}
               placeholder="Search video lessons"
@@ -66,7 +69,7 @@ export default function VocabLessons() {
               style={s.searchInput}
             />
           </View>
-          <Pressable style={s.filterBtn} onPress={() => setFilterOpen(true)}>
+          <Pressable testID="learn-lessons-filters-open" style={s.filterBtn} onPress={() => setFilterOpen(true)}>
             <VIcon name="options-outline" size={20} color="#FFFFFF" />
             {activeFilters > 0 && (
               <View style={s.filterBadge}>
@@ -147,12 +150,12 @@ function FiltersModal({
   const s = makeStyles(colors);
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={s.sheetBackdrop} onPress={onClose} />
-      <View style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+      <Pressable testID="learn-lessons-filters-backdrop" style={s.sheetBackdrop} onPress={onClose} />
+      <BoundedSheet testID="learn-lessons-filters-sheet" style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
         <View style={s.sheetHandle} />
         <View style={s.sheetHeader}>
           <Text style={s.sheetTitle}>Filters</Text>
-          <Pressable onPress={() => { setLevelFilter(null); setMaxMinutes(null); }}>
+          <Pressable testID="learn-lessons-filters-reset" hitSlop={12} onPress={() => { setLevelFilter(null); setMaxMinutes(null); }}>
             <Text style={s.sheetReset}>Reset</Text>
           </Pressable>
         </View>
@@ -162,6 +165,7 @@ function FiltersModal({
           {LEVELS.map((lv) => (
             <Pressable
               key={lv}
+              testID={`learn-lessons-level-${lv}`}
               onPress={() => setLevelFilter(levelFilter === lv ? null : lv)}
               style={[s.chip, levelFilter === lv && s.chipActive]}
             >
@@ -175,6 +179,7 @@ function FiltersModal({
           {[15, 25, 40].map((m) => (
             <Pressable
               key={m}
+              testID={`learn-lessons-duration-${m}`}
               onPress={() => setMaxMinutes(maxMinutes === m ? null : m)}
               style={[s.chip, maxMinutes === m && s.chipActive]}
             >
@@ -183,10 +188,10 @@ function FiltersModal({
           ))}
         </View>
 
-        <Pressable style={s.applyBtn} onPress={onClose}>
+        <Pressable testID="learn-lessons-filters-apply" style={s.applyBtn} onPress={onClose}>
           <Text style={s.applyText}>Apply</Text>
         </Pressable>
-      </View>
+      </BoundedSheet>
     </Modal>
   );
 }
@@ -219,7 +224,7 @@ const makeStyles = (c: LearnPalette) =>
     },
     lessonTitle: { color: c.onLight, fontSize: 20, fontWeight: "800", lineHeight: 26, marginBottom: 10 },
     lessonDesc: { color: "#3E3E48", fontSize: 14, lineHeight: 20, marginBottom: 12 },
-    metaRow: { flexDirection: "row", gap: 20, marginBottom: 14, alignItems: "center" },
+    metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 20, marginBottom: 14, alignItems: "center" },
     metaItem: { flexDirection: "row", alignItems: "center", gap: 5 },
     metaText: { color: "#0B0B0F", fontSize: 13, fontWeight: "600" },
     startBtn: {
@@ -245,6 +250,7 @@ const makeStyles = (c: LearnPalette) =>
     sheetLabel: { color: c.textDim, fontSize: 13, fontWeight: "700", marginTop: 12, marginBottom: 8, textTransform: "uppercase" },
     sheetRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
     chip: {
+      minHeight: 44, justifyContent: "center",
       paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
       backgroundColor: c.surfaceRaised, borderWidth: 1,
       borderColor: c.mode === "light" ? c.border : "transparent",

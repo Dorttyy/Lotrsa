@@ -2,7 +2,7 @@ import { Ionicons } from "@/src/ui/icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,8 +16,8 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardAvoidingView } from "@/src/components/layout/KeyboardAvoidingView";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 import { AppSwitch } from "@/src/components/AppSwitch";
 
 import { Avatar } from "@/src/components/Avatar";
@@ -87,6 +87,7 @@ export default function Voice() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [roomLangs, setRoomLangs] = useState<string[]>([]);
   const [mode, setMode] = useState<"chat" | "music" | "study">("chat");
@@ -146,6 +147,16 @@ export default function Voice() {
     }, [load]),
   );
 
+  // Navigate only AFTER the create Modal has left the rendered tree.
+  useEffect(() => {
+    if (modalOpen || !createdRoomId) return;
+    const frame = requestAnimationFrame(() => {
+      router.push(`/room/${createdRoomId}`);
+      setCreatedRoomId(null);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [createdRoomId, modalOpen, router]);
+
   const resetForm = () => {
     setTitle("");
     setRoomLangs([]);
@@ -190,7 +201,7 @@ export default function Voice() {
       });
       setModalOpen(false);
       resetForm();
-      router.push(`/room/${room.id}`);
+      setCreatedRoomId(room.id);
     } catch (e) {
       // Keep the modal open and TELL the user why it failed (was silent before).
       const msg = e instanceof Error ? e.message : "Could not create the room. Try again.";
@@ -209,7 +220,10 @@ export default function Voice() {
     try {
       await api.post(`/rooms/${room.id}/join`);
       router.push(`/room/${room.id}`);
-    } catch {
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Could not join this room.";
+      if (Platform.OS === "web") window.alert(message);
+      else Alert.alert("Voiceroom", message);
       load();
     }
   };
@@ -346,7 +360,7 @@ export default function Voice() {
         <Text style={styles.fabText}>Create Room</Text>
       </Pressable>
 
-      <Modal
+      {modalOpen && <Modal
         visible={modalOpen}
         animationType="slide"
         onRequestClose={() => setModalOpen(false)}
@@ -357,10 +371,10 @@ export default function Voice() {
             style={styles.crGlow}
             pointerEvents="none"
           />
-          <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+          <SafeAreaView style={styles.crFlex} edges={["top", "bottom"]}>
             <KeyboardAvoidingView
-              style={{ flex: 1 }}
-              behavior={Platform.OS === "ios" ? "padding" : undefined}
+              style={styles.crFlex}
+              behavior={Platform.OS === "ios" ? "padding" : Platform.OS === "android" ? "height" : undefined}
             >
               <Pressable
                 testID="room-modal-close-btn"
@@ -372,6 +386,7 @@ export default function Voice() {
               </Pressable>
 
               <ScrollView
+                style={styles.crFlex}
                 contentContainerStyle={styles.crBody}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
@@ -805,7 +820,7 @@ export default function Voice() {
             </KeyboardAvoidingView>
           </SafeAreaView>
         </View>
-      </Modal>
+      </Modal>}
     </SafeAreaView>
   );
 }
@@ -1206,6 +1221,7 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       backgroundColor: colors.surfaceSecondary,
     },
+    crFlex: { flex: 1, minHeight: 0 },
     crGlow: {
       position: "absolute",
       top: 0,
@@ -1464,6 +1480,7 @@ const makeStyles = (colors: ThemeColors) =>
       color: colors.onSurfaceSecondary,
     },
     crFooter: {
+      flexShrink: 0,
       backgroundColor: colors.surface,
       paddingHorizontal: 18,
       paddingTop: 6,

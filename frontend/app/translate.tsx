@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
 
 import { BackButton } from "@/src/components/BackButton";
 import { LANGUAGES } from "@/src/constants/languages";

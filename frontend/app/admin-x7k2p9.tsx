@@ -22,7 +22,7 @@ import { Avatar } from "@/src/components/Avatar";
 import { useAuth } from "@/src/context/AuthContext";
 import { fonts } from "@/src/theme";
 import { api } from "@/src/utils/api";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
 
 // ── Design tokens (light, modern, reference-inspired) ──
 const BG = "#F3F4F8";              // page background
@@ -285,7 +285,7 @@ export default function AdminPanel() {
             </LinearGradient>
             <Text style={s.loginTitle}>Admin Console</Text>
             <Text style={s.loginSub}>
-              LinguaConnect · restricted area, authorized staff only
+              Mello · restricted area, authorized staff only
             </Text>
             <View style={s.loginField}>
               <Ionicons name="mail-outline" size={16} color={MUTED} />
@@ -1433,7 +1433,6 @@ function Settings() {
 
   const FIELDS: [string, string][] = [
     ["free_translations_per_day", "Free translations / day"],
-    ["free_rooms_per_day", "Free room hosting / day"],
     ["free_new_chats_per_day", "Free new chats / day"],
     ["vip_new_chats_per_day", "VIP new chats / day"],
   ];

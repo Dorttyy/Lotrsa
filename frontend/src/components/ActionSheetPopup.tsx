@@ -3,7 +3,7 @@ import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import React from "react";
 import {
-  Dimensions,
+  ScrollView,
   Modal,
   Platform,
   Pressable,
@@ -14,6 +14,7 @@ import {
 import Animated, { FadeOut, ZoomIn } from "react-native-reanimated";
 
 import { useTheme } from "@/src/context/ThemeContext";
+import { usePopupLayout } from "@/src/hooks/use-popup-layout";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
 
 /**
@@ -74,14 +75,15 @@ export function ActionSheetPopup({
 }: Props) {
   const { colors, mode } = useTheme();
   const styles = React.useMemo(() => makeStyles(colors), [colors]);
-  const { width: screenW, height: screenH } = Dimensions.get("window");
+  const layout = usePopupLayout();
+  const { width: screenW, height: screenH } = layout;
 
   if (!visible || !anchor) return null;
 
   const ACCENT = colors.brand;
   const INK = colors.onSurface;
 
-  const CARD_WIDTH = Math.min(258, screenW - 48);
+  const CARD_WIDTH = layout.cardWidth;
   const CARD_HEIGHT =
     (quick.length ? 90 : 0) + rows.length * 52 + 28;
 
@@ -104,25 +106,19 @@ export function ActionSheetPopup({
     ? 56
     : Math.min(screenH * 0.4, 22 + Math.min(estLines, 12) * (pillFontSize * 1.4));
 
-  const GAP = 14;
-  const TOP_SAFE = 70;
-  const BOTTOM_SAFE = 40;
-  const maxPillTop = screenH - BOTTOM_SAFE - GAP - CARD_HEIGHT - PILL_HEIGHT;
-  const pillTop = Math.max(
-    TOP_SAFE,
-    Math.min(anchor.y, Math.max(TOP_SAFE, maxPillTop)),
+  const { pillTop, pillHeight, cardTop, cardMaxHeight } = layout.vertical(
+    anchor.y, PILL_HEIGHT, CARD_HEIGHT * layout.fontScale,
   );
-  const cardTop = pillTop + PILL_HEIGHT + GAP;
 
   const pillWidth = isVoice
     ? 180
     : Math.min(PILL_MAX_W, Math.max(80, pillLabel.length * pillFontSize * 0.62 + 28));
   const anchorLeft =
     align === "right" ? anchor.x + anchor.width - pillWidth : anchor.x;
-  const pillLeft = Math.max(16, Math.min(anchorLeft, screenW - pillWidth - 16));
+  const pillLeft = layout.left(anchorLeft, pillWidth);
   let cardLeft =
     align === "right" ? anchor.x + anchor.width - CARD_WIDTH : anchor.x;
-  cardLeft = Math.max(16, Math.min(cardLeft, screenW - CARD_WIDTH - 16));
+  cardLeft = layout.left(cardLeft, CARD_WIDTH);
 
   const act = (id: string) => {
     Haptics.selectionAsync().catch(() => {});
@@ -130,8 +126,8 @@ export function ActionSheetPopup({
   };
 
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
+    <Modal visible transparent statusBarTranslucent navigationBarTranslucent animationType="none" onRequestClose={onClose}>
+      <Pressable testID="sheet-action-backdrop" style={styles.backdrop} onPress={onClose}>
         <BlurView
           intensity={Platform.OS === "android" ? 40 : 32}
           tint={mode === "dark" ? "dark" : "light"}
@@ -142,7 +138,7 @@ export function ActionSheetPopup({
         {isVoice ? (
           <View
             pointerEvents="none"
-            style={{ position: "absolute", top: pillTop, left: pillLeft }}
+            style={{ position: "absolute", top: pillTop, left: pillLeft, maxHeight: pillHeight, overflow: "hidden" }}
           >
             <View style={[styles.voicePill, { width: pillWidth }]}>
               <Ionicons name="play" size={22} color={INK} />
@@ -156,7 +152,7 @@ export function ActionSheetPopup({
             pointerEvents="none"
             style={[
               styles.highlightPill,
-              { top: pillTop, left: pillLeft, maxWidth: PILL_MAX_W, minWidth: 60 },
+              { top: pillTop, left: pillLeft, maxWidth: PILL_MAX_W, minWidth: 60, maxHeight: pillHeight, overflow: "hidden" },
             ]}
           >
             <View style={[styles.pillDot, styles.pillDotStart]} />
@@ -175,9 +171,11 @@ export function ActionSheetPopup({
         <Animated.View
           entering={ZoomIn.duration(170)}
           exiting={FadeOut.duration(120)}
-          style={[styles.card, { left: cardLeft, top: cardTop, width: CARD_WIDTH }]}
+          testID="sheet-action-card"
+          style={[styles.card, { left: cardLeft, top: cardTop, width: CARD_WIDTH, maxHeight: cardMaxHeight }]}
         >
-          <Pressable onPress={(e) => e.stopPropagation?.()} style={{ borderRadius: 26 }}>
+          <ScrollView testID="sheet-action-scroll" style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled">
+          <Pressable testID="sheet-action-content" onPress={(e) => e.stopPropagation?.()} style={{ borderRadius: 26 }}>
             {quick.length > 0 && (
               <>
                 <View style={styles.roundRow}>
@@ -239,6 +237,7 @@ export function ActionSheetPopup({
               ))}
             </View>
           </Pressable>
+          </ScrollView>
         </Animated.View>
       </Pressable>
     </Modal>
@@ -310,6 +309,7 @@ const makeStyles = (colors: ThemeColors) =>
       marginHorizontal: 8,
     },
     listRow: {
+      minHeight: 44,
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.md,
@@ -320,6 +320,7 @@ const makeStyles = (colors: ThemeColors) =>
     listRowPressed: { backgroundColor: colors.surfaceSecondary },
     listIcon: { width: 26, alignItems: "center" },
     listLabel: {
+      flexShrink: 1,
       fontFamily: fonts.textSemi,
       fontSize: 16,
       color: colors.onSurface,

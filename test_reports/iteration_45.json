@@ -1,0 +1,91 @@
+{
+  "summary": "Frontend + integration regression run on public preview completed with QA1/QA2. Core Practice typography, Voiceroom notices title/read-only behavior, room create->route, room minimize/reopen, and send icon asset wiring (chat + room) were validated. Native Android/iOS evidence was verified from generated logs/artifacts only; real device/native build execution remains blocked by environment.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Voice tab header",
+        "issue": "Header still renders 'Voice Rooms' instead of requested exact 'Voiceroom'.",
+        "testID": "voice-header-title",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Create room modal CTA visibility",
+        "issue": "Create button can be pushed outside viewport while keyboard is open; submit fails unless keyboard is dismissed/scroll adjusted.",
+        "testID": "room-create-submit-btn",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Private chat call (QA1 -> QA2) accept/connect/end",
+        "issue": "Call creation succeeds (POST /api/rtc/calls 201) but QA2 did not receive incoming popup (call-accept-btn never appeared) in browser 2-context test; flow blocked before connection verification.",
+        "affected_testIDs": [
+          "chat-call-btn",
+          "call-accept-btn",
+          "call-overlay"
+        ]
+      },
+      {
+        "flow": "Moments room-share/tag/comment/translation regression",
+        "issue": "Moments feed had zero cards for both QA1 and QA2 in this environment, so #voiceroom auto-share, detail comment send persistence, and translate button API path could not be exercised.",
+        "affected_testIDs": [
+          "moments-screen",
+          "moment-card-*",
+          "moment-detail-translate-btn",
+          "comment-send-btn"
+        ]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Voiceroom notices",
+        "issues": [
+          "Read-only screen intent appears correct (no chat composer controls exposed), but this run only hit empty state due no notices data."
+        ]
+      }
+    ],
+    "react_native_issues": [
+      {
+        "component": "Metro asset resolution (runtime log)",
+        "issue": "Expo error log showed repeated ENOENT scandir '/app/frontend/sounds' during asset request handling; needs RCA to ensure no stale/wrong runtime sound path remains."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/memory/NATIVE_CALL_TEST_MATRIX.md",
+    "/tmp/native-android-js-final.log",
+    "/tmp/native-ios-js-final.log",
+    "/tmp/native-prebuild-final.log",
+    "/tmp/native-autolink-android-final.json",
+    "/tmp/native-autolink-ios-final.json",
+    "/app/test_reports/artifacts/iteration_45"
+  ],
+  "action_items": [
+    "Update Voice tab title copy to exact requested label 'Voiceroom'.",
+    "Fix incoming-call delivery/visibility for callee context (WS/incoming event path) so call-accept popup reliably appears.",
+    "Ensure create-room CTA remains tappable with keyboard open on 390/320 widths (avoid off-screen submit).",
+    "Seed or restore QA-safe Moments fixture so #voiceroom share/tag + comment/translate regressions can be validated end-to-end.",
+    "Investigate Metro '/app/frontend/sounds' ENOENT runtime requests and remove stale path resolution."
+  ],
+  "critical_code_review_comments": [
+    "frontend/app/room/[id].tsx is ~3505 lines (>700 guideline), making room session regressions harder to isolate and test.",
+    "frontend/app/(tabs)/moments.tsx is ~1766 lines (>700 guideline), contributing to brittle selector/loading behavior and difficult targeted QA.",
+    "Large screen modules should be split into smaller focused units (composer, notices, actions, translation handlers, quota panels) for safer regression coverage."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_45.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (per request, full backend suite not rerun)",
+    "frontend": "70% (core UI regressions mostly pass; call receive + moments-dependent flows blocked/failing)"
+  },
+  "seed_data_creation": "Created temporary QA host rooms and posted limited QA messages/comments during verification; attempted cleanup by leaving created rooms only. No broad delete/ledger wipe actions performed.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Practice typography checks passed (shortcut 11px, in-call title 18px, chats title 28px). Send icon file integrity verified (7099 bytes, sha256 28f7b1953f4ecc712c3acb86301ee5f375811393bdac5531b42000ce8d76784a) and runtime src resolved to /assets/?unstable_path=.%2Fassets%2Ficons/send.png in chat + room. Voiceroom notices title/preview string checks passed. Native matrix/artifacts reviewed; real Android/iOS compile/device/Bluetooth/background/cellular remained NOT RUN (environment blocked).",
+  "rca_of_issue": "Two-user call RCA (web preview): caller-side call creation reached backend (201) but callee incoming popup did not surface in automation context, suggesting incoming-event delivery/consumption issue (likely WS lifecycle/race/presence state) rather than create API failure. For moments-related checks, missing feed fixtures prevented end-to-end validation rather than a deterministic client crash."
+}

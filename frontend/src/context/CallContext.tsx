@@ -1,5 +1,4 @@
 import { Ionicons } from "@/src/ui/icons";
-import { useAudioPlayer } from "expo-audio";
 import { LinearGradient } from "expo-linear-gradient";
 import React, {
   createContext,
@@ -18,7 +17,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  Vibration,
   View,
 } from "react-native";
 import Animated, {
@@ -33,6 +31,7 @@ import Animated, {
 import { Avatar } from "@/src/components/Avatar";
 import { IncomingCallPopup } from "@/src/components/call/IncomingCallPopup";
 import { stopVoicePlayback } from "@/src/utils/voice-playback";
+import { useCallTones } from "@/src/hooks/use-call-tones";
 import { VipBadge } from "@/src/components/Badges";
 import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -212,8 +211,15 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   const [audioRouteError, setAudioRouteError] = useState("");
   const [seconds, setSeconds] = useState(0);
   const [peerSpeaking, setPeerSpeaking] = useState(false);
+  const stopCallTones = useCallTones(user ? call : null);
 
   const setCall = (c: CallState | null) => {
+    // Stop synchronously before accepting/enabling the mic or clearing a call,
+    // rather than letting a pending async playback start after the transition.
+    const previous = callRef.current;
+    if (!c || c.status !== previous?.status || c.callId !== previous?.callId || c.practice !== previous?.practice) {
+      stopCallTones();
+    }
     if (c && !callRef.current) stopVoicePlayback();
     callRef.current = c;
     setCallState(c);
@@ -361,7 +367,11 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   const createPeer = async (peerId: string, callId: string) => {
     const rtc = getRTC();
     if (!rtc) throw new Error("webrtc-unavailable");
-    if (rtc.native) audioSession.start(false);
+    if (rtc.native) {
+      await audioSession.prepare();
+      if (!isCurrentCall(callId)) throw new Error("Call cancelled");
+      audioSession.start(false);
+    }
     const stream = await getMicStream();
     if (!isCurrentCall(callId)) {
       stream.getTracks().forEach((t: any) => t.stop());
@@ -803,7 +813,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
       wsRef.current?.close();
       wsRef.current = null;
     };
-  }, [user, handleEvent]);
+  }, [user, handleEvent, recoverIncoming]);
 
   useEffect(() => {
     if (call?.phase !== "connected" && call?.phase !== "reconnecting") return;
@@ -877,32 +887,6 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
       audioSession.stop();
       setSpeakerOn(false);
     };
-  }, [call?.status]);
-
-  // Soft outgoing ringback in both Calling and Ringing, and incoming ringtone.
-  const ringtone = useAudioPlayer(require("../../assets/sounds/ringtone.wav"));
-  useEffect(() => {
-    if (call?.status !== "incoming" && call?.status !== "outgoing") return;
-    try {
-      ringtone.loop = true;
-      ringtone.volume = call.status === "outgoing" ? 0.16 : 0.35;
-      ringtone.seekTo(0);
-      ringtone.play();
-    } catch {
-      // audio unavailable (e.g. web autoplay policy); vibration still works
-    }
-    if (Platform.OS !== "web" && call.status === "incoming") {
-      Vibration.vibrate([600, 1000], true);
-    }
-    return () => {
-      try {
-        ringtone.pause();
-      } catch {
-        // already released
-      }
-      if (Platform.OS !== "web") Vibration.cancel();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [call?.status]);
 
   const styles = makeStyles(colors);

@@ -12,9 +12,10 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
 
 import { BackButton } from "@/src/components/BackButton";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
 import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, shadow, spacing, ThemeColors } from "@/src/theme";
@@ -161,7 +162,7 @@ export default function Market() {
         onRequestClose={() => setTopupOpen(false)}
       >
         <View style={styles.modalBackdrop}>
-        <View style={[styles.modalCard, { paddingBottom: insets.bottom + spacing.xxl }]}>
+        <BoundedSheet testID="market-topup-sheet" style={[styles.modalCard, { paddingBottom: insets.bottom + spacing.xxl }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Top Up Coins</Text>
               <Pressable
@@ -194,7 +195,7 @@ export default function Market() {
                 </Pressable>
               ))}
             </View>
-          </View>
+          </BoundedSheet>
         </View>
       </Modal>
     </SafeAreaView>

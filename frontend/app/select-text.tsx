@@ -1,4 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from "@/src/ui/icons";
+import { TranslationIcon } from "@/src/ui/TranslationIcon";
 import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -15,7 +16,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { api, assetUrl } from "@/src/utils/api";
 import { useAuth } from "@/src/context/AuthContext";
@@ -231,7 +232,8 @@ export default function SelectText() {
               {translating ? (
                 <ActivityIndicator size="small" color="#0E9AE0" />
               ) : (
-                <Text style={[styles.zhGlyph, !hasSelection && styles.dim]}>文A</Text>
+                <TranslationIcon testID="select-text-translate-icon" size={23}
+                  color={hasSelection ? "#1F2430" : "#C4C4CC"} />
               )}
               <Text style={[styles.actionLabel, !hasSelection && styles.dim]}>
                 Translate
@@ -404,11 +406,6 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     fontSize: 12,
-    color: "#1F2430",
-  },
-  zhGlyph: {
-    fontSize: 17,
-    fontWeight: "800",
     color: "#1F2430",
   },
   dim: {

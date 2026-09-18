@@ -12,16 +12,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Avatar } from "@/src/components/Avatar";
 import { StageInvitation } from "@/src/components/room/StageInvitation";
+import { RoomTimeNotice } from "@/src/components/room/RoomTimeNotice";
 import { useAuth } from "@/src/context/AuthContext";
 import { useCall } from "@/src/context/CallContext";
 import { useRoomAudio } from "@/src/hooks/use-room-audio";
 import { fonts } from "@/src/theme";
-import { api, Room } from "@/src/utils/api";
+import { api, Room, RoomTimeAllowance } from "@/src/utils/api";
 
 interface RoomSessionValue {
   activeRoomId: string | null;
   minimized: boolean;
   room: Room | null;
+  timeAllowance: RoomTimeAllowance | null;
   /** Ids of members whose microphones are actually producing audio right now. */
   speakingIds: string[];
   /** Per-member WebRTC transport state (CONNECTED / RECONNECTING / …). */
@@ -82,6 +84,8 @@ export const RoomSessionProvider: React.FC<{ children: React.ReactNode }> = ({
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [minimized, setMinimized] = useState(false);
   const [room, setRoom] = useState<Room | null>(null);
+  const [timeAllowance, setTimeAllowance] = useState<RoomTimeAllowance | null>(null);
+  const [timeNotice, setTimeNotice] = useState<string | null>(null);
   const [speakingIds, setSpeakingIds] = useState<string[]>([]);
   const [peerStates, setPeerStates] = useState<Record<string, string>>({});
 
@@ -113,6 +117,7 @@ export const RoomSessionProvider: React.FC<{ children: React.ReactNode }> = ({
     setActiveRoomId(null);
     setMinimized(false);
     setRoom(null);
+    setTimeAllowance(null);
     setSpeakingIds([]);
     setPeerStates({});
   }, []);
@@ -124,16 +129,19 @@ export const RoomSessionProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Keep the room fresh from WS events even when the screen is unmounted.
   useEffect(() => {
-    if (!activeRoomId) return;
+    if (!user) return;
     const unsub = subscribe((event: any) => {
+      if (event.type === "room_time_warning" || event.reason === "daily_host_limit" || event.reason === "daily_listener_limit") {
+        setTimeNotice(event.message || "Your daily room allowance is used up. It resets at 00:00 UTC.");
+      }
       if (event.type === "room_update" && event.room?.id === activeRoomId) {
         setRoom(event.room);
-      } else if ((event.type === "room_ended" || event.type === "room_kicked") && event.room_id === activeRoomId) {
+      } else if ((event.type === "room_ended" || event.type === "room_kicked" || event.type === "room_left") && event.room_id === activeRoomId) {
         endSession();
       }
     });
     return unsub;
-  }, [activeRoomId, subscribe, endSession]);
+  }, [activeRoomId, subscribe, endSession, user]);
 
   // Safety poll (5s) so a minimized room stays accurate and auto-closes if we
   // were removed or the room ended.
@@ -142,17 +150,23 @@ export const RoomSessionProvider: React.FC<{ children: React.ReactNode }> = ({
     let alive = true;
     const tick = async () => {
       try {
-        const r = await api.get<Room>(`/rooms/${activeRoomId}`);
+        const data = await api.post<{ room: Room; allowance: RoomTimeAllowance }>(`/rooms/${activeRoomId}/heartbeat`);
+        const r = data.room;
         if (!alive) return;
         setRoom(r);
+        setTimeAllowance(data.allowance);
         const stillIn = (r.members || []).some((m) => m.id === user?.id);
         if (!stillIn || r.is_live === false) endSession();
       } catch (error: any) {
         // A brief offline/5xx response must not kill an otherwise recoverable
         // WebRTC room. Only definitive loss of access ends the audio session.
-        if (alive && (error?.status === 403 || error?.status === 404)) endSession();
+        if (alive && (error?.status === 403 || error?.status === 404)) {
+          endSession();
+          if (error?.status === 403) setTimeNotice(error.message);
+        }
       }
     };
+    void tick();
     const iv = setInterval(tick, 5000);
     return () => {
       alive = false;
@@ -169,6 +183,7 @@ export const RoomSessionProvider: React.FC<{ children: React.ReactNode }> = ({
         activeRoomId,
         minimized,
         room,
+        timeAllowance,
         speakingIds,
         peerStates,
         startSession,
@@ -179,6 +194,7 @@ export const RoomSessionProvider: React.FC<{ children: React.ReactNode }> = ({
       }}
     >
       {children}
+      <RoomTimeNotice message={timeNotice} onClose={() => setTimeNotice(null)} />
       {!!activeRoomId && !!room && !!user && <StageInvitation key={`invitation-${activeRoomId}`} room={room} userId={user.id} subscribe={subscribe} onAccepted={() => { if (minimized) expand(); }} />}
       {!!activeRoomId && !!user?.id ? (
         <AudioSessionHost

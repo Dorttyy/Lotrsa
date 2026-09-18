@@ -25,6 +25,7 @@ import {
 } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
 
 import { useTheme } from "@/src/context/ThemeContext";
 import { useAuth } from "@/src/context/AuthContext";
@@ -165,7 +166,7 @@ export const WordOfDayCard: React.FC = () => {
           style={styles.backdrop}
           onPress={() => setDetailOpen(false)}
         />
-        <View
+        <BoundedSheet
           style={[styles.sheet, { paddingBottom: 34 + insets.bottom }]}
           testID="wotd-sheet"
         >
@@ -235,7 +236,7 @@ export const WordOfDayCard: React.FC = () => {
               </Pressable>
             )}
           </View>
-        </View>
+        </BoundedSheet>
       </Modal>
     </>
   );

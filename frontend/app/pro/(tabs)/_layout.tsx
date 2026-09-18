@@ -5,6 +5,7 @@ import { Platform, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { proColors, proFonts } from "@/src/pro/theme";
+import { useTabContentHeight } from "@/src/hooks/use-screen-space";
 
 /**
  * Bottom tab bar mirrors the MAIN app's icon-based navbar layout, but with a
@@ -13,6 +14,7 @@ import { proColors, proFonts } from "@/src/pro/theme";
  */
 export default function ProTabsLayout() {
   const insets = useSafeAreaInsets();
+  const tabContentHeight = useTabContentHeight();
   const bottomGap = Math.max(insets.bottom, 12) + 8;
 
   return (
@@ -25,14 +27,19 @@ export default function ProTabsLayout() {
         tabBarLabelStyle: {
           fontFamily: proFonts.sansSemi,
           fontSize: 11,
+          lineHeight: 16,
+          minHeight: 16,
+          flexShrink: 0,
           marginTop: 2,
         },
-        tabBarItemStyle: { paddingTop: 6 },
+        tabBarItemStyle: { paddingTop: 2, paddingBottom: 2 },
+        tabBarIconStyle: { height: 32 },
+        tabBarLabelPosition: "below-icon",
         tabBarStyle: {
           backgroundColor: proColors.surface,
           borderTopColor: proColors.border,
           borderTopWidth: StyleSheet.hairlineWidth,
-          height: 58 + bottomGap,
+          height: tabContentHeight + bottomGap,
           paddingBottom: bottomGap,
           paddingTop: 6,
           ...Platform.select({

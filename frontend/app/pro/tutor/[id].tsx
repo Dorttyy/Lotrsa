@@ -10,7 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { api } from "@/src/utils/api";
 import { proColors, proFonts, proRadius, proShadow } from "@/src/pro/theme";

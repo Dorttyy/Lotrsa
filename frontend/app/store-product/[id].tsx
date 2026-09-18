@@ -11,7 +11,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { useAuth } from "@/src/context/AuthContext";
 import { fonts, radius, spacing } from "@/src/theme";
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   cartBadgeText: { fontFamily: fonts.textBold, fontSize: 9.5, color: "#FFF" },
-  hero: { width: 390, height: 300, backgroundColor: "#F5F5F5" },
+  hero: { width: "100%", height: 300, backgroundColor: "#F5F5F5" },
   dots: { flexDirection: "row", justifyContent: "center", gap: 7, marginVertical: 14 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#D9D9D9" },
   dotOn: { backgroundColor: "#111" },

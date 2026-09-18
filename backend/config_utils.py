@@ -5,7 +5,7 @@ DEFAULTS = {
     "free_rooms_per_day": 1,
     "free_new_chats_per_day": 10,
     "vip_new_chats_per_day": 25,
-    "app_name": "LinguaConnect",
+    "app_name": "Mello",
 }
 
 

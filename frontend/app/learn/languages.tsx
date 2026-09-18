@@ -2,7 +2,7 @@ import { Ionicons } from "@/src/ui/icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "@/src/components/layout/SafeAreaView";
 
 import { useAuth } from "@/src/context/AuthContext";
 import { fonts } from "@/src/theme";

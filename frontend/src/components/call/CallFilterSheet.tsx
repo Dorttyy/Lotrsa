@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Keyboard, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { KeyboardAvoidingView } from "@/src/components/layout/KeyboardAvoidingView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, ThemeColors } from "@/src/theme";

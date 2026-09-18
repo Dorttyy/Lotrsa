@@ -12,6 +12,7 @@ import {
 } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSheetBounds } from "@/src/hooks/use-screen-space";
 
 import { Avatar } from "@/src/components/Avatar";
 import { VipBadge } from "@/src/components/Badges";
@@ -36,6 +37,7 @@ export const LikersRow: React.FC<LikersRowProps> = ({
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const sheetBounds = useSheetBounds();
   const [open, setOpen] = useState(false);
   const [list, setList] = useState<User[] | null>(null);
 
@@ -100,8 +102,10 @@ export const LikersRow: React.FC<LikersRowProps> = ({
       >
         <Pressable style={styles.backdrop} onPress={close}>
           <Pressable
+            testID="likers-sheet"
             style={[
               styles.card,
+              sheetBounds,
               { backgroundColor: colors.surface, paddingBottom: spacing.xxl + insets.bottom },
             ]}
             onPress={() => {}}
@@ -128,7 +132,7 @@ export const LikersRow: React.FC<LikersRowProps> = ({
               <FlatList
                 data={list}
                 keyExtractor={(u) => u.id}
-                style={{ maxHeight: 380 }}
+                style={{ maxHeight: 380, flexShrink: 1 }}
                 renderItem={({ item }) => (
                   <Pressable
                     testID={`liker-row-${item.id}`}

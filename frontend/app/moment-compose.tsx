@@ -1,4 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from "@/src/ui/icons";
+import { TranslationIcon } from "@/src/ui/TranslationIcon";
 import { useExclusiveVoicePlayer } from "@/src/hooks/use-exclusive-voice-player";
 import {
   AudioModule,
@@ -24,20 +25,21 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { KeyboardAvoidingView } from "@/src/components/layout/KeyboardAvoidingView";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
 
 import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, shadow, spacing, ThemeColors } from "@/src/theme";
 import { api } from "@/src/utils/api";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
 
 /**
  * Moments composer — HelloTalk-style layout:
  *   • Header: round ✕ · centered "Moments" title · Post pill
  *   • Big placeholder text area
  *   • "# Add a topic" chip + green abc badge just above the toolbar
- *   • Icon toolbar: mic · photo · emoji · 文A · poll · +
+ *   • Icon toolbar: mic · photo · emoji · translate · poll · +
  *   • Tapping the mic opens an inline recording panel (timer, waveform,
  *     cancel / stop / send) that attaches a voice clip to the post.
  */
@@ -297,7 +299,7 @@ export default function MomentComposeScreen() {
   const setPollOption = (i: number, v: string) =>
     setPollOptions((prev) => prev.map((o, idx) => (idx === i ? v : o)));
 
-  // ── 文A translate: append translation of the text in learning language ──
+  // ── Translate: append translation of the text in learning language ──
   const translateDraft = async () => {
     const src = text.trim();
     if (!src || translating) return;
@@ -562,7 +564,7 @@ export default function MomentComposeScreen() {
             {translating ? (
               <ActivityIndicator size="small" color={colors.brand} />
             ) : (
-              <Text style={styles.zhGlyph}>文A</Text>
+              <TranslationIcon testID="compose-tool-translate-icon" size={25} color={colors.onSurface} />
             )}
           </Pressable>
           <Pressable
@@ -703,8 +705,9 @@ export default function MomentComposeScreen() {
         animationType="slide"
         onRequestClose={() => setTagSheetOpen(false)}
       >
-        <Pressable style={styles.sheetBackdrop} onPress={() => setTagSheetOpen(false)} />
-        <View style={[styles.sheet, { paddingBottom: spacing.xl + insets.bottom }]}>
+        <KeyboardAvoidingView testID="compose-topic-keyboard-area" style={{ flex: 1, justifyContent: "flex-end" }}>
+        <Pressable testID="compose-topic-backdrop" style={styles.sheetBackdrop} onPress={() => setTagSheetOpen(false)} />
+        <BoundedSheet testID="compose-topic-sheet" style={[styles.sheet, { paddingBottom: spacing.xl + insets.bottom }]}>
           <View style={styles.sheetHandle} />
           <Text style={styles.sheetTitle}>Add topics</Text>
           <View style={styles.customRow}>
@@ -719,7 +722,7 @@ export default function MomentComposeScreen() {
               maxLength={30}
               autoCapitalize="none"
             />
-            <Pressable style={styles.customAdd} onPress={addCustomTag}>
+            <Pressable testID="compose-custom-tag-add" style={styles.customAdd} onPress={addCustomTag}>
               <Ionicons name="add" size={20} color={colors.onBrand} />
             </Pressable>
           </View>
@@ -747,7 +750,8 @@ export default function MomentComposeScreen() {
           >
             <Text style={styles.sheetDoneText}>Done</Text>
           </Pressable>
-        </View>
+        </BoundedSheet>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -991,11 +995,6 @@ const makeStyles = (colors: ThemeColors) =>
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: colors.border,
       backgroundColor: colors.surface,
-    },
-    zhGlyph: {
-      fontFamily: fonts.textBold,
-      fontSize: 17,
-      color: colors.onSurface,
     },
     recordPanel: {
       borderTopWidth: StyleSheet.hairlineWidth,

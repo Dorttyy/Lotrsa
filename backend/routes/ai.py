@@ -5,7 +5,6 @@ import uuid
 import base64 as b64mod
 from datetime import datetime, timezone
 
-import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -13,6 +12,9 @@ from auth_utils import CurrentUser
 from config_utils import get_app_config
 from db import audio_col, media_col, users_col
 from models import CorrectRequest, TranscribeRequest, TranslateRequest, _vip_active
+import translation_service
+import local_text_translation
+from translation_languages import LANGUAGES, RTL_CODES, normalize_language
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 logger = logging.getLogger(__name__)
@@ -38,15 +40,9 @@ NAME_TO_CODE = {
 
 
 async def _google_translate(text: str, target: str) -> str:
-    """Free Google Translate endpoint (no API key needed)."""
-    params = {"client": "gtx", "sl": "auto", "tl": target, "dt": "t", "q": text}
-    async with httpx.AsyncClient(timeout=15) as client:
-        r = await client.get(
-            "https://translate.googleapis.com/translate_a/single", params=params
-        )
-        r.raise_for_status()
-        data = r.json()
-    return "".join(seg[0] for seg in data[0] if seg and seg[0]).strip()
+    """Legacy name retained for callers; all inference is now local/offline."""
+    value, _ = await translation_service.provider_translate(text, "auto", normalize_language(target))
+    return value
 
 
 async def run_llm(system_message: str, text: str) -> str:
@@ -234,9 +230,10 @@ async def image_text(body: ImageAiRequest, current_user: CurrentUser):
     require_llm_key()
     img = await _load_image_b64(body.media_id)
     _, native = _user_langs(current_user)
-    target = (body.target_language or native or "en").strip()
-    if len(target) > 3:
-        target = NAME_TO_CODE.get(target.lower(), "en")
+    try:
+        target = normalize_language(body.target_language or native or "en")
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from None
     system = "You are an OCR + translation engine inside a language-exchange app."
     prompt = (
         "Extract ALL readable text from this image exactly as written. Then translate "
@@ -258,29 +255,29 @@ async def image_text(body: ImageAiRequest, current_user: CurrentUser):
     }
 
 
-@router.post("/translate")
+@router.get("/translation-languages")
+async def translation_languages():
+    return [{"code": code, "name": name, "rtl": code in RTL_CODES} for code, name in LANGUAGES.items()
+            if local_text_translation.model_code(code) in local_text_translation.SUPPORTED]
+
+
+@router.post("/translate", response_model=translation_service.TranslationResult)
 async def translate(body: TranslateRequest, current_user: CurrentUser):
-    target = (body.target_language or "en").strip()
-    if len(target) > 3:
-        target = NAME_TO_CODE.get(target.lower(), "en")
-    # Translation is unlimited and free for everyone: it runs on the free
-    # Google endpoint (no API key, no cost), so there is nothing to meter.
-    remaining = None
+    target_value = body.target_language or current_user.get("native_language")
+    if not target_value:
+        raise HTTPException(400, "Choose a translation language first.")
     try:
-        translated = await _google_translate(body.text, target)
-    except Exception:
-        # Fallback: LLM translation if the free endpoint is unavailable.
-        system = (
-            "You are a translation engine for a language exchange app. "
-            f"Translate the user's message into the language with ISO code '{target}'. "
-            "Reply with ONLY the translated text, nothing else."
-        )
-        try:
-            translated = await run_llm(system, body.text)
-        except Exception as e:
-            logger.exception("Translation failed")
-            raise HTTPException(status_code=502, detail=f"Translation failed: {e}")
-    return {"translated": translated, "target_language": target, "remaining": remaining}
+        target = normalize_language(target_value)
+        source = normalize_language(body.source_language or "auto", allow_auto=True)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from None
+    try:
+        return await translation_service.translate(current_user["_id"], body.text, source, target)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from None
+    except translation_service.TranslationFailure as error:
+        headers = {"Retry-After": str(error.retry_after)} if error.retry_after else None
+        raise HTTPException(503, "Translation is temporarily unavailable. Please try again.", headers=headers) from None
 
 
 @router.post("/correct")

@@ -22,10 +22,14 @@ export function NativeNotificationBridge() {
       if (key === handled.current) return;
       handled.current = key;
       router.push(notificationTarget(request.content.data || {}) as any);
-      void notifications.clearLastNotificationResponseAsync();
+      void notifications.clearLastNotificationResponseAsync().catch(() => {});
     };
     const subscription = notifications.addNotificationResponseReceivedListener(open);
-    const refreshed = notifications.addPushTokenListener(() => { void sendTokenToBackend().catch(() => {}); });
+    const refreshed = notifications.addPushTokenListener(() => {
+      if (live) void notifications.getPermissionsAsync().then(permission => {
+        if (live && permission.granted) return sendTokenToBackend();
+      }).catch(() => {});
+    });
     const appState = AppState.addEventListener("change", state => {
       if (state === "active") void notifications.getPermissionsAsync().then(permission => {
         if (live && permission.granted) return sendTokenToBackend();

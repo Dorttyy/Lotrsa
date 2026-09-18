@@ -5,10 +5,12 @@ import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { fonts } from "@/src/theme";
+import { useTabContentHeight } from "@/src/hooks/use-screen-space";
 import { premiumColors } from "@/src/premium/theme";
 
 export default function PremiumTabsLayout() {
   const insets = useSafeAreaInsets();
+  const tabContentHeight = useTabContentHeight();
   const bottomGap = Math.max(insets.bottom, 8);
 
   return (
@@ -35,7 +37,7 @@ export default function PremiumTabsLayout() {
           backgroundColor: premiumColors.surface,
           borderTopColor: premiumColors.divider,
           borderTopWidth: StyleSheet.hairlineWidth,
-          height: 64 + bottomGap,
+          height: tabContentHeight + bottomGap,
           paddingBottom: bottomGap,
           paddingTop: 4,
           ...Platform.select({

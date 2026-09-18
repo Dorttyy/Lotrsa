@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
 import { useRouter } from "expo-router";
 import type { PurchasesPackage } from "react-native-purchases";
 import { isTestStore, livePurchasesReady, useSubscription } from "@/src/billing/revenuecat";

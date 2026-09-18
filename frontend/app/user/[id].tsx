@@ -14,7 +14,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
 
 import { Avatar } from "@/src/components/Avatar";
 import { SpeakingBars } from "@/src/components/SpeakingBars";
@@ -291,7 +291,7 @@ export default function UserProfile() {
       </SafeAreaView>
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 96 + insets.bottom }}
+        contentContainerStyle={{ paddingBottom: 96 + insets.bottom, paddingLeft: insets.left, paddingRight: insets.right }}
         showsVerticalScrollIndicator={false}
       >
         {/* Transparent spacer that lets the cover show through at the top */}
@@ -760,7 +760,7 @@ export default function UserProfile() {
       </ScrollView>
 
       {/* Bottom action bar */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12, paddingLeft: insets.left + 20, paddingRight: insets.right + 20 }]}>
         {isSelf ? (
           <Pressable
             testID="post-moment-btn"

@@ -20,7 +20,8 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { KeyboardAvoidingView } from "@/src/components/layout/KeyboardAvoidingView";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
 
 import { Avatar } from "@/src/components/Avatar";
 import { VipBadge } from "@/src/components/Badges";
@@ -42,7 +43,7 @@ import { fonts, radius, shadow, spacing, ThemeColors } from "@/src/theme";
 import { AppTitle } from "@/src/ui/AppTitle";
 import { api, assetUrl, Moment } from "@/src/utils/api";
 import { timeAgo } from "@/src/utils/time";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
 
 export default function Moments() {
   const router = useRouter();
@@ -80,7 +81,7 @@ export default function Moments() {
   const noticeRef = React.useRef<ScrollView>(null);
   const noticeIdxRef = React.useRef(0);
   const { width: winW } = useWindowDimensions();
-  const bannerW = winW - spacing.xxl * 2;
+  const bannerW = Math.max(1, winW - insets.left - insets.right - spacing.xxl * 2);
 
   // Auto-advance the banner carousel; manual swipes stay in sync via onScroll.
   useEffect(() => {
@@ -733,7 +734,7 @@ export default function Moments() {
               {item.tags && item.tags.length > 0 ? (
                 <View style={styles.tagRow}>
                   {item.tags.map((t) => (
-                    <View key={t} style={styles.tagChip}>
+                    <View key={t} testID={`moment-tag-${item.id}-${t}`} style={styles.tagChip}>
                       <Text style={styles.tagChipText}>#{t}</Text>
                     </View>
                   ))}
@@ -815,7 +816,7 @@ export default function Moments() {
         onRequestClose={() => setFilterOpen(false)}
       >
         <Pressable style={styles.cfBackdrop} onPress={() => setFilterOpen(false)} />
-        <View style={[styles.cfSheet, { paddingBottom: spacing.xl + insets.bottom }]} testID="moments-custom-filter">
+        <BoundedSheet style={[styles.cfSheet, { paddingBottom: spacing.xl + insets.bottom }]} testID="moments-custom-filter">
           <View style={styles.cfHeader}>
             <Pressable
               testID="mcf-close"
@@ -882,7 +883,7 @@ export default function Moments() {
           >
             <Text style={styles.cfSearchText}>Search</Text>
           </Pressable>
-        </View>
+        </BoundedSheet>
       </Modal>
 
       <Modal
@@ -1014,7 +1015,7 @@ export default function Moments() {
           style={styles.modalBackdrop}
           behavior={Platform.OS === "ios" ? "padding" : Platform.OS === "android" ? "height" : undefined}
         >
-          <View style={styles.modalCard}>
+          <BoundedSheet testID="moments-composer-sheet" style={[styles.modalCard, { paddingBottom: spacing.xxl + insets.bottom }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>New Moment</Text>
               <Pressable
@@ -1075,7 +1076,7 @@ export default function Moments() {
                 )}
               </Pressable>
             </View>
-          </View>
+          </BoundedSheet>
         </KeyboardAvoidingView>
       </Modal>
       <MomentActionsMenu

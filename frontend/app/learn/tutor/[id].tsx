@@ -1,4 +1,5 @@
 import { VIcon } from "@/src/learn/Icon";
+import { BoundedSheet } from "@/src/components/layout/BoundedSheet";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -119,10 +120,10 @@ export default function TutorDetail() {
     "I’m a dedicated English educator with over five years of experience specializing in teaching professionals the language skills essential for their success.";
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingLeft: insets.left, paddingRight: insets.right }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 40, paddingHorizontal: 18 }}
+        contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 40 + insets.bottom, paddingHorizontal: 18 }}
       >
         <View style={s.topBar}>
           <Pressable onPress={() => router.back()} style={s.roundBtn}>
@@ -255,8 +256,8 @@ function BookingSheet({
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={s.sheetBackdrop} onPress={onClose} />
-      <View style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+      <Pressable testID="learn-booking-backdrop" style={s.sheetBackdrop} onPress={onClose} />
+      <BoundedSheet testID="learn-booking-sheet" style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
         <View style={s.sheetHandle} />
         <Text style={s.sheetTitle}>Book a lesson with {tutorName}</Text>
         <Text style={s.sheetLabel}>Choose a day</Text>
@@ -264,7 +265,7 @@ function BookingSheet({
           {days.map((d, i) => {
             const active = i === dayIdx;
             return (
-              <Pressable key={i} onPress={() => setDayIdx(i)} style={[s.dayCell, active && s.dayCellActive]}>
+              <Pressable testID={`learn-booking-day-${i}`} key={i} onPress={() => setDayIdx(i)} style={[s.dayCell, active && s.dayCellActive]}>
                 <Text style={[s.dayLabel, active && { color: "#0B0B0F" }]}>{d.label}</Text>
                 <Text style={[s.dayNum, active && { color: "#0B0B0F" }]}>{d.short}</Text>
               </Pressable>
@@ -275,7 +276,7 @@ function BookingSheet({
         <Text style={s.sheetLabel}>Available times</Text>
         <View style={s.timeGrid}>
           {TIME_SLOTS.map((t) => (
-            <Pressable key={t} onPress={() => setTime(t)} style={[s.timeChip, time === t && s.timeChipActive]}>
+            <Pressable testID={`learn-booking-time-${t}`} key={t} onPress={() => setTime(t)} style={[s.timeChip, time === t && s.timeChipActive]}>
               <Text style={[s.timeText, time === t && { color: "#0B0B0F" }]}>{t}</Text>
             </Pressable>
           ))}
@@ -283,12 +284,13 @@ function BookingSheet({
 
         <Pressable
           style={[s.applyBtn, (!time || submitting) && { opacity: 0.5 }]}
+          testID="learn-booking-confirm"
           disabled={!time || submitting}
           onPress={submit}
         >
           {submitting ? <ActivityIndicator color="#0B0B0F" /> : <Text style={s.applyText}>Confirm booking</Text>}
         </Pressable>
-      </View>
+      </BoundedSheet>
     </Modal>
   );
 }

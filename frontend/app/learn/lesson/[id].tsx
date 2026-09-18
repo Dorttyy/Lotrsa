@@ -82,7 +82,7 @@ export default function LessonPlayer() {
   const nextEnabled = step?.kind === "vocab" || (step?.kind === "quiz" && !!selected);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingLeft: insets.left, paddingRight: insets.right }}>
       <View style={[s.topBar, { paddingTop: insets.top + 8 }]}>
         <Pressable onPress={() => router.back()} style={s.roundBtn}>
           <VIcon name="close" size={24} color={colors.text} />
@@ -93,7 +93,7 @@ export default function LessonPlayer() {
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 30 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 30 + insets.bottom }}>
         <Text style={s.lessonTitle}>{lesson.title}</Text>
         <Text style={s.stepCounter}>Step {Math.min(idx + 1, total)} of {total}</Text>
 

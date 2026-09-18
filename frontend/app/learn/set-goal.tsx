@@ -5,7 +5,8 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 
 import { fonts } from "@/src/theme";
 import { learnColors } from "@/src/learn/theme";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "@/src/components/layout/SafeAreaView";
+import { useSheetBounds } from "@/src/hooks/use-screen-space";
 
 /**
  * "Set your Spanish goal" — a compact 4-step form matching the reference:
@@ -448,16 +449,18 @@ const PickerSheet = ({
   children: React.ReactNode;
 }) => {
   const insets = useSafeAreaInsets();
+  const sheetBounds = useSheetBounds();
   return (
   <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose}>
     <Pressable style={sheetStyles.backdrop} onPress={onClose}>
       <Pressable
-        style={[sheetStyles.sheet, { paddingBottom: 30 + insets.bottom }]}
+        testID="learn-goal-picker-sheet"
+        style={[sheetStyles.sheet, sheetBounds, { paddingBottom: 30 + insets.bottom }]}
         onPress={(e) => e.stopPropagation?.()}
       >
         <View style={sheetStyles.handle} />
         <Text style={sheetStyles.title}>{title}</Text>
-        <ScrollView style={{ maxHeight: 420 }}>{children}</ScrollView>
+        <ScrollView testID="learn-goal-picker-scroll" style={{ maxHeight: 420, flexShrink: 1 }}>{children}</ScrollView>
       </Pressable>
     </Pressable>
   </Modal>
@@ -547,6 +550,7 @@ const makeStyles = () =>
       justifyContent: "space-between",
     },
     purpleTitle: {
+      flexShrink: 1,
       fontFamily: fonts.displayBold,
       fontSize: 18,
       color: "#0B0B0F",

@@ -53,7 +53,7 @@ export default function VocabProfile() {
   const upcoming = bookings.filter((b) => new Date(b.slot_iso) > new Date()).slice(0, 3);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingLeft: insets.left, paddingRight: insets.right }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 40, paddingHorizontal: 18 }}
