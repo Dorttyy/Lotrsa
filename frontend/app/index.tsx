@@ -12,7 +12,7 @@ import { useAuth } from "@/src/context/AuthContext";
  * welcome / auth screen.
  */
 export default function Index() {
-  const { user, loading, isGuestBrowsing } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -22,7 +22,6 @@ export default function Index() {
     );
   }
 
-  if (isGuestBrowsing) return <Redirect href="/(tabs)/connect" />;
   if (!user) return <Redirect href="/welcome" />;
 
   if (!user.native_language || !user.learning_language) {

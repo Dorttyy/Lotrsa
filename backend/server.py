@@ -50,7 +50,9 @@ async def lifespan(app: FastAPI):
     await ensure_indexes()
     await seed_admin()
     await backfill_usernames()
-    await seed_pro_tutors()
+    # Fresh previews can opt out of synthetic profiles without disabling Pro.
+    if os.environ.get("SEED_DEMO_TUTORS", "true").lower() == "true":
+        await seed_pro_tutors()
     await seed_vocab_content()
     yield
     client.close()

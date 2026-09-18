@@ -231,7 +231,7 @@ export default function ChatScreen() {
     gift_unlocked?: boolean;
   } | null>(null);
   const [unlocking, setUnlocking] = useState(false);
-  // Partner's last-read timestamp — drives the "Seen"/"Delivered" receipt.
+  // Partner's last-read timestamp — drives the "Seen"/"Sent" receipt.
   const [partnerReadAt, setPartnerReadAt] = useState<string | null>(null);
   const listRef = useRef<FlatList<Message>>(null);
   // Keeps the list pinned to the newest message. True until the reader
@@ -1349,7 +1349,7 @@ export default function ChatScreen() {
               style={styles.headerInfo}
               onPress={() => router.push(`/group-settings/${id}`)}
             >
-              <Text style={styles.headerName} numberOfLines={1}>
+              <Text testID="chat-header-name" style={styles.headerName} numberOfLines={1} ellipsizeMode="tail">
                 {conversation?.name}
               </Text>
               <Text style={styles.headerStatus}>
@@ -1372,7 +1372,7 @@ export default function ChatScreen() {
               style={styles.headerInfo}
               onPress={() => router.push(`/user/${partner.id}`)}
             >
-              <Text style={styles.headerName} numberOfLines={1}>
+              <Text testID="chat-header-name" style={styles.headerName} numberOfLines={1} ellipsizeMode="tail">
                 {partner.name}
               </Text>
               <Text style={styles.headerStatus}>
@@ -2187,7 +2187,7 @@ export default function ChatScreen() {
                         <Text style={styles.receiptText}>
                           {partnerReadAt && partnerReadAt >= item.created_at
                             ? "Seen"
-                            : "Delivered"}
+                            : "Sent"}
                         </Text>
                       </View>
                     )}
@@ -2882,11 +2882,14 @@ const makeStyles = (colors: ThemeColors) =>
     },
     headerInfo: {
       flex: 1,
+      minWidth: 0,
+      minHeight: 48,
       justifyContent: "center",
     },
     headerName: {
       fontFamily: fonts.displaySemi,
-      fontSize: 24,
+      fontSize: 18,
+      lineHeight: 24,
       color: colors.onSurface,
     },
     headerStatus: {

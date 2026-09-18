@@ -1,734 +1,345 @@
 #!/usr/bin/env python3
 """
-Backend test for Group Chat + 1:1 Regression
-Tests group chat creation, messaging, member management, and 1:1 chat regression.
+Backend API testing for QA setup and auth regression.
+Tests QA user authentication, conversation setup, and profile completeness.
 """
 
 import requests
-import sys
-import base64
+import json
+from datetime import datetime
 
-# Backend URL from frontend/.env
+# Load configuration from environment
 BASE_URL = "https://elevate-familiar.preview.emergentagent.com/api"
 
-# Test credentials
-MEI_EMAIL = "mei@demo.com"
-MEI_PASSWORD = "Demo1234!"
-DIEGO_EMAIL = "diego@demo.com"
-DIEGO_PASSWORD = "Demo1234!"
+# Test credentials from memory/test_credentials.md
+QA1_EMAIL = "qa_tester_b40dc299@linguatest.com"
+QA1_PASSWORD = "QATest2026!"
+QA1_USER_ID = "83cdf218-fc71-4d7b-9427-1e7f6adfd9dc"
 
-def login(email, password):
-    """Login and return JWT token and user_id"""
-    print(f"🔐 Logging in as {email}...")
-    response = requests.post(
-        f"{BASE_URL}/auth/login",
-        json={"email": email, "password": password}
-    )
-    if response.status_code != 200:
-        print(f"❌ Login failed: {response.status_code} {response.text}")
-        sys.exit(1)
-    
-    data = response.json()
-    token = data.get("token")
-    user_id = data.get("user", {}).get("id")
-    
-    if not token or not user_id:
-        print(f"❌ Missing token or user_id in login response: {data}")
-        sys.exit(1)
-    
-    print(f"✅ Login successful, user_id: {user_id}")
-    return token, user_id
+QA2_EMAIL = "qa_guest_removal_67403793@linguatest.com"
+QA2_PASSWORD = "QATest2026!"
+QA2_USER_ID = "4d54db47-1a80-47b1-bcf7-ea76d748c671"
 
-def test_group_chat():
-    """Test group chat functionality"""
-    print("\n" + "="*80)
-    print("TESTING: GROUP CHAT FUNCTIONALITY")
-    print("="*80 + "\n")
-    
-    # Login both users
-    mei_token, mei_id = login(MEI_EMAIL, MEI_PASSWORD)
-    diego_token, diego_id = login(DIEGO_EMAIL, DIEGO_PASSWORD)
-    
-    mei_headers = {"Authorization": f"Bearer {mei_token}"}
-    diego_headers = {"Authorization": f"Bearer {diego_token}"}
-    
-    # A) GROUP CHAT TESTS
-    
-    # TEST 1: mei creates group with diego
-    print("\n🧪 TEST 1: POST /api/chats/group with member_ids:[diego_id]")
-    response = requests.post(
-        f"{BASE_URL}/chats/group",
-        headers=mei_headers,
-        json={"member_ids": [diego_id]}
-    )
-    
-    if response.status_code not in [200, 201]:
-        print(f"❌ FAILED: Group creation failed: {response.status_code} {response.text}")
+def print_test(name, passed, details=""):
+    """Print test result"""
+    status = "✅ PASS" if passed else "❌ FAIL"
+    print(f"{status}: {name}")
+    if details:
+        print(f"  {details}")
+
+def test_backend_health():
+    """Test 1: Backend health check"""
+    try:
+        response = requests.get(f"{BASE_URL}/", timeout=10)
+        passed = response.status_code == 200
+        print_test("Backend health check", passed, f"Status: {response.status_code}")
+        return passed
+    except Exception as e:
+        print_test("Backend health check", False, f"Error: {str(e)}")
         return False
-    
-    group_data = response.json()
-    group_id = group_data.get("id")
-    
-    # Verify response structure
-    if not group_data.get("is_group"):
-        print(f"❌ FAILED: is_group should be true")
+
+def test_qa1_login():
+    """Test 2: QA User 1 login"""
+    try:
+        response = requests.post(
+            f"{BASE_URL}/auth/login",
+            json={"email": QA1_EMAIL, "password": QA1_PASSWORD},
+            timeout=10
+        )
+        passed = response.status_code == 200
+        if passed:
+            data = response.json()
+            token = data.get("token")
+            user_id = data.get("user", {}).get("id")
+            print_test("QA User 1 login", passed, f"User ID: {user_id}")
+            return token, user_id
+        else:
+            print_test("QA User 1 login", False, f"Status: {response.status_code}, Response: {response.text}")
+            return None, None
+    except Exception as e:
+        print_test("QA User 1 login", False, f"Error: {str(e)}")
+        return None, None
+
+def test_qa1_me(token):
+    """Test 3: QA User 1 /auth/me"""
+    try:
+        response = requests.get(
+            f"{BASE_URL}/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10
+        )
+        passed = response.status_code == 200
+        if passed:
+            data = response.json()
+            user_id = data.get("id")
+            print_test("QA User 1 /auth/me", passed, f"User ID: {user_id}")
+            return data
+        else:
+            print_test("QA User 1 /auth/me", False, f"Status: {response.status_code}")
+            return None
+    except Exception as e:
+        print_test("QA User 1 /auth/me", False, f"Error: {str(e)}")
+        return None
+
+def test_qa2_login():
+    """Test 4: QA User 2 login"""
+    try:
+        response = requests.post(
+            f"{BASE_URL}/auth/login",
+            json={"email": QA2_EMAIL, "password": QA2_PASSWORD},
+            timeout=10
+        )
+        passed = response.status_code == 200
+        if passed:
+            data = response.json()
+            token = data.get("token")
+            user_id = data.get("user", {}).get("id")
+            print_test("QA User 2 login", passed, f"User ID: {user_id}")
+            return token, user_id
+        else:
+            print_test("QA User 2 login", False, f"Status: {response.status_code}, Response: {response.text}")
+            return None, None
+    except Exception as e:
+        print_test("QA User 2 login", False, f"Error: {str(e)}")
+        return None, None
+
+def test_qa2_me(token):
+    """Test 5: QA User 2 /auth/me"""
+    try:
+        response = requests.get(
+            f"{BASE_URL}/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10
+        )
+        passed = response.status_code == 200
+        if passed:
+            data = response.json()
+            user_id = data.get("id")
+            print_test("QA User 2 /auth/me", passed, f"User ID: {user_id}")
+            return data
+        else:
+            print_test("QA User 2 /auth/me", False, f"Status: {response.status_code}")
+            return None
+    except Exception as e:
+        print_test("QA User 2 /auth/me", False, f"Error: {str(e)}")
+        return None
+
+def test_guest_post_404():
+    """Test 6: Guest POST returns 404"""
+    try:
+        response = requests.post(f"{BASE_URL}/auth/guest", json={}, timeout=10)
+        passed = response.status_code == 404
+        print_test("Guest POST returns 404", passed, f"Status: {response.status_code}")
+        return passed
+    except Exception as e:
+        print_test("Guest POST returns 404", False, f"Error: {str(e)}")
         return False
+
+def check_qa2_profile(qa2_user):
+    """Check if QA2 profile needs completion"""
+    native_language = qa2_user.get("native_language")
+    learning_language = qa2_user.get("learning_language")
     
-    if not group_data.get("name"):
-        print(f"❌ FAILED: name field missing")
-        return False
+    needs_completion = not native_language or not learning_language
     
-    if group_data.get("member_count") != 2:
-        print(f"❌ FAILED: member_count should be 2, got {group_data.get('member_count')}")
-        return False
-    
-    if not group_data.get("members_preview"):
-        print(f"❌ FAILED: members_preview missing")
-        return False
-    
-    if group_data.get("owner_id") != mei_id:
-        print(f"❌ FAILED: owner_id should be mei_id")
-        return False
-    
-    print(f"✅ PASSED: Group created successfully")
-    print(f"   Group ID: {group_id}")
-    print(f"   Name: {group_data.get('name')}")
-    print(f"   Member count: {group_data.get('member_count')}")
-    print(f"   Owner: {group_data.get('owner_id')}")
-    
-    # TEST 2: diego gets chats and sees the group with system message
-    print("\n🧪 TEST 2: GET /api/chats as diego → group appears with system message")
-    response = requests.get(f"{BASE_URL}/chats", headers=diego_headers)
-    
-    if response.status_code != 200:
-        print(f"❌ FAILED: GET /api/chats failed: {response.status_code} {response.text}")
-        return False
-    
-    chats = response.json()
-    group_chat = None
-    
-    for chat in chats:
-        if chat.get("id") == group_id:
-            group_chat = chat
-            break
-    
-    if not group_chat:
-        print(f"❌ FAILED: Group not found in diego's chats")
-        return False
-    
-    if not group_chat.get("is_group"):
-        print(f"❌ FAILED: is_group should be true in chat list")
-        return False
-    
-    print(f"✅ PASSED: Group appears in diego's chat list")
-    
-    # Check for system message
-    response = requests.get(f"{BASE_URL}/chats/{group_id}/messages", headers=diego_headers)
-    
-    if response.status_code != 200:
-        print(f"❌ FAILED: GET messages failed: {response.status_code} {response.text}")
-        return False
-    
-    messages = response.json()
-    
-    if not messages:
-        print(f"❌ FAILED: No messages found (expected system message)")
-        return False
-    
-    first_msg = messages[0]
-    
-    if first_msg.get("type") != "system":
-        print(f"❌ FAILED: First message should be type=system, got {first_msg.get('type')}")
-        return False
-    
-    if "invited" not in first_msg.get("text", "").lower():
-        print(f"❌ FAILED: System message should mention 'invited'")
-        return False
-    
-    print(f"✅ PASSED: System message present: '{first_msg.get('text')}'")
-    
-    # TEST 3: mei sends message to group
-    print("\n🧪 TEST 3: POST /api/chats/{gid}/messages with text='hi group'")
-    response = requests.post(
-        f"{BASE_URL}/chats/{group_id}/messages",
-        headers=mei_headers,
-        json={"text": "hi group"}
-    )
-    
-    if response.status_code != 201:
-        print(f"❌ FAILED: Send message failed: {response.status_code} {response.text}")
-        return False
-    
-    msg_data = response.json()
-    msg_id = msg_data.get("id")
-    
-    print(f"✅ PASSED: Message sent successfully, id: {msg_id}")
-    
-    # Verify diego can see the message with sender card
-    response = requests.get(f"{BASE_URL}/chats/{group_id}/messages", headers=diego_headers)
-    
-    if response.status_code != 200:
-        print(f"❌ FAILED: GET messages failed: {response.status_code} {response.text}")
-        return False
-    
-    messages = response.json()
-    
-    # Find mei's message (not system message)
-    mei_msg = None
-    for msg in messages:
-        if msg.get("text") == "hi group":
-            mei_msg = msg
-            break
-    
-    if not mei_msg:
-        print(f"❌ FAILED: Message 'hi group' not found")
-        return False
-    
-    if not mei_msg.get("sender"):
-        print(f"❌ FAILED: sender card missing from group message")
-        return False
-    
-    if mei_msg["sender"].get("id") != mei_id:
-        print(f"❌ FAILED: sender.id should be mei_id")
-        return False
-    
-    if not mei_msg["sender"].get("name"):
-        print(f"❌ FAILED: sender.name missing")
-        return False
-    
-    print(f"✅ PASSED: Message visible with sender card (sender.name: {mei_msg['sender'].get('name')})")
-    
-    # TEST 4: diego's unread count incremented
-    print("\n🧪 TEST 4: GET /api/chats as diego → unread>=1 for group")
-    response = requests.get(f"{BASE_URL}/chats", headers=diego_headers)
-    
-    if response.status_code != 200:
-        print(f"❌ FAILED: GET /api/chats failed: {response.status_code} {response.text}")
-        return False
-    
-    chats = response.json()
-    group_chat = None
-    
-    for chat in chats:
-        if chat.get("id") == group_id:
-            group_chat = chat
-            break
-    
-    if not group_chat:
-        print(f"❌ FAILED: Group not found in chats")
-        return False
-    
-    unread = group_chat.get("unread", 0)
-    
-    if unread < 1:
-        print(f"❌ FAILED: unread should be >= 1, got {unread}")
-        return False
-    
-    print(f"✅ PASSED: Unread count = {unread}")
-    
-    # TEST 5: Rename group
-    print("\n🧪 TEST 5: POST /api/chats/{gid}/group/name with name='Renamed'")
-    response = requests.post(
-        f"{BASE_URL}/chats/{group_id}/group/name",
-        headers=mei_headers,
-        json={"name": "Renamed"}
-    )
-    
-    if response.status_code != 200:
-        print(f"❌ FAILED: Rename failed: {response.status_code} {response.text}")
-        return False
-    
-    rename_data = response.json()
-    
-    if not rename_data.get("ok"):
-        print(f"❌ FAILED: ok should be true")
-        return False
-    
-    if rename_data.get("name") != "Renamed":
-        print(f"❌ FAILED: name should be 'Renamed', got {rename_data.get('name')}")
-        return False
-    
-    print(f"✅ PASSED: Group renamed to 'Renamed'")
-    
-    # Verify name persisted
-    response = requests.get(f"{BASE_URL}/chats/{group_id}", headers=diego_headers)
-    
-    if response.status_code != 200:
-        print(f"❌ FAILED: GET group failed: {response.status_code} {response.text}")
-        return False
-    
-    group_data = response.json()
-    
-    if group_data.get("name") != "Renamed":
-        print(f"❌ FAILED: name not persisted, got {group_data.get('name')}")
-        return False
-    
-    print(f"✅ PASSED: Name persisted in GET /api/chats/{group_id}")
-    
-    # Check for system message about rename
-    response = requests.get(f"{BASE_URL}/chats/{group_id}/messages", headers=diego_headers)
-    messages = response.json()
-    
-    rename_msg = None
-    for msg in messages:
-        if msg.get("type") == "system" and "renamed" in msg.get("text", "").lower():
-            rename_msg = msg
-            break
-    
-    if not rename_msg:
-        print(f"⚠️  WARNING: No system message about rename found")
+    if needs_completion:
+        print(f"⚠️  QA2 profile incomplete:")
+        print(f"  native_language: {native_language}")
+        print(f"  learning_language: {learning_language}")
     else:
-        print(f"✅ PASSED: System message about rename: '{rename_msg.get('text')}'")
+        print(f"✅ QA2 profile complete:")
+        print(f"  native_language: {native_language}")
+        print(f"  learning_language: {learning_language}")
     
-    # TEST 6: Get group members
-    print("\n🧪 TEST 6: GET /api/chats/{gid}/group/members")
-    response = requests.get(f"{BASE_URL}/chats/{group_id}/group/members", headers=mei_headers)
-    
-    if response.status_code != 200:
-        print(f"❌ FAILED: GET members failed: {response.status_code} {response.text}")
-        return False
-    
-    members_data = response.json()
-    
-    if members_data.get("owner_id") != mei_id:
-        print(f"❌ FAILED: owner_id should be mei_id")
-        return False
-    
-    members = members_data.get("members", [])
-    
-    if len(members) != 2:
-        print(f"❌ FAILED: Should have 2 members, got {len(members)}")
-        return False
-    
-    print(f"✅ PASSED: Members list has 2 members, owner_id: {members_data.get('owner_id')}")
-    
-    # TEST 7: diego tries to remove mei (should fail 403)
-    print("\n🧪 TEST 7: diego POST /api/chats/{gid}/group/remove {user_id: mei_id} → 403")
-    response = requests.post(
-        f"{BASE_URL}/chats/{group_id}/group/remove",
-        headers=diego_headers,
-        json={"user_id": mei_id}
-    )
-    
-    if response.status_code != 403:
-        print(f"❌ FAILED: Should return 403, got {response.status_code}")
-        return False
-    
-    print(f"✅ PASSED: Non-owner correctly rejected with 403")
-    
-    # mei removes diego
-    print("\n   mei POST /api/chats/{gid}/group/remove {user_id: diego_id} → ok")
-    response = requests.post(
-        f"{BASE_URL}/chats/{group_id}/group/remove",
-        headers=mei_headers,
-        json={"user_id": diego_id}
-    )
-    
-    if response.status_code != 200:
-        print(f"❌ FAILED: Remove failed: {response.status_code} {response.text}")
-        return False
-    
-    remove_data = response.json()
-    
-    if not remove_data.get("ok"):
-        print(f"❌ FAILED: ok should be true")
-        return False
-    
-    print(f"✅ PASSED: diego removed successfully")
-    
-    # Verify member count is now 1
-    response = requests.get(f"{BASE_URL}/chats/{group_id}", headers=mei_headers)
-    group_data = response.json()
-    
-    if group_data.get("member_count") != 1:
-        print(f"❌ FAILED: member_count should be 1, got {group_data.get('member_count')}")
-        return False
-    
-    print(f"✅ PASSED: member_count now 1")
-    
-    # Re-add diego
-    print("\n   mei POST /api/chats/{gid}/group/add {member_ids:[diego_id]} → ok")
-    response = requests.post(
-        f"{BASE_URL}/chats/{group_id}/group/add",
-        headers=mei_headers,
-        json={"member_ids": [diego_id]}
-    )
-    
-    if response.status_code != 200:
-        print(f"❌ FAILED: Add failed: {response.status_code} {response.text}")
-        return False
-    
-    add_data = response.json()
-    
-    if not add_data.get("ok"):
-        print(f"❌ FAILED: ok should be true")
-        return False
-    
-    print(f"✅ PASSED: diego re-added successfully")
-    
-    # Verify member count is back to 2
-    response = requests.get(f"{BASE_URL}/chats/{group_id}", headers=mei_headers)
-    group_data = response.json()
-    
-    if group_data.get("member_count") != 2:
-        print(f"❌ FAILED: member_count should be 2, got {group_data.get('member_count')}")
-        return False
-    
-    print(f"✅ PASSED: member_count back to 2")
-    
-    # TEST 8: diego leaves group
-    print("\n🧪 TEST 8: diego POST /api/chats/{gid}/group/leave → ok")
-    response = requests.post(
-        f"{BASE_URL}/chats/{group_id}/group/leave",
-        headers=diego_headers
-    )
-    
-    if response.status_code != 200:
-        print(f"❌ FAILED: Leave failed: {response.status_code} {response.text}")
-        return False
-    
-    leave_data = response.json()
-    
-    if not leave_data.get("ok"):
-        print(f"❌ FAILED: ok should be true")
-        return False
-    
-    print(f"✅ PASSED: diego left group successfully")
-    
-    # Verify group no longer in diego's chats
-    response = requests.get(f"{BASE_URL}/chats", headers=diego_headers)
-    chats = response.json()
-    
-    group_found = False
-    for chat in chats:
-        if chat.get("id") == group_id:
-            group_found = True
-            break
-    
-    if group_found:
-        print(f"❌ FAILED: Group should not be in diego's chats after leaving")
-        return False
-    
-    print(f"✅ PASSED: Group no longer in diego's chat list")
-    
-    # Re-add diego for remaining tests
-    print("\n   Re-adding diego for remaining tests...")
-    response = requests.post(
-        f"{BASE_URL}/chats/{group_id}/group/add",
-        headers=mei_headers,
-        json={"member_ids": [diego_id]}
-    )
-    
-    if response.status_code != 200:
-        print(f"⚠️  WARNING: Could not re-add diego: {response.status_code}")
-    else:
-        print(f"✅ diego re-added")
-    
-    # TEST 9: Voice message in group
-    print("\n🧪 TEST 9: mei POST /api/chats/{gid}/voice with audio_base64")
-    
-    # Create minimal valid WAV audio (44 bytes header + 60 bytes data)
-    wav_header = b'RIFF' + (100).to_bytes(4, 'little') + b'WAVE'
-    wav_header += b'fmt ' + (16).to_bytes(4, 'little')
-    wav_header += (1).to_bytes(2, 'little')  # PCM
-    wav_header += (1).to_bytes(2, 'little')  # Mono
-    wav_header += (8000).to_bytes(4, 'little')  # Sample rate
-    wav_header += (16000).to_bytes(4, 'little')  # Byte rate
-    wav_header += (2).to_bytes(2, 'little')  # Block align
-    wav_header += (16).to_bytes(2, 'little')  # Bits per sample
-    wav_header += b'data' + (60).to_bytes(4, 'little')
-    wav_data = b'\x00' * 60
-    wav_bytes = wav_header + wav_data
-    
-    audio_base64 = base64.b64encode(wav_bytes).decode('utf-8')
-    
-    response = requests.post(
-        f"{BASE_URL}/chats/{group_id}/voice",
-        headers=mei_headers,
-        json={
-            "audio_base64": audio_base64,
-            "mime": "audio/wav",
-            "duration_ms": 1500
-        }
-    )
-    
-    if response.status_code != 201:
-        print(f"❌ FAILED: Voice message failed: {response.status_code} {response.text}")
-        return False
-    
-    voice_data = response.json()
-    
-    if voice_data.get("type") != "voice":
-        print(f"❌ FAILED: type should be 'voice', got {voice_data.get('type')}")
-        return False
-    
-    if not voice_data.get("audio_id"):
-        print(f"❌ FAILED: audio_id missing")
-        return False
-    
-    print(f"✅ PASSED: Voice message sent successfully")
-    
-    # TEST 10: Sticker in group
-    print("\n🧪 TEST 10: POST /api/chats/{gid}/sticker with sticker='1f600'")
-    response = requests.post(
-        f"{BASE_URL}/chats/{group_id}/sticker",
-        headers=mei_headers,
-        json={"sticker": "1f600"}
-    )
-    
-    if response.status_code != 201:
-        print(f"❌ FAILED: Sticker failed: {response.status_code} {response.text}")
-        return False
-    
-    sticker_data = response.json()
-    
-    if sticker_data.get("type") != "sticker":
-        print(f"❌ FAILED: type should be 'sticker', got {sticker_data.get('type')}")
-        return False
-    
-    if sticker_data.get("sticker") != "1f600":
-        print(f"❌ FAILED: sticker should be '1f600', got {sticker_data.get('sticker')}")
-        return False
-    
-    print(f"✅ PASSED: Sticker sent successfully")
-    
-    return True
+    return needs_completion
 
-def test_1_to_1_regression():
-    """Test 1:1 chat regression"""
-    print("\n" + "="*80)
-    print("TESTING: 1:1 CHAT REGRESSION")
-    print("="*80 + "\n")
+def complete_qa2_profile(token, qa2_user):
+    """Test 7: Complete QA2 profile if needed"""
+    needs_completion = check_qa2_profile(qa2_user)
     
-    # Login both users
-    mei_token, mei_id = login(MEI_EMAIL, MEI_PASSWORD)
-    diego_token, diego_id = login(DIEGO_EMAIL, DIEGO_PASSWORD)
+    if not needs_completion:
+        print_test("QA2 profile completion", True, "Profile already complete, no update needed")
+        return True
     
-    mei_headers = {"Authorization": f"Bearer {mei_token}"}
-    diego_headers = {"Authorization": f"Bearer {diego_token}"}
+    # Complete profile with minimal required fields
+    # Keep existing gender if set, use identifiable QA name
+    profile_update = {
+        "native_language": "en",
+        "learning_language": "es"
+    }
     
-    # TEST 11: Create/get 1:1 conversation
-    print("\n🧪 TEST 11: mei POST /api/chats {partner_id: diego_id} → 1:1 conversation")
-    response = requests.post(
-        f"{BASE_URL}/chats",
-        headers=mei_headers,
-        json={"partner_id": diego_id}
-    )
+    # Preserve existing gender if set
+    if qa2_user.get("gender"):
+        print(f"  Preserving existing gender: {qa2_user.get('gender')}")
     
-    if response.status_code not in [200, 201]:
-        print(f"❌ FAILED: Create conversation failed: {response.status_code} {response.text}")
+    try:
+        response = requests.put(
+            f"{BASE_URL}/users/me",
+            headers={"Authorization": f"Bearer {token}"},
+            json=profile_update,
+            timeout=10
+        )
+        passed = response.status_code == 200
+        if passed:
+            data = response.json()
+            print_test("QA2 profile completion", passed, 
+                      f"Updated: native_language={data.get('native_language')}, learning_language={data.get('learning_language')}")
+            print(f"  ⚠️  PROFILE UPDATED: QA2 now has native_language=en, learning_language=es")
+            return True
+        else:
+            print_test("QA2 profile completion", False, f"Status: {response.status_code}, Response: {response.text}")
+            return False
+    except Exception as e:
+        print_test("QA2 profile completion", False, f"Error: {str(e)}")
         return False
-    
-    conv_data = response.json()
-    conv_id = conv_data.get("id")
-    
-    # Verify it's NOT a group
-    if conv_data.get("is_group"):
-        print(f"❌ FAILED: is_group should be false or absent for 1:1")
+
+def find_or_create_conversation(qa1_token, qa2_user_id):
+    """Test 8: Find or create conversation between QA1 and QA2"""
+    try:
+        # First, try to find existing conversation
+        response = requests.get(
+            f"{BASE_URL}/chats",
+            headers={"Authorization": f"Bearer {qa1_token}"},
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            conversations = response.json()
+            # Look for conversation with QA2
+            for conv in conversations:
+                participants = conv.get("participants", [])
+                participant_ids = [p.get("id") for p in participants]
+                if qa2_user_id in participant_ids:
+                    conv_id = conv.get("id")
+                    print_test("Find existing conversation", True, f"Found conversation ID: {conv_id}")
+                    return conv_id
+            
+            # No existing conversation found, create one
+            print("  No existing conversation found, creating new one...")
+            create_response = requests.post(
+                f"{BASE_URL}/chats",
+                headers={"Authorization": f"Bearer {qa1_token}"},
+                json={"partner_id": qa2_user_id},
+                timeout=10
+            )
+            
+            if create_response.status_code in [200, 201]:
+                conv_data = create_response.json()
+                conv_id = conv_data.get("id")
+                print_test("Create conversation", True, f"Created conversation ID: {conv_id}")
+                return conv_id
+            else:
+                print_test("Create conversation", False, 
+                          f"Status: {create_response.status_code}, Response: {create_response.text}")
+                return None
+        else:
+            print_test("Find existing conversation", False, f"Status: {response.status_code}")
+            return None
+    except Exception as e:
+        print_test("Find/create conversation", False, f"Error: {str(e)}")
+        return None
+
+def test_wrong_password():
+    """Test 9: Wrong password returns 401"""
+    try:
+        response = requests.post(
+            f"{BASE_URL}/auth/login",
+            json={"email": QA1_EMAIL, "password": "WrongPassword123!"},
+            timeout=10
+        )
+        passed = response.status_code == 401
+        print_test("Wrong password returns 401", passed, f"Status: {response.status_code}")
+        return passed
+    except Exception as e:
+        print_test("Wrong password returns 401", False, f"Error: {str(e)}")
         return False
+
+def main():
+    """Run all backend tests"""
+    print("=" * 80)
+    print("BACKEND QA SETUP AND AUTH REGRESSION TESTING")
+    print("=" * 80)
+    print()
     
-    # Verify partner card present
-    if not conv_data.get("partner"):
-        print(f"❌ FAILED: partner card missing")
-        return False
+    results = []
     
-    if conv_data["partner"].get("id") != diego_id:
-        print(f"❌ FAILED: partner.id should be diego_id")
-        return False
+    # Test 1: Backend health
+    print("1. Backend Health Check")
+    print("-" * 80)
+    results.append(test_backend_health())
+    print()
     
-    print(f"✅ PASSED: 1:1 conversation created/retrieved")
-    print(f"   Conversation ID: {conv_id}")
-    print(f"   Partner: {conv_data['partner'].get('name')}")
+    # Test 2-3: QA User 1 auth
+    print("2. QA User 1 Authentication")
+    print("-" * 80)
+    qa1_token, qa1_user_id = test_qa1_login()
+    if qa1_token:
+        results.append(True)
+        qa1_user = test_qa1_me(qa1_token)
+        results.append(qa1_user is not None)
+    else:
+        results.append(False)
+        results.append(False)
+    print()
     
-    # TEST 12: Send text message
-    print("\n🧪 TEST 12: mei sends text message → diego sees unread increment")
-    response = requests.post(
-        f"{BASE_URL}/chats/{conv_id}/messages",
-        headers=mei_headers,
-        json={"text": "test message for 1:1"}
-    )
+    # Test 4-5: QA User 2 auth
+    print("3. QA User 2 Authentication")
+    print("-" * 80)
+    qa2_token, qa2_user_id = test_qa2_login()
+    if qa2_token:
+        results.append(True)
+        qa2_user = test_qa2_me(qa2_token)
+        results.append(qa2_user is not None)
+    else:
+        results.append(False)
+        results.append(False)
+    print()
     
-    if response.status_code != 201:
-        print(f"❌ FAILED: Send message failed: {response.status_code} {response.text}")
-        return False
+    # Test 6: Guest POST 404
+    print("4. Guest Mode Removal Verification")
+    print("-" * 80)
+    results.append(test_guest_post_404())
+    print()
     
-    msg_data = response.json()
-    msg_id = msg_data.get("id")
+    # Test 7: QA2 profile completion
+    if qa2_user:
+        print("5. QA2 Profile Completion Check")
+        print("-" * 80)
+        results.append(complete_qa2_profile(qa2_token, qa2_user))
+        print()
     
-    print(f"✅ PASSED: Text message sent, id: {msg_id}")
+    # Test 8: Find or create conversation
+    if qa1_token and qa2_user_id:
+        print("6. QA Conversation Setup")
+        print("-" * 80)
+        conv_id = find_or_create_conversation(qa1_token, qa2_user_id)
+        results.append(conv_id is not None)
+        if conv_id:
+            print(f"\n📝 CONVERSATION ID FOR FRONTEND TESTING: {conv_id}")
+        print()
     
-    # Verify diego sees unread increment
-    response = requests.get(f"{BASE_URL}/chats", headers=diego_headers)
+    # Test 9: Wrong password
+    print("7. Wrong Password Validation")
+    print("-" * 80)
+    results.append(test_wrong_password())
+    print()
     
-    if response.status_code != 200:
-        print(f"❌ FAILED: GET chats failed: {response.status_code} {response.text}")
-        return False
+    # Summary
+    print("=" * 80)
+    print("TEST SUMMARY")
+    print("=" * 80)
+    passed = sum(results)
+    total = len(results)
+    print(f"Passed: {passed}/{total}")
+    print(f"Failed: {total - passed}/{total}")
+    print()
     
-    chats = response.json()
-    conv = None
+    if passed == total:
+        print("✅ ALL TESTS PASSED - Backend ready for frontend UI testing")
+    else:
+        print("❌ SOME TESTS FAILED - Review failures above")
     
-    for chat in chats:
-        if chat.get("id") == conv_id:
-            conv = chat
-            break
-    
-    if not conv:
-        print(f"❌ FAILED: Conversation not found in diego's chats")
-        return False
-    
-    unread = conv.get("unread", 0)
-    
-    if unread < 1:
-        print(f"❌ FAILED: unread should be >= 1, got {unread}")
-        return False
-    
-    print(f"✅ PASSED: diego sees unread = {unread}")
-    
-    # Verify messages OK
-    response = requests.get(f"{BASE_URL}/chats/{conv_id}/messages", headers=diego_headers)
-    
-    if response.status_code != 200:
-        print(f"❌ FAILED: GET messages failed: {response.status_code} {response.text}")
-        return False
-    
-    messages = response.json()
-    
-    found = False
-    for msg in messages:
-        if msg.get("id") == msg_id:
-            found = True
-            break
-    
-    if not found:
-        print(f"❌ FAILED: Message not found in messages list")
-        return False
-    
-    print(f"✅ PASSED: Message visible in GET messages")
-    
-    # TEST 13: Send voice + image
-    print("\n🧪 TEST 13: mei sends voice + image messages")
-    
-    # Voice message
-    wav_header = b'RIFF' + (100).to_bytes(4, 'little') + b'WAVE'
-    wav_header += b'fmt ' + (16).to_bytes(4, 'little')
-    wav_header += (1).to_bytes(2, 'little')
-    wav_header += (1).to_bytes(2, 'little')
-    wav_header += (8000).to_bytes(4, 'little')
-    wav_header += (16000).to_bytes(4, 'little')
-    wav_header += (2).to_bytes(2, 'little')
-    wav_header += (16).to_bytes(2, 'little')
-    wav_header += b'data' + (60).to_bytes(4, 'little')
-    wav_data = b'\x00' * 60
-    wav_bytes = wav_header + wav_data
-    audio_base64 = base64.b64encode(wav_bytes).decode('utf-8')
-    
-    response = requests.post(
-        f"{BASE_URL}/chats/{conv_id}/voice",
-        headers=mei_headers,
-        json={
-            "audio_base64": audio_base64,
-            "mime": "audio/wav",
-            "duration_ms": 1000
-        }
-    )
-    
-    if response.status_code != 201:
-        print(f"❌ FAILED: Voice message failed: {response.status_code} {response.text}")
-        return False
-    
-    print(f"✅ PASSED: Voice message sent")
-    
-    # Image message (tiny PNG)
-    png_bytes = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==")
-    image_base64 = base64.b64encode(png_bytes).decode('utf-8')
-    
-    response = requests.post(
-        f"{BASE_URL}/chats/{conv_id}/image",
-        headers=mei_headers,
-        json={
-            "image_base64": image_base64,
-            "mime": "image/png"
-        }
-    )
-    
-    if response.status_code != 201:
-        print(f"❌ FAILED: Image message failed: {response.status_code} {response.text}")
-        return False
-    
-    print(f"✅ PASSED: Image message sent")
-    
-    # TEST 14: Reaction
-    print("\n🧪 TEST 14: diego POST /api/chats/{cid}/messages/{mid}/react {emoji:'❤️'}")
-    response = requests.post(
-        f"{BASE_URL}/chats/{conv_id}/messages/{msg_id}/react",
-        headers=diego_headers,
-        json={"emoji": "❤️"}
-    )
-    
-    if response.status_code != 200:
-        print(f"❌ FAILED: React failed: {response.status_code} {response.text}")
-        return False
-    
-    react_data = response.json()
-    
-    # Verify reactions array present
-    if "reactions" not in react_data:
-        print(f"❌ FAILED: reactions array missing")
-        return False
-    
-    print(f"✅ PASSED: Reaction added successfully")
-    
-    # TEST 15: Call log
-    print("\n🧪 TEST 15: mei POST /api/chats/{cid}/call {status:'answered', duration_ms:5000, kind:'voice'}")
-    response = requests.post(
-        f"{BASE_URL}/chats/{conv_id}/call",
-        headers=mei_headers,
-        json={
-            "status": "answered",
-            "duration_ms": 5000,
-            "kind": "voice"
-        }
-    )
-    
-    if response.status_code != 201:
-        print(f"❌ FAILED: Call log failed: {response.status_code} {response.text}")
-        return False
-    
-    call_data = response.json()
-    
-    if call_data.get("type") != "call":
-        print(f"❌ FAILED: type should be 'call', got {call_data.get('type')}")
-        return False
-    
-    if call_data.get("call_status") != "answered":
-        print(f"❌ FAILED: call_status should be 'answered', got {call_data.get('call_status')}")
-        return False
-    
-    print(f"✅ PASSED: Call log created successfully")
-    
-    return True
+    return passed == total
 
 if __name__ == "__main__":
-    try:
-        print("\n" + "="*80)
-        print("GROUP CHAT + 1:1 REGRESSION TEST SUITE")
-        print("="*80)
-        
-        group_success = test_group_chat()
-        regression_success = test_1_to_1_regression()
-        
-        if group_success and regression_success:
-            print("\n" + "="*80)
-            print("✅ ALL TESTS PASSED")
-            print("="*80)
-            sys.exit(0)
-        else:
-            print("\n" + "="*80)
-            print("❌ SOME TESTS FAILED")
-            print("="*80)
-            sys.exit(1)
-    except Exception as e:
-        print(f"\n❌ UNEXPECTED ERROR: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+    main()

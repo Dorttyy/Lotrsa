@@ -17,7 +17,15 @@ from models import CorrectRequest, TranscribeRequest, TranslateRequest, _vip_act
 router = APIRouter(prefix="/ai", tags=["ai"])
 logger = logging.getLogger(__name__)
 
-EMERGENT_LLM_KEY = os.environ["EMERGENT_LLM_KEY"]
+def require_llm_key() -> str:
+    """Optional AI setup must never prevent account services from starting."""
+    key = os.environ.get("EMERGENT_LLM_KEY", "").strip()
+    if not key:
+        raise HTTPException(
+            status_code=503,
+            detail="Optional AI features are not configured for this preview.",
+        )
+    return key
 
 # Safety net when a language *name* is sent instead of an ISO code.
 NAME_TO_CODE = {
@@ -42,10 +50,11 @@ async def _google_translate(text: str, target: str) -> str:
 
 
 async def run_llm(system_message: str, text: str) -> str:
+    api_key = require_llm_key()
     from emergentintegrations.llm.chat import LlmChat, StreamDone, TextDelta, UserMessage
 
     chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
+        api_key=api_key,
         session_id=f"lingua-{uuid.uuid4()}",
         system_message=system_message,
     ).with_model("openai", "gpt-5.2")
@@ -73,6 +82,7 @@ def parse_json_response(raw: str) -> dict | None:
 async def run_llm_image(system_message: str, text: str, image_base64: str) -> str:
     """LLM call that also attaches an image (vision) — used by AI Vocab and
     Extract-text-&-translate on photo messages."""
+    api_key = require_llm_key()
     from emergentintegrations.llm.chat import (
         ImageContent,
         LlmChat,
@@ -82,7 +92,7 @@ async def run_llm_image(system_message: str, text: str, image_base64: str) -> st
     )
 
     chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
+        api_key=api_key,
         session_id=f"lingua-img-{uuid.uuid4()}",
         system_message=system_message,
     ).with_model("openai", "gpt-5.2")
@@ -129,6 +139,8 @@ async def image_lens(body: ImageAiRequest, current_user: CurrentUser):
     """AI Lens: identify THE main object in a photo as a flashcard —
     native word + learning word + pronunciation + meanings + example."""
     # Free users get 3 lens scans per day; VIP is unlimited.
+    # A missing optional integration must not consume a user's scan quota.
+    require_llm_key()
     if not _vip_active(current_user):
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         usage = current_user.get("lens_usage") or {}
@@ -184,6 +196,7 @@ async def image_lens(body: ImageAiRequest, current_user: CurrentUser):
 @router.post("/image-vocab")
 async def image_vocab(body: ImageAiRequest, current_user: CurrentUser):
     """AI Vocab: identify useful vocabulary for objects/actions in a photo."""
+    require_llm_key()
     img = await _load_image_b64(body.media_id)
     learning, native = _user_langs(current_user)
     system = (
@@ -218,6 +231,7 @@ async def image_vocab(body: ImageAiRequest, current_user: CurrentUser):
 @router.post("/image-text")
 async def image_text(body: ImageAiRequest, current_user: CurrentUser):
     """Extract text & translate: OCR any text in the photo and translate it."""
+    require_llm_key()
     img = await _load_image_b64(body.media_id)
     _, native = _user_langs(current_user)
     target = (body.target_language or native or "en").strip()
@@ -271,6 +285,7 @@ async def translate(body: TranslateRequest, current_user: CurrentUser):
 
 @router.post("/correct")
 async def correct(body: CorrectRequest, current_user: CurrentUser):
+    require_llm_key()
     lang_hint = f" The text is written in {body.language}." if body.language else ""
     system = (
         "You are a friendly language tutor in a language exchange app. "

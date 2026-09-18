@@ -72,43 +72,6 @@ async def register(body: RegisterRequest):
     return {"token": create_access_token(user_id), "user": user_public(doc)}
 
 
-@router.post("/guest", status_code=status.HTTP_201_CREATED)
-async def guest():
-    """One-tap guest account — lets a visitor explore the app without signing
-    up. Creates a real user record so all features (chat, moments, rooms)
-    keep working, just pre-filled with sensible defaults so onboarding can be
-    skipped. Guests can convert to a full account later from Settings."""
-    user_id = str(uuid.uuid4())
-    guest_number = random.randint(1000, 9999)
-    guest_name = f"Guest {guest_number}"
-    now = datetime.now(timezone.utc)
-    doc = {
-        "_id": user_id,
-        "email": f"guest_{user_id[:8]}@guest.linguaconnect.local",
-        "password_hash": hash_password(uuid.uuid4().hex),  # unreachable password
-        "name": guest_name,
-        "username": await generate_username(guest_name),
-        "username_changed_at": None,
-        "bio": None,
-        "country": "United States",
-        "avatar_url": None,
-        "native_language": "en",
-        "learning_language": "es",
-        "learning_languages": ["es"],
-        "proficiency": "Beginner",
-        "age": 25,
-        "gender": "male",
-        "interests": ["Music", "Travel", "Movies"],
-        "is_guest": True,
-        "streak_count": 1,
-        "coins": 500,
-        "last_active_date": now.date().isoformat(),
-        "created_at": now.isoformat(),
-    }
-    await users_col.insert_one(doc)
-    return {"token": create_access_token(user_id), "user": user_public(doc)}
-
-
 @router.post("/login")
 async def login(body: LoginRequest):
     doc = await users_col.find_one({"email": body.email.lower()})

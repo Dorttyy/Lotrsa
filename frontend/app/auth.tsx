@@ -1,15 +1,15 @@
 /**
  * LinguaConnect auth screen — email-only login + signup.
  *
- * A single screen with a segmented Log in / Sign up toggle. Both flows share
- * the same fields (name shown only when signing up). Local guest browsing
- * is available without creating an account or contacting the server.
+ * A clean, reference-inspired form with a centered heading and rounded CTA.
+ * Both flows share the same fields (name shown only when signing up).
+ * Only working email authentication is exposed; no guest or social placeholders.
  */
 
 import { Ionicons } from "@/src/ui/icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -44,18 +44,27 @@ export default function AuthScreen() {
   const [focused, setFocused] = useState<FieldKey | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const { login, register, enterGuestBrowsing, isGuestBrowsing } = useAuth();
+  const { login, register } = useAuth();
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const submitting = useRef(false);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, mode: themeMode } = useTheme();
   const styles = React.useMemo(() => makeStyles(colors), [colors]);
+
+  useEffect(() => {
+    setMode(initialMode === "login" ? "login" : "register");
+    setError(null);
+    setShowPassword(false);
+  }, [initialMode]);
 
   const isLogin = mode === "login";
 
   const emailValid = /^\S+@\S+\.\S+$/.test(email.trim());
   const passwordValid = password.length >= 6;
   const nameValid = isLogin || name.trim().length >= 1;
-  const formValid = emailValid && passwordValid && nameValid;
+  const formValid = emailValid && (isLogin ? password.length > 0 : passwordValid) && nameValid;
 
   const routeAfterAuth = (u: { native_language?: string | null; learning_language?: string | null }) => {
     if (!u.native_language || !u.learning_language) {
@@ -81,6 +90,7 @@ export default function AuthScreen() {
 
   // ── email / password submit ──────────────────────────────────────────
   const submit = async () => {
+    if (submitting.current) return;
     setError(null);
     if (!email.trim()) return setError("Please enter your email.");
     if (!emailValid) return setError("Please enter a valid email address.");
@@ -89,6 +99,8 @@ export default function AuthScreen() {
       return setError("Password must be at least 6 characters.");
     }
     if (!isLogin && !name.trim()) return setError("Please enter your name.");
+    Keyboard.dismiss();
+    submitting.current = true;
     setBusy(true);
     try {
       const authedUser = isLogin
@@ -98,6 +110,7 @@ export default function AuthScreen() {
     } catch (e) {
       setError(humanizeError(e instanceof Error ? e.message : "Something went wrong"));
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   };
@@ -112,37 +125,23 @@ export default function AuthScreen() {
 
   // ── render ───────────────────────────────────────────────────────────
   return (
-    <View style={styles.container} testID="auth-screen">
-      {/* Purple gradient hero */}
-      <LinearGradient
-        colors={["#0E9AE0", "#0A6B9E"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.hero, { paddingTop: insets.top + spacing.sm }]}
-      >
+    <View style={[styles.container, { paddingLeft: insets.left, paddingRight: insets.right }]} testID="auth-screen">
+      <StatusBar style={themeMode === "dark" ? "light" : "dark"} />
+      <View style={[styles.topBar, { paddingTop: insets.top + spacing.sm }]}>
         <BackButton
           testID="auth-back-btn"
-          variant="overlay"
-          onPress={() => router.canGoBack()
-            ? router.back()
-            : router.replace(isGuestBrowsing ? "/(tabs)/connect" : "/welcome")}
+          variant="plain"
+          onPress={() => {
+            if (busy) return;
+            if (router.canGoBack()) router.back();
+            else router.replace("/welcome");
+          }}
         />
-        <View style={styles.heroBody}>
-          <View style={styles.logoBadge}>
-            <Ionicons name="chatbubbles" size={26} color="#0E9AE0" />
-          </View>
-          <Text style={styles.heroTitle}>
-            {isLogin ? "Welcome back!" : "Join LinguaConnect"}
-          </Text>
-          <Text style={styles.heroSubtitle}>
-            {isLogin
-              ? "Log in and keep the conversation going."
-              : "Meet native speakers and learn together."}
-          </Text>
-        </View>
-      </LinearGradient>
+        <Text style={styles.wordmark}>LinguaConnect</Text>
+        <View style={styles.headerBalance} />
+      </View>
 
-      {/* Form sheet */}
+      {/* One continuous surface; scrollable with the keyboard open. */}
       <KeyboardAvoidingView
         style={styles.sheetFlex}
         behavior={
@@ -157,53 +156,17 @@ export default function AuthScreen() {
           <ScrollView
             contentContainerStyle={[styles.scroll, { paddingBottom: spacing.xxl + insets.bottom }]}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
           >
-            {/* Segmented Log in / Sign up */}
-            <View style={styles.segmentedRow}>
-              {(["login", "register"] as Mode[]).map((m) => {
-                const on = mode === m;
-                return (
-                  <Pressable
-                    key={m}
-                    testID={`auth-segment-${m}`}
-                    onPress={() => {
-                      setMode(m);
-                      setError(null);
-                    }}
-                    style={[styles.segmentBtn, on && styles.segmentBtnOn]}
-                  >
-                    <Text
-                      style={[
-                        styles.segmentText,
-                        on && styles.segmentTextOn,
-                      ]}
-                    >
-                      {m === "login" ? "Log in" : "Sign up"}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            <View style={styles.guestEntry}>
-              <Pressable
-                testID="auth-guest-btn"
-                accessibilityRole="button"
-                accessibilityLabel="Continue as Guest"
-                accessibilityHint="Browse the app without creating an account"
-                onPress={() => {
-                  Keyboard.dismiss();
-                  enterGuestBrowsing();
-                  router.replace("/(tabs)/connect");
-                }}
-                style={({ pressed }) => [styles.guestButton, pressed && { opacity: 0.75 }]}
-              >
-                <Ionicons name="compass-outline" size={21} color={colors.brand} />
-                <Text style={styles.guestButtonText}>Continue as Guest</Text>
-                <Ionicons name="arrow-forward" size={18} color={colors.brand} />
-              </Pressable>
-              <Text style={styles.guestHint}>No account needed. Chat, posts, and calls require sign-in.</Text>
+            <View style={styles.form}>
+            <View style={styles.intro}>
+              <Text testID="auth-title" accessibilityRole="header" style={styles.heading}>
+                {isLogin ? "Login" : "Sign up"}
+              </Text>
+              <Text style={styles.subtitle}>
+                {isLogin ? "Good to see you again." : "A new language. A new connection."}
+              </Text>
             </View>
 
             {!isLogin && (
@@ -217,6 +180,12 @@ export default function AuthScreen() {
                   />
                   <TextInput
                     testID="auth-name-input"
+                    accessibilityLabel="Name"
+                    editable={!busy}
+                    autoComplete="name"
+                    textContentType="name"
+                    returnKeyType="next"
+                    onSubmitEditing={() => emailRef.current?.focus()}
                     style={styles.input}
                     placeholder="Your name"
                     placeholderTextColor={colors.onSurfaceSecondary}
@@ -239,7 +208,14 @@ export default function AuthScreen() {
                   color={focused === "email" ? colors.brand : colors.onSurfaceSecondary}
                 />
                 <TextInput
+                  ref={emailRef}
                   testID="auth-email-input"
+                  accessibilityLabel="Email"
+                  editable={!busy}
+                  autoCorrect={false}
+                  textContentType="emailAddress"
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
                   style={styles.input}
                   placeholder="you@example.com"
                   placeholderTextColor={colors.onSurfaceSecondary}
@@ -255,22 +231,7 @@ export default function AuthScreen() {
             </View>
 
             <View style={styles.field}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Password</Text>
-                {isLogin && (
-                  <Pressable
-                    testID="auth-forgot-btn"
-                    hitSlop={6}
-                    onPress={() =>
-                      setError(
-                        "Password reset is coming soon. For now, please contact support.",
-                      )
-                    }
-                  >
-                    <Text style={styles.forgotText}>Forgot password?</Text>
-                  </Pressable>
-                )}
-              </View>
+              <Text style={styles.label}>Password</Text>
               <View style={inputWrapStyle("password")}>
                 <Ionicons
                   name="lock-closed-outline"
@@ -280,7 +241,16 @@ export default function AuthScreen() {
                   }
                 />
                 <TextInput
+                  ref={passwordRef}
                   testID="auth-password-input"
+                  accessibilityLabel="Password"
+                  editable={!busy}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  textContentType={isLogin ? "password" : "newPassword"}
+                  returnKeyType="go"
+                  onSubmitEditing={() => { void submit(); }}
                   style={styles.input}
                   placeholder={isLogin ? "Your password" : "At least 6 characters"}
                   placeholderTextColor={colors.onSurfaceSecondary}
@@ -292,8 +262,11 @@ export default function AuthScreen() {
                 />
                 <Pressable
                   testID="auth-toggle-password-btn"
+                  accessibilityRole="button"
+                  accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                  accessibilityState={{ checked: showPassword }}
+                  style={styles.passwordToggle}
                   onPress={() => setShowPassword((v) => !v)}
-                  hitSlop={8}
                 >
                   <Ionicons
                     name={showPassword ? "eye-off-outline" : "eye-outline"}
@@ -318,8 +291,19 @@ export default function AuthScreen() {
               )}
             </View>
 
+            {isLogin && (
+              <Pressable
+                testID="auth-forgot-btn"
+                accessibilityRole="button"
+                style={styles.forgotButton}
+                onPress={() => setError("Password recovery is not available in this preview yet.")}
+              >
+                <Text style={styles.forgotText}>Forgot password?</Text>
+              </Pressable>
+            )}
+
             {error && (
-              <View style={styles.errorRow}>
+              <View style={styles.errorRow} accessibilityLiveRegion="polite">
                 <Ionicons name="alert-circle" size={15} color={colors.error} />
                 <Text testID="auth-error-text" style={styles.error}>
                   {error}
@@ -329,6 +313,9 @@ export default function AuthScreen() {
 
             <Pressable
               testID="auth-submit-btn"
+              accessibilityRole="button"
+              accessibilityLabel={isLogin ? "Login" : "Sign up"}
+              accessibilityState={{ disabled: busy || !formValid, busy }}
               style={({ pressed }) => [
                 styles.submitWrap,
                 (pressed || busy) && { opacity: 0.85 },
@@ -337,51 +324,34 @@ export default function AuthScreen() {
               onPress={submit}
               disabled={bothBusy || !formValid}
             >
-              <LinearGradient
-                colors={["#0E9AE0", "#0A6B9E"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.submitBtn}
-              >
+              <View style={styles.submitBtn}>
                 {busy ? (
-                  <ActivityIndicator color="#FFFFFF" />
+                  <ActivityIndicator color={colors.surface} />
                 ) : (
-                  <>
-                    <Text style={styles.submitText}>
-                      {isLogin ? "Log In" : "Sign Up"}
-                    </Text>
-                    <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-                  </>
+                  <Text style={styles.submitText}>{isLogin ? "Login" : "Sign up"}</Text>
                 )}
-              </LinearGradient>
+              </View>
             </Pressable>
-
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>
-                {isLogin ? "New here?" : "Already have an account?"}
-              </Text>
-              <View style={styles.dividerLine} />
-            </View>
 
             <Pressable
               testID="auth-switch-mode-btn"
+              accessibilityRole="button"
+              accessibilityLabel={isLogin ? "Create an account" : "Log in instead"}
+              disabled={busy}
               onPress={() => {
                 setMode(isLogin ? "register" : "login");
+                setShowPassword(false);
                 setError(null);
               }}
               style={({ pressed }) => [styles.switchBtn, pressed && { opacity: 0.7 }]}
             >
-              <Text style={styles.switchText}>
-                {isLogin ? "Create a new account" : "Log in instead"}
+              <Text style={styles.switchPrompt}>
+                {isLogin ? "Need an account? " : "Already have an account? "}
+                <Text style={styles.switchText}>{isLogin ? "Sign up" : "Log in"}</Text>
               </Text>
             </Pressable>
-
-            <Text style={styles.tosText}>
-              By continuing, you agree to our{" "}
-              <Text style={styles.tosLink}>Terms</Text> &{" "}
-              <Text style={styles.tosLink}>Privacy</Text>.
-            </Text>
+            {!isLogin && <Text style={styles.tosText}>Your language journey starts with a simple hello.</Text>}
+            </View>
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
@@ -391,235 +361,33 @@ export default function AuthScreen() {
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: "#0E9AE0",
-    },
-    hero: {
-      paddingHorizontal: spacing.xl,
-      paddingBottom: spacing.xxl + spacing.md,
-    },
-    heroBody: {
-      marginTop: spacing.lg,
-      gap: spacing.sm,
-    },
-    logoBadge: {
-      width: 52,
-      height: 52,
-      borderRadius: 16,
-      backgroundColor: "#FFFFFF",
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: spacing.xs,
-      boxShadow: "0px 6px 16px rgba(15, 23, 42, 0.14)",
-    },
-    heroTitle: {
-      fontFamily: fonts.displayBold,
-      fontSize: 26,
-      color: "#FFFFFF",
-    },
-    heroSubtitle: {
-      fontFamily: fonts.text,
-      fontSize: 14,
-      color: "rgba(255,255,255,0.9)",
-      marginTop: 2,
-    },
-    sheetFlex: {
-      flex: 1,
-    },
-    sheet: {
-      flex: 1,
-      backgroundColor: colors.surface,
-      borderTopLeftRadius: 28,
-      borderTopRightRadius: 28,
-      marginTop: -28,
-    },
-    scroll: {
-      padding: spacing.xl,
-      paddingBottom: spacing.xxl,
-    },
-    guestEntry: {
-      gap: spacing.sm,
-      marginBottom: spacing.lg,
-    },
-    guestButton: {
-      minHeight: 52,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: spacing.sm,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.md,
-      borderRadius: 999,
-      backgroundColor: colors.brandTertiary,
-      borderWidth: 1,
-      borderColor: colors.brand,
-    },
-    guestButtonText: {
-      fontFamily: fonts.textBold,
-      fontSize: 15,
-      color: colors.brand,
-      flexShrink: 1,
-    },
-    guestHint: {
-      textAlign: "center",
-      fontFamily: fonts.text,
-      fontSize: 11.5,
-      lineHeight: 17,
-      color: colors.onSurfaceSecondary,
-    },
-    // ── Segmented switcher ──
-    segmentedRow: {
-      flexDirection: "row",
-      backgroundColor: colors.surfaceSecondary,
-      borderRadius: 12,
-      padding: 4,
-      marginBottom: spacing.lg,
-      gap: 4,
-    },
-    segmentBtn: {
-      flex: 1,
-      paddingVertical: 9,
-      borderRadius: 9,
-      alignItems: "center",
-    },
-    segmentBtnOn: {
-      backgroundColor: colors.surface,
-      boxShadow: "0px 1px 3px rgba(15, 23, 42, 0.08)",
-    },
-    segmentText: {
-      fontFamily: fonts.textBold,
-      fontSize: 13.5,
-      color: colors.onSurfaceSecondary,
-    },
-    segmentTextOn: {
-      color: colors.brand,
-    },
-    field: {
-      marginBottom: spacing.md,
-    },
-    labelRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 6,
-    },
-    label: {
-      fontFamily: fonts.textBold,
-      fontSize: 12,
-      color: colors.onSurfaceSecondary,
-      letterSpacing: 0.3,
-      textTransform: "uppercase",
-    },
-    forgotText: {
-      fontFamily: fonts.textBold,
-      fontSize: 12,
-      color: colors.brand,
-    },
-    inputWrap: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-      backgroundColor: colors.surfaceSecondary,
-      borderWidth: 1.5,
-      borderColor: "transparent",
-      borderRadius: 12,
-      paddingHorizontal: 12,
-      paddingVertical: Platform.OS === "web" ? 12 : 10,
-    },
-    inputWrapFocused: {
-      borderColor: colors.brand,
-      backgroundColor: colors.surface,
-    },
-    input: {
-      flex: 1,
-      fontFamily: fonts.text,
-      fontSize: 15,
-      color: colors.onSurface,
-      paddingVertical: 0,
-      ...(Platform.OS === "web" ? { outlineWidth: 0 } : {}),
-    },
-    hint: {
-      fontFamily: fonts.text,
-      fontSize: 11.5,
-      color: colors.onSurfaceSecondary,
-      marginTop: 5,
-      marginLeft: 4,
-    },
-    errorRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-      backgroundColor: `${colors.error}1A`,
-      borderRadius: 10,
-      paddingHorizontal: 12,
-      paddingVertical: 9,
-      marginBottom: spacing.md,
-    },
-    error: {
-      flex: 1,
-      fontFamily: fonts.textBold,
-      fontSize: 12.5,
-      color: colors.error,
-    },
-    submitWrap: {
-      marginTop: spacing.xs,
-      borderRadius: 999,
-      overflow: "hidden",
-    },
-    submitBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 8,
-      paddingVertical: 14,
-    },
-    submitText: {
-      fontFamily: fonts.textBold,
-      fontSize: 15.5,
-      color: "#FFFFFF",
-    },
-    dividerRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-      marginVertical: spacing.md,
-    },
-    dividerLine: {
-      flex: 1,
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: colors.divider,
-    },
-    dividerText: {
-      fontFamily: fonts.textBold,
-      fontSize: 11.5,
-      color: colors.onSurfaceSecondary,
-      letterSpacing: 0.5,
-      textTransform: "uppercase",
-    },
-    switchBtn: {
-      alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: 12,
-      borderRadius: 12,
-      borderWidth: 1.5,
-      borderColor: colors.divider,
-    },
-    switchText: {
-      fontFamily: fonts.textBold,
-      fontSize: 14.5,
-      color: colors.brand,
-    },
-    tosText: {
-      textAlign: "center",
-      fontFamily: fonts.text,
-      fontSize: 11.5,
-      color: colors.onSurfaceSecondary,
-      marginTop: spacing.md,
-      lineHeight: 17,
-    },
-    tosLink: {
-      color: colors.brand,
-      fontFamily: fonts.textBold,
-    },
+    container: { flex: 1, backgroundColor: colors.surface },
+    topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, gap: spacing.sm },
+    wordmark: { fontFamily: fonts.textSemi, fontSize: 13, letterSpacing: 0.3, color: colors.onSurfaceSecondary },
+    headerBalance: { width: 40 },
+    sheetFlex: { flex: 1 },
+    sheet: { flex: 1 },
+    scroll: { flexGrow: 1, justifyContent: "center", paddingHorizontal: spacing.xxl, paddingTop: spacing.xl },
+    form: { width: "100%", maxWidth: 380, alignSelf: "center" },
+    intro: { alignItems: "center", gap: spacing.sm, marginBottom: spacing.xxl },
+    heading: { fontFamily: fonts.displayBold, fontSize: 28, lineHeight: 36, color: colors.onSurface, textAlign: "center", letterSpacing: -0.5 },
+    subtitle: { fontFamily: fonts.text, fontSize: 13, lineHeight: 20, textAlign: "center", color: colors.onSurfaceSecondary },
+    field: { marginBottom: spacing.lg },
+    label: { fontFamily: fonts.textSemi, fontSize: 12, color: colors.onSurfaceSecondary, marginBottom: spacing.sm, marginLeft: spacing.xs },
+    inputWrap: { minHeight: 54, flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.divider, borderRadius: 14, paddingLeft: 16, paddingRight: 4 },
+    inputWrapFocused: { borderColor: colors.brand, backgroundColor: colors.surface },
+    input: { flex: 1, minWidth: 0, minHeight: 52, paddingVertical: 12, paddingRight: 8, fontFamily: fonts.text, fontSize: 14, color: colors.onSurface, ...(Platform.OS === "web" ? { outlineWidth: 0 } : {}) },
+    passwordToggle: { width: 48, minHeight: 52, alignItems: "center", justifyContent: "center" },
+    forgotButton: { minHeight: 44, justifyContent: "center", alignItems: "center", alignSelf: "flex-end", marginTop: -spacing.sm, marginBottom: spacing.sm, paddingHorizontal: spacing.sm },
+    forgotText: { fontFamily: fonts.text, fontSize: 12, color: colors.onSurfaceSecondary, textDecorationLine: "underline" },
+    hint: { fontFamily: fonts.text, fontSize: 11.5, lineHeight: 17, color: colors.onSurfaceSecondary, marginTop: 7, marginLeft: 4 },
+    errorRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, backgroundColor: `${colors.error}14`, borderRadius: 12, padding: 12, marginBottom: spacing.lg },
+    error: { flex: 1, fontFamily: fonts.textSemi, fontSize: 12.5, lineHeight: 19, color: colors.error },
+    submitWrap: { marginTop: spacing.xs, borderRadius: 999, overflow: "hidden", backgroundColor: colors.onSurface },
+    submitBtn: { minHeight: 52, alignItems: "center", justifyContent: "center", paddingVertical: 15, paddingHorizontal: spacing.lg },
+    submitText: { fontFamily: fonts.textBold, fontSize: 15, color: colors.surface },
+    switchBtn: { minHeight: 48, alignItems: "center", justifyContent: "center", marginTop: spacing.xl, paddingVertical: spacing.md },
+    switchPrompt: { fontFamily: fonts.text, fontSize: 13, color: colors.onSurfaceSecondary, textAlign: "center", lineHeight: 20 },
+    switchText: { fontFamily: fonts.textBold, fontSize: 13, color: colors.onSurface },
+    tosText: { textAlign: "center", fontFamily: fonts.text, fontSize: 11.5, color: colors.onSurfaceSecondary, marginTop: spacing.sm, lineHeight: 18 },
   });

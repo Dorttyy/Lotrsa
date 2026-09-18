@@ -4,7 +4,6 @@ import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CheckInModal } from "@/src/components/CheckInModal";
-import { GuestTabBoundary } from "@/src/components/GuestExperience";
 import { useAuth } from "@/src/context/AuthContext";
 import { useNotifications } from "@/src/context/NotificationsContext";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -27,11 +26,8 @@ interface CheckInReward {
 export default function TabsLayout() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user, loading, isGuestBrowsing } = useAuth();
-  const counts = useNotifications();
-  const chatUnread = isGuestBrowsing ? 0 : counts.chatUnread;
-  const momentsUnread = isGuestBrowsing ? 0 : counts.momentsUnread;
-  const profileUnread = isGuestBrowsing ? 0 : counts.profileUnread;
+  const { user, loading } = useAuth();
+  const { chatUnread, momentsUnread, profileUnread } = useNotifications();
   const [reward, setReward] = useState<CheckInReward | null>(null);
 
   // Daily streak check-in: runs once when the main app mounts. The backend
@@ -64,16 +60,14 @@ export default function TabsLayout() {
   // extra lift so the icon row sits comfortably clear of the very edge.
   const bottomGap = Math.max(insets.bottom, 12) + 10;
 
-  if (!loading && !user && !isGuestBrowsing) {
+  if (loading) return null;
+  if (!user) {
     return <Redirect href="/auth?mode=login" />;
   }
 
   return (
     <>
     <Tabs
-      screenLayout={({ children, route }) => (
-        <GuestTabBoundary name={route.name}>{children}</GuestTabBoundary>
-      )}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.brand,
@@ -122,7 +116,7 @@ export default function TabsLayout() {
             fontSize: 10,
           },
           tabBarIcon: ({ focused, color, size }) => (
-            <ChatsIcon focused={focused} size={size + 2} color={color} />
+            <ChatsIcon focused={focused} size={size + 4} color={color} />
           ),
         }}
       />
@@ -132,7 +126,7 @@ export default function TabsLayout() {
           title: "Connect",
           tabBarButtonTestID: "tab-connect",
           tabBarIcon: ({ focused, color, size }) => (
-            <ConnectIcon focused={focused} size={size + 2} color={color} />
+            <ConnectIcon focused={focused} size={size + 4} color={color} />
           ),
         }}
       />
@@ -154,7 +148,7 @@ export default function TabsLayout() {
             fontSize: 10,
           },
           tabBarIcon: ({ focused, color, size }) => (
-            <MomentsIcon focused={focused} size={size + 2} color={color} />
+            <MomentsIcon focused={focused} size={size + 4} color={color} />
           ),
         }}
       />
@@ -164,7 +158,7 @@ export default function TabsLayout() {
           title: "Voice",
           tabBarButtonTestID: "tab-voice",
           tabBarIcon: ({ focused, color, size }) => (
-            <VoiceIcon focused={focused} size={size + 2} color={color} />
+            <VoiceIcon focused={focused} size={size + 4} color={color} />
           ),
         }}
       />
@@ -177,7 +171,7 @@ export default function TabsLayout() {
             <View>
               <MeIcon
                 focused={focused}
-                size={size + 2}
+                size={size + 4}
                 color={color}
                 gender={user?.gender}
               />
@@ -193,7 +187,7 @@ export default function TabsLayout() {
       />
     </Tabs>
     <CheckInModal
-      visible={!isGuestBrowsing && !!reward}
+      visible={!!reward}
       streak={reward?.streak ?? 1}
       coinsAwarded={reward?.coinsAwarded ?? 0}
       totalCoins={reward?.totalCoins ?? 0}

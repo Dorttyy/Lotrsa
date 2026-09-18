@@ -1,67 +1,16 @@
 import React from "react";
-import type { StyleProp, TextStyle } from "react-native";
-import Svg, { Path, Rect } from "react-native-svg";
+import { Image, StyleSheet, View } from "react-native";
+import type { ColorValue, ImageStyle, StyleProp, TextStyle, ViewStyle } from "react-native";
+import Svg, { Path } from "react-native-svg";
 
-/**
- * The app's signature voice/microphone glyph — a faithful vector recreation of
- * the user's uploaded icon: a soft translucent capsule body with two chunky
- * curved dashes inside, wrapped by a thick rounded U-bracket (no base bar).
- *
- * Shared by the bottom-navigation Voice tab (NavIcons) and every
- * `name="mic" | "microphone" | "voice"` icon across the app, so the mark is
- * identical everywhere.
- */
+import navbarUploads from "@/src/assets/navbar-upload-icons.json";
 
-/** The raw glyph geometry, for embedding in an existing <Svg viewBox="0 0 24 24">. */
-export function MicShape({
-  color,
-  bodyOpacity = 0.45,
-}: {
-  color: string;
-  bodyOpacity?: number;
-}) {
-  return (
-    <>
-      {/* capsule body (tinted) */}
-      <Rect
-        x="5.65"
-        y="1.3"
-        width="12.7"
-        height="17.1"
-        rx="6.35"
-        fill={color}
-        opacity={bodyOpacity}
-      />
-      {/* two curved dashes */}
-      <Path
-        d="M9.35 6.6 Q12 4.8 14.65 6.05"
-        stroke={color}
-        strokeWidth={2.0}
-        strokeLinecap="round"
-        fill="none"
-      />
-      <Path
-        d="M9.35 9.6 Q12 7.8 14.65 9.05"
-        stroke={color}
-        strokeWidth={2.0}
-        strokeLinecap="round"
-        fill="none"
-      />
-      {/* thick U-bracket cradling the capsule */}
-      <Path
-        d="M4.1 10.6 V11.7 C4.1 16.25 7.65 19.95 12 19.95 C16.35 19.95 19.9 16.25 19.9 11.7 V10.6"
-        stroke={color}
-        strokeWidth={2.1}
-        strokeLinecap="round"
-        fill="none"
-      />
-    </>
-  );
-}
+/** One exact uploaded microphone source for navigation and every in-app alias. */
+const microphoneSource = { uri: navbarUploads.voice };
 
 export interface MicGlyphProps {
   size?: number;
-  color?: string;
+  color?: ColorValue;
   style?: StyleProp<TextStyle>;
   testID?: string;
   accessibilityLabel?: string;
@@ -75,20 +24,18 @@ export function MicGlyph({
   accessibilityLabel,
 }: MicGlyphProps) {
   return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      style={style as never}
-      testID={testID}
+    <Image
+      source={microphoneSource}
+      style={[styles.image, { width: size, height: size }, style as StyleProp<ImageStyle>, { tintColor: color }]}
+      fadeDuration={0}
+      accessible={!!accessibilityLabel}
       accessibilityLabel={accessibilityLabel}
-    >
-      <MicShape color={color} />
-    </Svg>
+      testID={testID ?? "uploaded-microphone"}
+    />
   );
 }
 
-/** Muted variant: same mark with a diagonal cut through it. */
+/** Same microphone artwork, with a distinct slash; never use speaker-mute here. */
 export function MicOffGlyph({
   size = 22,
   color = "#111827",
@@ -97,22 +44,32 @@ export function MicOffGlyph({
   accessibilityLabel,
 }: MicGlyphProps) {
   return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      style={style as never}
-      testID={testID}
+    <View
+      style={[{ width: size, height: size }, style as StyleProp<ViewStyle>]}
+      accessible={!!accessibilityLabel}
       accessibilityLabel={accessibilityLabel}
+      testID={testID ?? "uploaded-microphone-off"}
     >
-      <MicShape color={color} bodyOpacity={0.3} />
-      <Path
-        d="M3.6 20.4 L20.4 3.6"
-        stroke={color}
-        strokeWidth={2.25}
-        strokeLinecap="round"
-        fill="none"
+      <Image
+        source={microphoneSource}
+        style={[StyleSheet.absoluteFill, styles.image, { tintColor: color }]}
+        fadeDuration={0}
+        accessible={false}
       />
-    </Svg>
+      <Svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 24 24"
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+        accessible={false}
+      >
+        <Path d="M3.6 20.4 L20.4 3.6" stroke={color} strokeWidth={2.25} strokeLinecap="round" />
+      </Svg>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  image: { resizeMode: "contain" },
+});

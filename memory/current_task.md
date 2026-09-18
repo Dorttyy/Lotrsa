@@ -1,4 +1,66 @@
-# Current task — signup recovery and reference-inspired onboarding
+# Current task — UI update delivered; verified scope and limitations
+
+## AUTHORITATIVE CURRENT STATUS (supersedes all older planning notes below)
+- User approved A for new3pageintro/sharedmic/UIchecks andQA-onlySent/Seen testing; most recent task is minimal login/signup like reference with NO Guest Mode. Implemented actualemail/password design only; no dummyGoogle/Applebuttons.
+- Auth screen now singlecleanwhite/navysurface, centeredLogin/Signup, subtle54ptfields, solid52ptpillCTA, inlinebottomswitch, safescroll/KAV/insets, accessiblepasswordtoggle/autofill/keyboardfocus, duplicate-submit guard. RealAuthContext/backendcontracts unchanged. ExistingForgotPassword explicitlyunavailable; noresetserviceintegrated.
+- welcome.tsx now3page publicintro with originalcollage/globe/rings, base64stockportraits, nativehorizontalpager, verticalscrollfallback, 44ptpagination, signup/loginCTAs and reducedmotion animation. Existing5postsignup profile/language/DOB/gender/intereststeps unchanged.
+- MicGlyph/Nav Voice use SAME uploadednavbarPNG; mutedglyph sameimage+slash. Fiveuploadedactionicons globallymapped (lightning/bell/call/speakermute/menu), mutedmicrophone/notifoff/volumelevel semantics preserved. Navbar order/gendericons unchanged.
+- Chatheader24->18pt; Moments24->28pt; Delivered label -> Sent, Seen/serverlogic unchanged.
+
+## TESTING-AGENT VERIFIED (real API/browser, no mocks)
+- Backend9/9 auth/readinessPASS; guestAPI404, twoQAusers login/me, wrongpassword401; boundedQAconversation created98ea1271-de38-4a76-8be9-c24210657858.
+- Browser3intropages,pagers/swipe/signup+loginlinks,320x568/390x844/430x932layouts passed withfooterreachable/nohorizontaloverflow.
+- MinimalAuth form,toggle,passwordshowhide,validation,wrongpassword,realQAlogin->Connect PASS. RealNEWsignup201->onboarding PASS; first2postsignup steps exercised. NewQAcredential istrackedinmemory/test_credentials.md.
+- Chat18pt+smallwidthtruncation andactualSent receipt(noDelivered) PASS. Laterisolatedtest verifiedMoments28px and exactuploadedbell+call+microphonePNGdataURIs. Dailycheckin isnormalwithEXISTINGcheckin-close-btn; noappmodalpatchneeded.
+- Lintpasses;27PRE-EXISTING TSCerrors remainelsewhere,noneintroduced.
+
+## NOT VERIFIED / NOT IMPLEMENTED
+- Real-timeSent->Seen twoaccounttest didNOTexecute. Agentusedundefinedbrowservariable (NameError) despitepage-onlytool; reportthis as unverified, NOT appfailure. Do notclaimSeenpassed. Futuretester can investigate obtaining browser via page.context.browser or use approved devices; doNOTsimulateReads.
+- Darktheme runtime,full5steponboardingcompletion,nativeOSkeyboard/safeareas,WebRTCaudio/TURN/SFU,Android/iOSbuilds notverifiedthisincrement.
+- OptionalAI remainsunconfigured503, passwordreset/GoogleApple unavailable. Externalcross-originOPTIONSissue unchanged; sameoriginloginworks. No production-readyclaim.
+- Earlier testers called toolbudgetexpiry a sessionfailure; troubleshootconfirmedNOTJWTfailure. Earlier broad 'allverified' statements wereoverstated; useonlyexactchecksabove.
+- Existingfreshenv/DB/JWT MUSTremain; no newsecrets/databases ordata deletion. Generatedbackend_test.pyhasformattingwhitespaceonly; appsourcechanges passdiffcheck.
+
+## Historical planning notes (not current blockers)
+
+## Latest approved implementation — awaiting runtime UI checks
+- User approved A for exact5globalactionicon replacements+focusedUIchecks. Added src/assets/action-upload-icons.json (exactbase64PNGbytes), src/ui/UploadedActionIcon.tsx and sharedicons dispatch for flash/bolt, notification/bell, call/phone, volume-mute/off and menu/reorder aliases. Existing size/color/transforms preserved; mic-off/bell-off/volumelevels/ellipsis unaffected in this increment.
+- User added chatprofiletitle too large -> headerName24to18/line24 with48minimum hitarea; Moments title24to28/line34, no card/message typography changes.
+- User requested Delivered wording -> Sent; only chat receipt text/comment changed. Seen condition/checkmarks and serverlogic untouched.
+- Backend/static tests passed5health,8iconasset/alias,6style/receiptchecks; no newTSCissues (27pre-existing). RuntimeUI checks still pending. No existing conversation between the two current QAaccounts; if testing real Sent/Seen needs QA-only conversation/message creation, not fakeauth or realcontacts.
+
+## Newest request — minimalist login/signup reference (confirmation pending)
+- User uploaded bdkpj439_5a695a55cecf5274086d7f8d1aa3bd44.jpg: white minimal auth screen, centeredLogin, subtlefields, pillbuttons, darkgreen/lime accents, Google/Apple options andGuest. User explicitly says NO Guest Mode.
+- Existing real email/password auth works. GoogleLogin backend method exists but no configured socialfrontend flow; Apple not implemented. Do NOT add fake Google/Apple buttons. Clarify email-only visual adaptation vs real provider integration/credentials. No new authdesign applied yet; preserve existing configuration and contracts.
+
+## Three-page intro and shared microphone — implemented, testing pending
+- User explicitly approved A for3intro+globalmic+focusedtests AND creation of a QA-only test conversation/messages for Sent/Seen checks. User additionally requires testing-agent verification before claiming bugs fixed.
+- welcome.tsx now re-exports WelcomeIntroScreen. New src/components/welcome/WelcomeIntroScreen.tsx has3horizontalpaging slides,44ptindicatorbuttons,GetStarted->auth/register andLogin->auth/login,verticalscrollfallback,safeareas,Reanimatedfade/translate respecting reducedmotion. No featureclaims/statistics fabricated.
+- WelcomeArtwork.tsx builds original portraitconversationcollage,illustrativeglobe,connectionrings. New welcome-portraits.json has3vision-selectedphotos bundledbase64 (~85KB); decorative,NOT actualmemberprofiles. One vision_expert call used (max2 total). Photos selected1534528741775-53994a69daeb,1520529277867-dbf8c5e0b340,1518725522904-4b3939358342. Preview firstslide screenshot renderedcleanly but NOT runtimeverification.
+- MicGlyph.tsx now uses exactnavbarUploads.voice PNG viaRNImage; MicOffGlyph overlaysdiagonalSVGslash. NavIcons.VoiceIcon invokes sameMicGlyph. All existing sharedmic/microphone/voice aliases useit; speakerMute distinct. Prior unusedMicShape vectorremoved. Lint passes; TSCsame27preexistingerrors,noneintroduced.
+- /onboarding.tsx required5profile/language/gender/DOB/country/interestssteps untouched. Noauth/backendenvedits.
+- Need backend/staticcheck for newmic/introthenfrontendagent actual3pageswipe/buttons/mobilelayout,allglobalicons,compactchat18/largerMoments28,SentthenSeenQAonlymessages,login/signupflow. Do NOT claim verified until testingagentreport. Prior agentonlystaticchecks; baselineUIlogin/main5tabsverified butdark/secondarynot.
+
+## Approved design reference
+- Latest user: make wholeapp voice/microphone icon match navbar exact uploadedmic; preserve microphone-off slash. Shared MicGlyph currently STILL oldvector, not yet replaced. Action speaker-mute upload remains separate.
+- Latest user: THREE publicintro/onboarding pages like uploadedPortra references but different content. Existing welcome.tsx is one public landing; onboarding.tsx is five REAL post-signup requiredprofile steps (languages,country,DOB/gender,interests), MUST preserve them.
+- Recommended: replace welcome with3swipeableintro slides, keepGetStarted->auth/register andLogin->auth/login on each, originalLinguaConnect art/copy; darknavy+blue/cyan glow, centeredboldheadlines, verticaltickpagination andwhiteCTA. NoPortralogo/artwork or fakeusagecounts. Newimage refs: 9f99qdck_HRrJL0AbYAACrfq.jpg,620kam8i_HRrJMXBbsAAX7p7.jpg,qvolfjww_HRrJNA7XAAAyWAC.jpg under currentassetbaseURL. Last image analyzed with analyze_file_tool; visual reference is connectionrings, others layeredportraitcards andglobe. No newintro/micimplementation done yet.
+- Confirm publicintro vs replacement of requiredprofile setup; propose preserveprofile steps. UserA for earlierUIchecks exists, further realQAmessage sideeffect consent pending.
+
+## Prior state — retained context
+
+## CURRENT STATE — supersedes the historical audit below
+- User explicitly approved a FRESH preview with "Create new". Both .env files now exist, using verified platform runtime Mongo/Expo settings. Database `linguaconnect_preview_91d577847a48` is new and distinct; no old data deleted or migrated. JWT generated privately and must NOT be rotated again.
+- Backend auth tests PASSED real register/login/me, invalid credentials/token rejection, bcrypt storage, onboarding profile persistence and survival after backend restart. Current admin + QA credentials are in test_credentials.md; do not use old demo passwords.
+- Removed import-time optional-AI secret requirement. Paid AI returns503 when unconfigured; free translation path preserved. Synthetic Pro tutor seeding disabled by SEED_DEMO_TUTORS=false, functionality retained. No fake auth or users/rooms added as product data.
+- User then requested REMOVE Guest Mode. Removed guest button, local guest browsing screens/state/redirects and /api/auth/guest creation endpoint. Obsolete persisted guest flag is cleaned. AuthRouteBoundary now requires real user for all routes except index/welcome/auth; existing login/register/onboarding/navigation remain. No account records deleted. Backend regression PASSED10/10: guest creation404 with no new records; real login/register/me/admin preserved; optional AI503 correctly isolated.
+- Latest user upload mapping implemented with exact original PNG bytes in src/assets/navbar-upload-icons.json: #1 microphone Voice, #2 communication Chats, #3 group Connect, #4 yin-yang Moments. Existing tab order and gender-based profile uploads retained. Theme tint/focus spring unchanged; in-app microphone icons outside navbar untouched.
+- ESLint passes changed files. NavIconProps ColorValue fix removed5 former diagnostics; global TypeScript still reports27 PRE-EXISTING errors in other modules, none new.
+- Frontend runtime/UI testing remains pending user permission (previous user preference was self-testing). Do not claim UI/native authentication or icons visually verified on-device.
+- Known external limitation: public cross-origin OPTIONS preflight400 upstream, local backend exact-origin OPTIONS200 (troubleshooter confirmed). Same-origin requests pass; do not change protected origin/ports to bypass. Existing password-reset button is still a placeholder; full app/audio/build verification not done.
+- Next: backend regression test guest endpoint absent and normal auth unchanged; ask permission for frontend testing. No further redesign now.
+
+## Historical audit — PRE-FRESH-SETUP, retained only for context
 
 ## User direction
 User speaks Bengali. They approved best-judgment work, requested onboarding inspired by the uploaded reference, and urgently reported signup/system failure. Fix authentication first; retain all existing core routes/features. Pause after first verified value addition before broad redesign.

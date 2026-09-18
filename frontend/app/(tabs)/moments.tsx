@@ -370,7 +370,12 @@ export default function Moments() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]} testID="moments-screen">
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Moments</Text>
+        <Text
+          testID="moments-header-title"
+          accessibilityRole="header"
+          style={styles.headerTitle}
+          numberOfLines={1}
+        >Moments</Text>
         <View style={{ flex: 1 }} />
         <View style={styles.headerActions}>
           <IconChip
@@ -1444,7 +1449,9 @@ const makeStyles = (colors: ThemeColors) =>
   },
   headerTitle: {
     fontFamily: fonts.displayBold,
-    fontSize: 24,
+    fontSize: 28,
+    lineHeight: 34,
+    flexShrink: 1,
     color: colors.onSurface,
   },
   headerSub: {

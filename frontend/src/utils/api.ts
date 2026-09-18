@@ -1,5 +1,3 @@
-import { assertGuestRequestAllowed } from "@/src/utils/guest-access";
-
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 let authToken: string | null = null;
@@ -35,9 +33,8 @@ async function request<T>(
   path: string,
   body?: unknown,
 ): Promise<T> {
-  assertGuestRequestAllowed(method, path);
   if (!API_URL) {
-    throw new Error("Account services are unavailable right now. You can continue as a guest.");
+    throw new Error("Account services are unavailable right now. Please try again shortly.");
   }
   let res: Response;
   try {

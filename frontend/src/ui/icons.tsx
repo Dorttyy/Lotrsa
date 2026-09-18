@@ -1,5 +1,7 @@
 /**
- * Unified line-icon set (drop-in replacement for @expo/vector-icons).
+ * Unified icon set (drop-in replacement for @expo/vector-icons).
+ * Matching action icons use the user's exact bundled uploads; remaining
+ * symbols keep the existing Lucide line-icon treatment.
  *
  * The whole app used to import { Ionicons, MaterialCommunityIcons } from
  * "@expo/vector-icons". To give the product a single, consistent, modern
@@ -236,6 +238,7 @@ import {
 } from "lucide-react-native";
 
 import { MicGlyph, MicOffGlyph } from "@/src/ui/MicGlyph";
+import { resolveUploadedAction, UploadedActionIcon } from "@/src/ui/UploadedActionIcon";
 
 type LucideCmp = React.ComponentType<{
   size?: number;
@@ -749,6 +752,19 @@ function createFamily() {
     testID,
     accessibilityLabel,
   }: IconProps) => {
+    const artwork = resolveUploadedAction(name);
+    if (artwork) {
+      return (
+        <UploadedActionIcon
+          artwork={artwork}
+          size={size}
+          color={color}
+          style={style}
+          testID={testID}
+          accessibilityLabel={accessibilityLabel}
+        />
+      );
+    }
     const Cmp = resolve(name);
     const isOutline = !!name && /-(outline|sharp)$/i.test(name);
     const base = (name || "").replace(/-(outline|sharp)$/i, "");
