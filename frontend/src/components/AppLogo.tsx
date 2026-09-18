@@ -9,4 +9,4 @@ export function AppLogo({ size = 32, testID = "app-logo" }: { size?: number; tes
     contentFit="contain" style={[styles.logo, { width: size, height: size }]} />;
 }
 
-const styles = StyleSheet.create({ logo: { flexShrink: 0, borderRadius: 8 } });
+const styles = StyleSheet.create({ logo: { flexShrink: 0 } });

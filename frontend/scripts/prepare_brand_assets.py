@@ -1,44 +1,53 @@
 """Prepare faithful bundled branding; archive derivatives in managed storage.
 
 Run manually with EMERGENT_LLM_KEY supplied in the environment (never bundled).
-No redraw, recoloring, aspect distortion, or removal of the photo background.
+Use the NEW transparent user upload without recoloring or redrawing.
 """
 import hashlib
 import io
 import json
+import math
 import os
 from pathlib import Path
 import uuid
 
 from dotenv import load_dotenv
-from PIL import Image, ImageOps
+from PIL import Image, ImageChops, ImageOps
 import requests
 
 load_dotenv()
-SOURCE = "https://customer-assets-v7afamib.emergentagent.net/job_elevate-familiar/artifacts/xgnt8aha_1789740818648.jpg"
+SOURCE = "https://customer-assets-v7afamib.emergentagent.net/job_elevate-familiar/artifacts/rizf8n77_1000101542.png"
 DEST = Path(__file__).resolve().parents[1] / "assets" / "images"
 
 
 def prepare():
     response = requests.get(SOURCE, timeout=60)
     response.raise_for_status()
-    source = ImageOps.exif_transpose(Image.open(io.BytesIO(response.content))).convert("RGB")
-    saturation = source.convert("HSV").getchannel("S").point(lambda value: 255 if value > 65 else 0)
-    left, top, right, bottom = saturation.getbbox()
-    side = min(source.width, source.height, max(right - left, bottom - top) + 120)
-    x = max(0, min(source.width - side, (left + right - side) // 2 + 8))
-    y = max(0, min(source.height - side, (top + bottom - side) // 2 + 10))
-    crop = (x, y, x + side, y + side)
-    square = source.crop(crop)
-    icon = square.resize((1024, 1024), Image.Resampling.LANCZOS)
-    background = square.getpixel((0, 0))
-    adaptive = Image.new("RGB", (1080, 1080), background)
-    adaptive.paste(square.resize((660, 660), Image.Resampling.LANCZOS), (210, 210))
+    source = ImageOps.exif_transpose(Image.open(io.BytesIO(response.content))).convert("RGBA")
+    crop = source.getchannel("A").getbbox()
+    artwork = source.crop(crop)
+    side = max(artwork.size) + 120
+    square = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    square.alpha_composite(artwork, ((side - artwork.width) // 2, (side - artwork.height) // 2))
+    android_icon = square.resize((1024, 1024), Image.Resampling.LANCZOS)
+    # Apple app-store icons cannot have alpha. Only the iOS/general icon gets a
+    # white backing; default icon, in-app logo, splash and Android stay transparent.
+    icon = Image.new("RGBA", (1024, 1024), "white")
+    icon.alpha_composite(android_icon)
+    icon = icon.convert("RGB")
+    alpha = square.getchannel("A")
+    radius = max(math.hypot(x - side / 2, y - side / 2)
+                 for y in range(side) for x in range(side) if alpha.getpixel((x, y)))
+    adaptive_size = min(660, int(side * 318 / radius))
+    adaptive = Image.new("RGBA", (1080, 1080), (0, 0, 0, 0))
+    offset = (1080 - adaptive_size) // 2
+    adaptive.alpha_composite(square.resize((adaptive_size, adaptive_size), Image.Resampling.LANCZOS), (offset, offset))
     # Android status icons MUST be white with transparency, not full-color art.
-    silhouette = saturation.crop(crop).resize((96, 96), Image.Resampling.LANCZOS)
+    saturation = square.convert("RGB").convert("HSV").getchannel("S").point(lambda value: 255 if value > 65 else 0)
+    silhouette = ImageChops.multiply(alpha, saturation).resize((96, 96), Image.Resampling.LANCZOS)
     notification = Image.new("RGBA", (96, 96), "white")
     notification.putalpha(silhouette)
-    assets = {"icon.png": icon, "adaptive-icon.png": adaptive,
+    assets = {"icon.png": android_icon, "ios-icon.png": icon, "android-icon.png": android_icon, "adaptive-icon.png": adaptive,
               "splash-icon.png": square.resize((512, 512), Image.Resampling.LANCZOS),
               "brand-logo.png": square.resize((256, 256), Image.Resampling.LANCZOS),
               "favicon.png": square.resize((64, 64), Image.Resampling.LANCZOS),
@@ -69,9 +78,9 @@ def prepare():
         (DEST / name).write_bytes(content)
         records.append({"file": name, "size": image.size, "mode": image.mode,
                         "sha256": digest, "storage_path": stored})
-    (DEST / "brand-original.jpg").write_bytes(response.content)
+    (DEST / "brand-original.png").write_bytes(response.content)
     print(json.dumps({"source": SOURCE, "source_size": source.size, "crop": crop,
-                      "background": "#%02X%02X%02X" % background, "assets": records}, indent=2))
+                      "transparent": True, "adaptive_size": adaptive_size, "assets": records}, indent=2))
 
 
 if __name__ == "__main__":

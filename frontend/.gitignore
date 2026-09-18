@@ -3,6 +3,10 @@
 # dependencies
 node_modules/
 
+# This project declares Yarn Classic. Keep its deterministic lockfile in source.
+package-lock.json
+!yarn.lock
+
 # Expo
 .expo/
 dist/

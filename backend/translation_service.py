@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from db import db
 import local_text_translation
 
-CACHE_VERSION = "m2m100-local-v3-bounded"
+CACHE_VERSION = "m2m100-local-v4-original-fallback"
 cache = db["text_translation_cache"]
 _inflight: dict[str, asyncio.Task] = {}
 logger = logging.getLogger(__name__)
@@ -29,6 +29,15 @@ class TranslationResult(BaseModel):
     cached: bool = False
     remaining: None = None
     provider: str = "local-m2m100"
+    unchanged: bool = False
+
+
+def original_result(text: str, target: str = "auto", source: str = "auto", *, cached: bool = False) -> TranslationResult:
+    """User-requested fallback: original content, without unsupported warnings.
+    Metadata explicitly distinguishes this from a new model translation.
+    """
+    return TranslationResult(translated=text, target_language=target, source_language=source,
+                             unchanged=True, provider="passthrough", cached=cached)
 
 
 async def initialize():
@@ -58,11 +67,15 @@ async def translate(user_id: str, text: str, source: str, target: str) -> Transl
     except Exception:
         hit = None
     if hit and isinstance(hit.get("translated"), str) and hit["translated"].strip():
+        if hit["translated"] == text:
+            return original_result(text, hit["target_language"], hit["source_language"], cached=True)
         return TranslationResult(**hit, cached=True)
 
     async def work():
         translated, detected = await provider_translate(text, source, target)
-        result = TranslationResult(translated=translated, source_language=detected, target_language=target)
+        result = original_result(text, target, detected) if translated == text else TranslationResult(
+            translated=translated, source_language=detected, target_language=target,
+        )
         try:
             await cache.update_one({"_id": key}, {"$set": {"user_id": user_id, "translated": translated,
                 "source_language": detected, "target_language": target,

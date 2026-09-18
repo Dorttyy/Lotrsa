@@ -163,10 +163,32 @@ class TestTranslationCore:
         assert "12345" in translated
         assert "✅" in translated or "🙂" in translated
 
-    def test_unsupported_targets_te_eo_rejected(self, st):
-        for target in ("te", "eo"):
-            res = _translate(st["s"], st["qa1"]["token"], text="test unsupported", target=target)
-            assert res.status_code in (400, 422), f"{target}: {res.status_code} {res.text[:200]}"
+    def test_unknown_or_unsupported_languages_passthrough_200_exact_text(self, st):
+        text = "  నేను ప్రతిరోజు తెలుగు మాట్లాడతాను.\r\n🙂  "
+        cases = [
+            # Recognized but currently unsupported by local model => passthrough
+            {"source": "auto", "target": "te"},
+            {"source": "auto", "target": "eo"},
+            # Unknown/invalid code or language-name input => passthrough
+            {"source": "auto", "target": "xx"},
+            {"source": "auto", "target": "Elvish"},
+            {"source": "zz", "target": "en"},
+            {"source": "Klingon", "target": "en"},
+        ]
+        for case in cases:
+            res = _translate(
+                st["s"],
+                st["qa1"]["token"],
+                text=text,
+                target=case["target"],
+                source=case["source"],
+            )
+            assert res.status_code == 200, f"{case}: {res.status_code} {res.text[:240]}"
+            body = res.json()
+            assert body["translated"] == text, body
+            assert body.get("unchanged") is True, body
+            assert body.get("provider") == "passthrough", body
+            assert "detail" not in body, body
 
     def test_empty_text_returns_422(self, st):
         res = st["s"].post(
@@ -229,14 +251,14 @@ class TestTranslationCore:
         assert b1["provider"] == "local-m2m100"
         assert b2["provider"] == "local-m2m100"
 
-    def test_translation_languages_endpoint_does_not_advertise_te_eo(self, st):
+    def test_translation_languages_endpoint_includes_te_eo_catalog(self, st):
         res = st["s"].get(f"{st['base']}/api/ai/translation-languages", timeout=30)
         assert res.status_code == 200, res.text
         body = res.json()
         assert isinstance(body, list)
         codes = {item.get("code") for item in body if isinstance(item, dict)}
-        assert "te" not in codes
-        assert "eo" not in codes
+        assert "te" in codes
+        assert "eo" in codes
 
 
 class TestPushPreviewReadiness:

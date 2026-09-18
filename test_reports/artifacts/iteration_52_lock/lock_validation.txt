@@ -1,0 +1,11 @@
+{
+  "lockfile_v1": true,
+  "direct_dependencies_count": 68,
+  "direct_dependencies_missing_from_lock": [],
+  "lock_entries_count": 1459,
+  "resolved_lines_count": 941,
+  "non_https_resolved_count": 0,
+  "non_https_resolved_samples": [],
+  "integrity_lines_count": 941,
+  "integrity_to_resolved_ratio": "941/941"
+}

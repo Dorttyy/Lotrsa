@@ -1,0 +1,10 @@
+=== Disk check before clean install ===
+Filesystem      Size  Used Avail Use% Mounted on
+overlay          95G   26G   70G  27% /
+
+=== Package manager source checks ===
+package-lock.json absent (expected)
+packageManager=yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e
+directDeps=68
+patches directory not present
+Prepared temp install dir: /tmp/mello-clean-iteration52

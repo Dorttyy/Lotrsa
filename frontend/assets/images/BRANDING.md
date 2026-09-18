@@ -1,40 +1,41 @@
-# User-supplied Mello logo
+# Mello — current transparent user-uploaded artwork
 
-Source: https://customer-assets-v7afamib.emergentagent.net/job_elevate-familiar/artifacts/xgnt8aha_1789740818648.jpg
+Latest source (supersedes the earlier gray-background JPG):
+https://customer-assets-v7afamib.emergentagent.net/job_elevate-familiar/artifacts/rizf8n77_1000101542.png
 
-Latest explicit app name: **Mello**. Internal storage prefix and existing native
-package/bundle identifiers/deep-link schemes stay stable to preserve users,
-notifications and compatibility. They are not displayed branding.
+Source713×837RGBA, alpha0..255. Crop only fullytransparent margins at
+`(84,226,595,705)`, center withpadding; no redrawing/recoloring/background removal.
+Source saved as brand-original.png. OldJPG is historical, no longer referenced.
 
-User approved retaining the light-gray photographic background, original colors
-and artwork, using the image as both in-app logo and launcher icon. Source is
-713×837; square crop `(33,160,666,793)` removes only surplus gray margins.
-No redraw, no generative image, no stretching. Source retained as brand-original.jpg.
+## Platform behavior
+- Defaulticon, Androidlegacy/adaptiveforeground, in-applogo, favicon andsplashart
+  retain REALalpha transparency. AppLogo adds no baked background or rounded frame.
+- AppleAppStore appicons CANNOTcontainalpha: **ios-icon.png only** is the sameart
+  composited ontoopaque white. Explicitios.icon override; defaulticonstaysRGBA.
+- AdaptiveAndroidlauncher supplies itsownmask/background; foregroundhasalpha.
+  Backgroundwhite; artworkscaled636into1080withsafe-radiuspadding.
+- SplashPNGis transparent; native/JSscreenbackgrounduseslight#FFFFFF anddark
+  #0B1220surfaces. No oldgrayrectangle. Startup BrandSplashneedsnonetwork/customfont.
+- Native launcher/splash appearance requires anupdatedinstalledbinary;
+  browserstartup and PNGalpha checks are notdeviceproof.
 
-All derivatives archived in Emergent Managed Object Storage; downloads verified
-byte-for-byte against SHA256 on 2026-09-18. Local copies are mandatory for native
-launcher/splash and offline in-app rendering; no private storage key is bundled.
+## Managed object storage archive
+All8bundledfiles uploaded andreadbackverifiedbySHA256. Prefix:
+`linguaconnect/uploads/branding/` (historicalinternalprefixkept; publicnameMello).
 
-| Bundled asset | Size | Managed storage object (prefix `linguaconnect/uploads/branding/`) |
+| Bundledfile | Format/size | Managedobject |
 |---|---|---|
-| icon.png | 1024×1024 RGB, opaque iOS/legacy Android | e469cd45-2026-5f96-92a8-d7b48f9f2e46.png |
-| adaptive-icon.png | 1080×1080, artwork padded | a22727e3-ccbe-56c1-9893-b165bf6b5e0c.png |
-| splash-icon.png | 512×512 | 81614847-8259-5c73-86a0-6ed3b3aa8123.png |
-| brand-logo.png | 256×256 | 41871d0e-fe4e-5510-b9c0-e83ea6c4ac6f.png |
-| favicon.png | 64×64 | a745cbe6-7055-5e24-b340-eda3ebca0c3a.png |
-| notification-icon.png | 96×96 white/alpha silhouette | 7b6817d7-a613-521f-879d-386a81a07a90.png |
+| icon.png | RGBA1024 | 16aa51ae-9cd9-535b-9abf-af9cd0283f79.png |
+| android-icon.png | RGBA1024 | 16aa51ae-9cd9-535b-9abf-af9cd0283f79.png |
+| ios-icon.png | RGB1024,opaque | 1223b8a0-00c7-5ef1-b25e-891db65b036d.png |
+| adaptive-icon.png | RGBA1080 | b5bec596-8142-5da0-b71d-ccedb11deac8.png |
+| splash-icon.png | RGBA512 | ad7b3c07-7e90-503f-8400-4483192d4a7d.png |
+| brand-logo.png | RGBA256 | ac25f02f-41e1-52c2-bb64-c06e472b7eb7.png |
+| favicon.png | RGBA64 | e21ec8b0-ffe9-5615-a7b8-70ab3298700f.png |
+| notification-icon.png | RGBA96,whitesilhouette | 613bb7d8-f65e-53c2-838a-39e1d6948b88.png |
 
-Reproduction: `scripts/prepare_brand_assets.py` with server-side storage credential
-supplied via environment. App code does NOT call storage or require a key.
-Icon SHA256: bc0d903fce58cba9abee493d07f553d7e98179e973d7dcbcb52b823b11d21696.
-Adaptive SHA256: c4cf60b715a5a288f0f3e1aafd0ba57c9019da774ecd241c1b99d2f7261fd7eb.
-
-Adaptive safe-circle recheck: colored artwork (HSV saturation >65) has maximum
-radius **327.87px**, inside Android's central **330px** safe-circle on1080px.
-The tester's non-background-pixel check included the retained gray photographic
-shadow; no colored logo pixels are clipped. Physical launcher masks still need
-an installed native binary.
-
-Native launcher/splash changes require installing a newly built binary; Metro
-hot reload updates the in-app logo only. Physical launcher mask checks remain
-separate from source/config verification.
+DefaulticonSHA256:2f89dfe312201f0123f0d25862801a6f54314da19da815eae63a221f9e578050.
+iOSiconSHA256:130e27fefcfdb14311eee8d7b6369b2b8c45557355b783149c8a7463182ac331.
+SplashSHA256:4abf3ae34b8c2800b2061988a17dfed0f49ba4a8ec085fb9e99d6582afd17c92.
+Reproducewithscripts/prepare_brand_assets.py andserver-side storagecredential in
+environment; no storagekey in appbundle. Publicappidentifiers unchangedbybranding.

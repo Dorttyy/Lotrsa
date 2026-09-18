@@ -1,0 +1,53 @@
+{
+  "summary": "Frontend-only verification completed for lock/build hardening and mobile smoke. Fresh isolated Yarn1 install in /tmp passed with --frozen-lockfile; yarn.lock SHA256 stayed unchanged before/after. Public preview login, 5 tabs, chat open, text send, reaction popup, and emoji More-picker selection passed. Remaining production blocker is Firebase client mismatch with builder-overwritten Android applicationId from provided user logs.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "EAS Android build -> Google Services config resolution",
+        "issue": "Provided user build log overwrites Android applicationId to app.emergent.elevatefamiliarebcc2e16, but frontend/google-services.json contains only com.emergent.communityspeak.z97eev and com.mello clients. This is a real production build blocker and cannot be solved by random renaming or disabling Firebase/push.",
+        "affected_testIDs": []
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/artifacts/iteration_52_lock/precheck.txt",
+    "/app/test_reports/artifacts/iteration_52_lock/clean_install.log",
+    "/app/test_reports/artifacts/iteration_52_lock/lock_validation.txt",
+    "/app/test_reports/artifacts/iteration_52_lock/lock_validation_full_direct.txt",
+    "/app/test_reports/artifacts/iteration_52_lock/yarn_lock_sha_before.txt",
+    "/app/test_reports/artifacts/iteration_52_lock/yarn_lock_sha_tmp_after_install.txt",
+    "/app/test_reports/artifacts/iteration_52_lock/firebase_package_mismatch_check.json",
+    "/app/test_reports/artifacts/iteration_52_ui/final_ui_state.jpeg",
+    "/root/.emergent/automation_output/20260918_224832/console_20260918_224832.log",
+    "/root/.emergent/automation_output/20260918_224651/console_20260918_224651.log"
+  ],
+  "action_items": [
+    "Provide an authentic Firebase google-services.json client for the ACTUAL final Android applicationId used by builder logs: app.emergent.elevatefamiliarebcc2e16 (or stop overwriting to an unregistered ID).",
+    "Keep frontend lock/build source as Yarn1 only: packageManager yarn@1.22.22, no package-lock.json, and retain !yarn.lock in ignore rules.",
+    "If re-testing production build, re-run clean install proof and EAS archive check after Firebase client update."
+  ],
+  "critical_code_review_comments": [
+    "yarn.lock is valid Yarn Classic (v1), with HTTPS resolved URLs and matching integrity lines (941/941).",
+    "All 74 direct dependencies (dependencies + devDependencies) from package.json are present in yarn.lock.",
+    "Current runtime package com.emergent.communityspeak.z97eev matches existing google-services client, but does not negate logged production builder overwrite mismatch."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_52.json"
+  ],
+  "success_rate": {
+    "backend": "Not run (frontend-only scope)",
+    "frontend": "92% (all requested lock/smoke checks passed; production Firebase applicationId mismatch still BLOCKED)"
+  },
+  "seed_data_creation": "Sent one smoke chat message: TEST_ITER52_UI_REACTION_SMOKE.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Temp clean-install directory used: /tmp/mello-clean-iteration52 (node_modules cleaned after verification). No production code changes were made. package-lock.json absent in frontend. EAS skip-lockfile flag not found in repo or runtime env.",
+  "rca_of_issue": "RCA: user-provided production logs show failure stage before Gradle app logic due lockfile handling (now resolved in this workspace), and a separate NEXT blocker where build pipeline rewrites android.applicationId to app.emergent.elevatefamiliarebcc2e16. google-services.json lacks that exact client package entry, so Google Services plugin/client mapping will fail in final build context until user supplies matching Firebase configuration."
+}

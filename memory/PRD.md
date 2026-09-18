@@ -1,5 +1,35 @@
 # PRD — Mello (previously LinguaConnect)
 
+## Newest user changes — transparent artwork + gentle translation fallback
+- UseruploadedNEWtransparentPNG rizf8n77_1000101542.png andaskedlogo+appicontransparent.
+  SourceRGBAverified; allinapplogo/splash/defaulticon/Androidforeground/faviconretainalpha.
+  Explicitios.iconopaque whitefallbackrequiredbyApple (userinformed); AndroidOSownmask/background.
+  No oldgraybox inlogo. Native/JSsplashlightsurfacewhite/dark0B1220. All8assetsmanagedstorage
+  archived+hashverified; offlinebundledpaths/provenanceassets/images/BRANDING.md.
+- Additionaluseraskednewlogo visibleinsplash: nativepluginconfigured200pxcontainbothmodes;
+  BrandSplash nowshownwhilefonts/sessionload, hideAsyncafterrealrootlayout, noartificialdelay.
+  Authlogicunchanged, onlyloadingpresentation. Tester53normalstartup/loginPASS;
+  controlledpending-fontCDPscreenshotstilltobeverified(latesttestincludesalphaassets).
+- Userexplicitnewtranslationpolicy: knownsupportedlanguagestranslate; unknown/unavailable
+  source/targetreturns EXACToriginaltext withoutunsupportedwarning. API200+unchangedtrue+
+  providerpassthrough makesfallbackhonest. FullconfiguredpickerincludesTelugu/Esperantoagain.
+  Originalwhitespace/newlines/emojisretained, Chatpanelnolongertrimssubmittedtext. Realservice/
+  networkerrors stillsurface503(notmisrepresentedastranlated). Oldtests49expectingunsupported400/422
+  mustbeupdatedONLYforthisintentionallychangedcontract. Newpolicycacheversionv4.
+- SourceTypeScript/lints/nativeJSexportsPASS; realunknown-codeAPIreturnedexactspaces/newlines/emoji.
+  TargetedUI/backendregressionpending. Buildlockfixcleaninstallpassedtest52; realFirebaseclient
+  mismatch withloggedfinalAndroidapplicationId remainsuser-inputblocker; doNOTfakeJSONorremovepush.
+
+## Latest task — production Android build failure (IN PROGRESS)
+User supplied EAS logs and approved code/config-only fixes, explicitly NO Docker changes.
+Fatal source mismatch: packageManagerYarn1 but no yarn.lock. Generated valid nativeYarnlock,
+removednpmfrontendlock, added missing peers viaExpoCLI, addedEAS archiveignore ensuring
+lockfile/publicfrontendenv retained. Frozeninstall+TypeScript+freshExpoconfigPASS.
+See `/app/memory/BUILD_FAILURE_2026_09_18.md`. Pending cleaninstallation/export/smoke and
+deployment-agent recheck. Realnextblocker: pipelinefinalAndroidpackage
+`app.emergent.elevatefamiliarebcc2e16` has NOmatchingFirebaseclient incurrentGooglefile;
+need authentic clientconfig, no fabricatedrename/pushdisable. Docker/infra/env/db unchanged.
+
 ## FINAL CURRENT STATUS — P0 + branding + Chat translation + reactions
 - Final gate: **22/22 backend regressions PASS** (`/app/test_reports/pytest/mello_final.xml`), TypeScript0errors/newreactionlintclean, finalAndroid+iOSJSexports PASS(`/tmp/mello-native-final.log`, officialdebug--no-bytecode for ARM/x86compiler mismatch). Nativebinary/device/push caveat unchanged.
 - Latest reaction requirement clarified: **one emoji per USER per MESSAGE**, no cap on how many distinct messages a user reacts to. Picking a different emoji REPLACES that user's previous choice; same emoji removes it; other users' reactions are preserved. Real UI+API verified, including independent reactions on two messages. No auth credentials changed.

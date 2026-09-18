@@ -15,8 +15,7 @@ const NATIVE_NAMES: Record<string, string> = {
   hi: 'हिन्दी हिंदी', ar: 'العربية', es: 'Español', pt: 'Português', 'pt-BR': 'Português Brasil', de: 'Deutsch',
   fr: 'Français', id: 'Bahasa Indonesia', fa: 'فارسی', he: 'עברית', ru: 'Русский', ta: 'தமிழ்', te: 'తెలుగు',
 };
-// The installed offline M2M100 vocabulary has no Telugu/Esperanto tokens.
-// Keep names for existing profiles, but never offer a target we cannot serve.
+// Offer the full catalog. Unknown/unavailable language pairs keep the original
+// text unchanged, as requested, instead of showing unsupported-language alerts.
 export const TRANSLATION_LANGUAGES = Object.entries(TRANSLATION_NAMES)
-  .filter(([code]) => code !== 'te' && code !== 'eo')
   .map(([code, name]) => ({ code, name, nativeName: NATIVE_NAMES[code] || '' }));

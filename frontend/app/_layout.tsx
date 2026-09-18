@@ -26,7 +26,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import * as NavigationBar from "expo-navigation-bar";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -48,8 +48,9 @@ import { useIconFonts } from "@/src/hooks/use-icon-fonts";
 import { bindNetworkTelemetry } from "@/src/utils/api";
 import { AppErrorScreen } from "@/src/components/AppErrorScreen";
 import { Notifications, pushSupported } from "@/src/utils/push-native";
+import { BrandSplash } from "@/src/components/BrandSplash";
 
-SplashScreen.preventAutoHideAsync();
+void SplashScreen.preventAutoHideAsync().catch(() => {});
 initializeRevenueCat();
 
 // Router-level crash screen — generic, no technical details or builder branding.
@@ -159,17 +160,18 @@ export default function RootLayout() {
 
   const ready = (iconsLoaded || !!iconsError) && (fontsLoaded || !!fontsError);
 
-  useEffect(() => {
-    if (ready) SplashScreen.hideAsync();
+  const onRootLayout = useCallback(() => {
+    // Hide native artwork only after the replacement UI has laid out.
+    if (ready) void SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
 
   // NativeNotificationBridge is the SINGLE warm/cold tap owner. It waits for
   // authenticated state and deduplicates the response before opening a route.
 
-  if (!ready) return null;
+  if (!ready) return <BrandSplash />;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onRootLayout}>
       <KeyboardProvider>
         <SafeAreaProvider>
           <ThemeProvider>

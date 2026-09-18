@@ -579,8 +579,8 @@ export default function ChatScreen() {
   };
 
   const runPanelTranslate = async () => {
-    const text = trInput.trim();
-    if (!text || trLoading) return;
+    const text = trInput;
+    if (!text.trim() || trLoading) return;
     setTrLoading(true);
     setTrError(null);
     setTrResult(null);

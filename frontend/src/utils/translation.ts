@@ -2,7 +2,7 @@ import type { TextStyle } from 'react-native';
 import { api, getAuthToken } from '@/src/utils/api';
 
 export interface TranslationInput { text: string; target_language?: string | null; source_language?: string; }
-export interface TranslationResult { translated: string; target_language: string; source_language: string; cached: boolean; }
+export interface TranslationResult { translated: string; target_language: string; source_language: string; cached: boolean; unchanged?: boolean; provider?: string; }
 const pending = new Map<string, Promise<TranslationResult>>();
 
 async function perform(input: TranslationInput, signal?: AbortSignal): Promise<TranslationResult> {

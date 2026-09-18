@@ -1,0 +1,11 @@
+{
+  "current_android_package": "com.emergent.communityspeak.z97eev",
+  "google_services_clients": [
+    "com.emergent.communityspeak.z97eev",
+    "com.mello"
+  ],
+  "logged_builder_overwrite_applicationId": "app.emergent.elevatefamiliarebcc2e16",
+  "logged_package_in_google_services": false,
+  "current_package_in_google_services": true,
+  "classification": "BLOCKED_AUTHENTIC_FIREBASE_CLIENT_REQUIRED"
+}

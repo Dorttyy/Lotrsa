@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "icon": "./assets/images/ios-icon.png",
       "supportsTablet": true,
       "bundleIdentifier": "com.emergent.communityspeak.z97eev",
       "infoPlist": {
@@ -23,11 +24,12 @@
       }
     },
     "android": {
+      "icon": "./assets/images/android-icon.png",
       "softwareKeyboardLayoutMode": "resize",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#EBEBED"
+        "backgroundColor": "#FFFFFF"
       },
       "package": "com.emergent.communityspeak.z97eev",
       "permissions": [
@@ -58,7 +60,11 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#EBEBED"
+          "backgroundColor": "#FFFFFF",
+          "dark": {
+            "image": "./assets/images/splash-icon.png",
+            "backgroundColor": "#0B1220"
+          }
         }
       ],
       "expo-font",

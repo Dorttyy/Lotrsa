@@ -1,0 +1,71 @@
+{
+  "summary": "Frontend-only targeted splash/startup verification completed on public preview. Config/code checks pass for new Mello splash asset usage and startup BrandSplash wiring. Web automation confirmed splash logo metrics (centered/contained, gray background) under controlled font-request hold, but Playwright screenshot capture during held-font state failed repeatedly due tool-level font-ready blocking; this is a test tooling limitation, not confirmed app regression.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Test-only font-throttled startup screenshot",
+        "issue": "When intentionally holding font requests (to keep BrandSplash visible), Playwright screenshot API waits for fonts and times out, so direct screenshot proof of held-font splash could not be captured despite successful DOM/testID visibility and geometry metrics.",
+        "affected_testIDs": [
+          "mello-splash-screen",
+          "mello-splash-screen-logo"
+        ]
+      },
+      {
+        "flow": "Session restoration with real /api/auth/me held briefly",
+        "issue": "Selector-based loading-state detection succeeded, but one captured frame was blank/transition state; visual capture is timing-sensitive without introducing artificial delay.",
+        "affected_testIDs": [
+          "app-loading-logo",
+          "session-loading-logo",
+          "mello-splash-screen-logo"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/artifacts/iteration_53_load/public_load_390x844.jpeg",
+    "/app/test_reports/artifacts/iteration_53_session/login_connect_390x844.jpeg",
+    "/app/test_reports/artifacts/iteration_53_session/session_loading_390x844.jpeg",
+    "/app/test_reports/artifacts/iteration_53_session/session_released_connect_390x844.jpeg",
+    "/app/test_reports/artifacts/iteration_53_metrics/final_20260918_225815.jpeg",
+    "/app/test_reports/artifacts/iteration_53_ui/global_failure.jpeg",
+    "/app/test_reports/artifacts/iteration_53_ui_run2/global_failure.jpeg",
+    "/app/test_reports/artifacts/iteration_53_ui_run3/failure.jpeg",
+    "/app/test_reports/artifacts/iteration_53_session_run2/failure.jpeg",
+    "/root/.emergent/automation_output/20260918_225421/console_20260918_225421.log",
+    "/root/.emergent/automation_output/20260918_225548/console_20260918_225548.log",
+    "/root/.emergent/automation_output/20260918_225709/console_20260918_225709.log",
+    "/root/.emergent/automation_output/20260918_225756/console_20260918_225756.log",
+    "/root/.emergent/automation_output/20260918_225815/console_20260918_225815.log",
+    "/root/.emergent/automation_output/20260918_225858/console_20260918_225858.log"
+  ],
+  "action_items": [
+    "If strict screenshot proof is mandatory for held-font startup, use a capture mechanism that does not block on document.fonts.ready (or capture from native build instrumentation/video), since Playwright screenshot blocks by design.",
+    "Validate native launch splash on freshly installed Android/iOS build; web preview cannot prove OS-native splash rendering lifecycle.",
+    "Optional testing hardening: expose a deterministic non-production test hook/event for loading-logo visibility transitions to reduce racey blank-frame captures."
+  ],
+  "critical_code_review_comments": [
+    "app.json expo-splash-screen plugin is correctly configured to splash-icon.png, imageWidth 200, resizeMode contain, background #EBEBED, and explicit dark mode uses same image/background.",
+    "BrandSplash uses bundled local asset require(@/assets/images/splash-icon.png) with fixed gray background and no network image dependency.",
+    "RootLayout keeps native splash hideAsync tied to rendered root onLayout only when ready, matching requested startup-transition pattern.",
+    "Index/AuthRouteBoundary presentation changed to BrandSplash (app-loading/session-loading) while auth redirect logic remains unchanged."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_53.json"
+  ],
+  "success_rate": {
+    "backend": "Not run (frontend-only scope)",
+    "frontend": "~85% (config/code/startup logic and viewport metrics passed; held-font screenshot evidence blocked by tooling limitation)"
+  },
+  "seed_data_creation": "Used existing QA user login only: qa_tester_b40dc299@linguatest.com. No credential/storage mutation performed.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Controlled font-delay checks were done without mocked API bodies and confirmed via DOM metrics: 390x844, 320x568, 844x390 all returned splashBg rgb(235,235,237), logo 200x200, centerDx/centerDy 0, fullyContained true. Repeated screenshot attempts during held-font state timed out on Playwright font readiness. Treat those failures as automation limitations, not direct app failures.",
+  "rca_of_issue": "RCA (test capture issue): Playwright screenshot pipeline waits for font readiness. In this task, fonts are intentionally held to keep pre-ready BrandSplash visible, creating a deadlock for screenshot capture. Reproduction: intercept .ttf/.woff request before initial navigation -> wait for mello-splash-screen-logo -> call page/locator screenshot -> timeout waiting for fonts. Mitigation: gather geometry/assertion evidence via DOM metrics during hold, then release requests; for visual proof, use video/native instrumentation or tooling that can capture without font-ready dependency."
+}

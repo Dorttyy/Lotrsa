@@ -68,15 +68,21 @@ def _chunks(tokens: list[str]):
 
 
 def process(text: str, source: str, target: str) -> tuple[str, str]:
-    load()
-    target_code = model_code(target)
-    if target_code not in SUPPORTED:
-        raise ValueError("This language is not supported by offline translation yet.")
     if not any(char.isalpha() for char in text):
         return text, source
-    source_code = _detector.classify(text)[0] if source == "auto" else model_code(source)
+    if not SUPPORTED:
+        # Missing model assets are an operational failure, not an unknown language.
+        raise RuntimeError("Local translation model vocabulary is unavailable")
+    target_code = model_code(target)
+    if target_code not in SUPPORTED or (source != "auto" and model_code(source) not in SUPPORTED):
+        return text, source
+    load()
+    try:
+        source_code = _detector.classify(text)[0] if source == "auto" else model_code(source)
+    except (ValueError, IndexError, ZeroDivisionError):
+        return text, "auto"
     if source_code not in SUPPORTED:
-        raise ValueError("The detected source language is not supported. Choose the source language explicitly.")
+        return text, source_code
     if source_code == target_code:
         value = text
     else:

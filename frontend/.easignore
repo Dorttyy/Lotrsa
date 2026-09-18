@@ -1,0 +1,37 @@
+# Native builds use the package manager declared in package.json.
+node_modules/
+.expo/
+dist/
+web-build/
+.metro-cache/
+coverage/
+*.tsbuildinfo
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+
+# No competing package manager lockfiles in the EAS project directory.
+package-lock.json
+npm-shrinkwrap.json
+pnpm-lock.yaml
+bun.lock*
+!package.json
+!yarn.lock
+!scripts/check-pkg.js
+
+# Signing credentials are consumed by the build service, never app source.
+credentials.json
+*.jks
+*.p12
+*.p8
+*.key
+*.mobileprovision
+**/*service-account*.json
+
+# The builder writes PUBLIC frontend build values into .env before submission.
+# Preserve that file in the private EAS build context (not in Git); no backend
+# environment or server secrets belong in this frontend directory.
+.env*
+!.env
+!google-services.json

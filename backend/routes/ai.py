@@ -13,7 +13,6 @@ from config_utils import get_app_config
 from db import audio_col, media_col, users_col
 from models import CorrectRequest, TranscribeRequest, TranslateRequest, _vip_active
 import translation_service
-import local_text_translation
 from translation_languages import LANGUAGES, RTL_CODES, normalize_language
 
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -41,7 +40,11 @@ NAME_TO_CODE = {
 
 async def _google_translate(text: str, target: str) -> str:
     """Legacy name retained for callers; all inference is now local/offline."""
-    value, _ = await translation_service.provider_translate(text, "auto", normalize_language(target))
+    try:
+        target = normalize_language(target)
+    except ValueError:
+        return text
+    value, _ = await translation_service.provider_translate(text, "auto", target)
     return value
 
 
@@ -257,20 +260,19 @@ async def image_text(body: ImageAiRequest, current_user: CurrentUser):
 
 @router.get("/translation-languages")
 async def translation_languages():
-    return [{"code": code, "name": name, "rtl": code in RTL_CODES} for code, name in LANGUAGES.items()
-            if local_text_translation.model_code(code) in local_text_translation.SUPPORTED]
+    return [{"code": code, "name": name, "rtl": code in RTL_CODES} for code, name in LANGUAGES.items()]
 
 
 @router.post("/translate", response_model=translation_service.TranslationResult)
 async def translate(body: TranslateRequest, current_user: CurrentUser):
     target_value = body.target_language or current_user.get("native_language")
     if not target_value:
-        raise HTTPException(400, "Choose a translation language first.")
+        return translation_service.original_result(body.text)
     try:
         target = normalize_language(target_value)
         source = normalize_language(body.source_language or "auto", allow_auto=True)
-    except ValueError as error:
-        raise HTTPException(400, str(error)) from None
+    except ValueError:
+        return translation_service.original_result(body.text, target_value, body.source_language or "auto")
     try:
         return await translation_service.translate(current_user["_id"], body.text, source, target)
     except ValueError as error:
