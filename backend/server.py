@@ -1,4 +1,5 @@
 import logging
+import asyncio
 import os
 from contextlib import asynccontextmanager
 
@@ -30,7 +31,8 @@ from routes.push import router as push_router  # noqa: E402
 from routes.rooms import router as rooms_router  # noqa: E402
 from routes.rtc import router as rtc_router  # noqa: E402
 from routes.call_practice import router as call_practice_router  # noqa: E402
-from routes.call_captions import router as call_captions_router  # noqa: E402
+from routes.room_stage import router as room_stage_router  # noqa: E402
+from routes.room_moderators import router as room_moderators_router  # noqa: E402
 import rtc_core  # noqa: E402
 from routes.pro import router as pro_router, seed_pro_tutors  # noqa: E402
 from routes.lessons import router as lessons_router  # noqa: E402
@@ -120,6 +122,7 @@ CALL_EVENT_TYPES = {
     "call_end",
     "call_decline",
     "call_media_ready",
+    "call_ringing",
 }
 ROOM_EVENT_TYPES = {
     "rtc_offer",
@@ -192,6 +195,15 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     if caller:
                         data["caller"] = user_card(caller)
                     data["expires_at"] = rtc_core.session(call_id)["expires_at"]
+                    data["practice"] = bool(rtc_core.session(call_id).get("practice"))
+                    if user_id == sess["caller"] and not sess.get("accepted"):
+                        sess["offer"] = {**data, "from": user_id, "from_user_id": user_id}
+                        if not sess.get("push_attempted"):
+                            asyncio.create_task(rtc_core.push_call_once(call_id))
+                elif event_type == "call_ringing":
+                    if user_id != rtc_core.session(call_id)["receiver"]:
+                        continue
+                    rtc_core.session(call_id)["delivered"] = True
                 elif event_type == "call_answer":
                     if user_id != rtc_core.session(call_id)["receiver"] and not rtc_core.session(call_id).get("accepted"):
                         continue
@@ -200,6 +212,12 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     rtc_core.session(call_id)["accepted"] = True
                 elif event_type == "call_media_ready":
                     await rtc_core.media_ready(call_id, user_id)
+                elif event_type == "call_ice":
+                    sess = rtc_core.session(call_id)
+                    if user_id == sess["caller"] and not sess.get("accepted") and data.get("candidate"):
+                        candidates = sess.setdefault("early_ice", [])
+                        if len(candidates) < 80:
+                            candidates.append(data["candidate"])
                 elif event_type == "call_decline":
                     await rtc_core.finish(call_id, rtc_core.REJECTED)
                 elif event_type == "call_end":
@@ -292,7 +310,8 @@ for router in (
     rooms_router,
     rtc_router,
     call_practice_router,
-    call_captions_router,
+    room_stage_router,
+    room_moderators_router,
     audio_router,
     media_router,
     notifications_router,

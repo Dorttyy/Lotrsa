@@ -56,9 +56,8 @@ export default function TabsLayout() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
-  // Reserve room for the device's home indicator / nav bar, plus a little
-  // extra lift so the icon row sits comfortably clear of the very edge.
-  const bottomGap = Math.max(insets.bottom, 12) + 10;
+  // Reserve the actual system inset, without double-lifting the icon row.
+  const bottomGap = Math.max(insets.bottom, 8);
 
   if (loading) return null;
   if (!user) {
@@ -81,17 +80,18 @@ export default function TabsLayout() {
           flexShrink: 0,
         },
         tabBarItemStyle: {
-          paddingTop: 4,
+          paddingTop: 2,
+          paddingBottom: 2,
         },
+        tabBarIconStyle: { height: 32 },
+        tabBarLabelPosition: "below-icon",
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.divider,
           borderTopWidth: StyleSheet.hairlineWidth,
-          // Comfortable content height + safe-area gap (min 12) so the bar
-          // stays lifted above the home indicator on every device.
-          height: 68 + bottomGap,
+          height: 64 + bottomGap,
           paddingBottom: bottomGap,
-          paddingTop: 8,
+          paddingTop: 4,
           ...Platform.select({
             ios: {
               shadowColor: "#0F172A",

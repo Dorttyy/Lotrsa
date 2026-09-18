@@ -1,0 +1,95 @@
+{
+  "summary": "Executed targeted backend regression plus mobile-web UI validation for inbox voice translation controls, call speaker-control changes, and partial multi-context room checks. Backend mostly passed (6/7) with one blocking practice-call precondition failure; frontend validated key QA2 translation behavior but several required multi-user flows remain unverified.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/rtc/practice/call",
+        "issue": "Regression test failed twice with 409: 'Leave your current call or voice room before starting another.' This blocked the 600-second practice-call timer/privacy flow test path.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Admin post-auth routing",
+        "issue": "Admin login did not land on admin page in this run; it routed to /onboarding before manual navigation to /voice.",
+        "testID": "auth-submit-btn",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "QA2 chat voice fixtures transcript/translation controls",
+        "issue": "transcribe/collapse/expand checks ran on fixture ids and did not raise control-state failures, but long-text collapsed text-control layout check at 320x568 could not find target collapsed text controls in this dataset.",
+        "affected_testIDs": [
+          "transcribe-btn-c2f725da-d08f-471d-aed9-7fe02db49bca",
+          "transcribe-btn-3766d281-2b7e-47ca-a704-2dd5f84a3862",
+          "side-collapse-btn-c2f725da-d08f-471d-aed9-7fe02db49bca",
+          "side-collapse-btn-3766d281-2b7e-47ca-a704-2dd5f84a3862"
+        ]
+      },
+      {
+        "flow": "Two-user call speaker-control validation",
+        "issue": "QA2->QA1 call initiation did not surface incoming accept UI on QA1 within timeout, so end-to-end active-call speaker toggle assertions remained incomplete.",
+        "affected_testIDs": [
+          "chat-call-btn",
+          "call-accept-btn",
+          "call-speaker-btn",
+          "call-speaker-device-note"
+        ]
+      },
+      {
+        "flow": "3-context room duplicate-key and stage/moderator UI sync",
+        "issue": "Could not fully execute required create/join/invite/session-update sequence across QA1+QA2+Admin in a single run due auth-state/routing interruption in multi-context script; duplicate-key console validation is therefore partial only.",
+        "affected_testIDs": [
+          "room-create-fab",
+          "room-card-*",
+          "room-menu-btn",
+          "room-moderators-btn"
+        ]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Chat translation controls at 320x568",
+        "issues": [
+          "Required long-text collapsed/expanded icon cluster alignment could not be conclusively validated because target collapsed text controls were not found in current visible thread state."
+        ]
+      }
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration38_practice_rooms_moderators.py",
+    "/app/test_reports/pytest/iteration39_backend.xml",
+    "/app/test_reports/artifacts_iter39_ui_retry/chat_translation_390.jpg",
+    "/app/test_reports/artifacts_iter39_ui_retry/chat_translation_320.jpg",
+    "/app/test_reports/artifacts_iter39_admin/admin_voice.jpg",
+    "/app/test_reports/artifacts_iter39_ui_retry/qa1_call_fail.jpg",
+    "/app/test_reports/artifacts_iter39_ui_retry/qa2_call_fail.jpg"
+  ],
+  "action_items": [
+    "Investigate and clear persistent active-call/active-room state for QA accounts so practice-call regression can run deterministically.",
+    "Fix/confirm admin post-login destination (expected admin landing) before /voice navigation in verified flow.",
+    "Re-run full 3-context room UI scenario (host/mod/admin) including moderator invite accept/reject, stage request handling, and duplicate-key console checks.",
+    "Run dedicated long-text translation fixture validation at 320 and 390 to confirm collapsed/expanded icon cluster spacing/alignment requirements."
+  ],
+  "critical_code_review_comments": [
+    "`/app/frontend/app/chat/[id].tsx` remains very large (>4000 lines), increasing regression risk for tightly-coupled UI state around transcript/translation/collapse behavior.",
+    "`/app/backend/tests/test_iteration38_practice_rooms_moderators.py` hardcodes QA credentials in test source; credential sourcing should be centralized to secure test config/fixtures."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_39.json"
+  ],
+  "success_rate": {
+    "backend": "86% (6/7)",
+    "frontend": "50% (login + targeted voice-translation checks passed; major multi-user/call validations incomplete)"
+  },
+  "seed_data_creation": "No new seed data created in this iteration.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Use /auth?mode=login for deterministic auth automation. Admin account currently routes to /onboarding in this environment before manual /voice navigation. Re-run room multi-context flow with explicit modal dismissal and capture per-context screenshots on every failure. Practice-call backend test currently blocked by 409 precondition (active session state).",
+  "rca_of_issue": "Practice-call regression failure RCA: the suite expects a clean pre-call state, but server rejects /rtc/practice/call with 409 when either participant is already in an active call/voice room. Repro: run TestPracticePrivacyAndTimer::test_practice_call... -> POST /api/rtc/practice/call returns 409 immediately. Mitigation: ensure teardown clears lingering room memberships/calls for QA users before test start (or add pre-test cleanup endpoint calls)."
+}

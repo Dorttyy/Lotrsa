@@ -11,6 +11,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Avatar } from "@/src/components/Avatar";
+import { StageInvitation } from "@/src/components/room/StageInvitation";
 import { useAuth } from "@/src/context/AuthContext";
 import { useCall } from "@/src/context/CallContext";
 import { useRoomAudio } from "@/src/hooks/use-room-audio";
@@ -178,9 +179,10 @@ export const RoomSessionProvider: React.FC<{ children: React.ReactNode }> = ({
       }}
     >
       {children}
+      {!!activeRoomId && !!room && !!user && <StageInvitation key={`invitation-${activeRoomId}`} room={room} userId={user.id} subscribe={subscribe} onAccepted={() => { if (minimized) expand(); }} />}
       {!!activeRoomId && !!user?.id ? (
         <AudioSessionHost
-          key={activeRoomId}
+          key={`audio-${activeRoomId}`}
           roomId={activeRoomId}
           myId={user.id}
           members={members}

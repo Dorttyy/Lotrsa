@@ -102,8 +102,50 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
+## Latest current task — inbox preview icons ONLY
+user_problem_statement: "User explicitly narrowed earlier Do all: আপাতত শুধু Chats list latest preview beside each avatar/name: existing app mic for voice messages and voice-room shares, existing call artwork for missed/other calls. Preserve all other behavior."
+backend:
+  - task: "Typed latest-message snapshots and batched read-only legacy enrichment"
+    implemented: true
+    working: true
+    file: "backend/chat_previews.py; backend/routes/chats.py"
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "New Pydantic preview whitelist (type/call_status/duration_ms/room_id); all message send paths persist type; legacy list/detail snapshots match exact conversation+timestamp+sender in one query without DB writes. No emoji-only guesses, no message/history changes, no auth/room/purchase changes. Python lint passes."
+      - working: true
+        agent: "testing"
+        comment: "Iteration41 backend9/9PASS. Typed text/voice/missed+answeredcall/room/customcaption/group snapshots, legacy list+detail enrichment and unread/time/sender verified. test_reports/iteration_41.json and pytest/iteration41_backend.xml. QA-only fixtures; no liveaudio/purchase tests."
+frontend:
+  - task: "Existing custom mic/call artwork beside latest inbox preview"
+    implemented: true
+    working: true
+    file: "frontend/src/components/ChatLastMessage.tsx; app/(tabs)/chats.tsx; src/utils/api.ts"
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Typed voice/call/room previews render 16pt shared uploaded artwork and strip ONLY their generated leading emoji; labels/durations/titles retained; normal text unchanged. Row navigation, unread, live-room override unchanged. New deterministic chat-preview[-text/-voice-icon/-call-icon/-room-icon]-{conversationID} IDs. Lint passes; tsc EXACT same16 preexisting errors, no new. Initial390 screenshot PASS."
+      - working: true
+        agent: "main"
+        comment: "Iteration41 realbrowser390/320 icons/truncation/unread/search/filter/rowopening/darkthemePASS, screenshots viewed. Main plain-text lookalike followupPASS: real composer text phone-emoji Missedcall retained exact, zero mediaicon nodes,320nooverflow. Nativephysical verification not performed. All currentincrement checks complete; other tasks deferred per latest user instruction."
+test_plan:
+  current_focus:
+    - "QA-only real API snapshots voice/missed/answered/room/custom room caption/text, legacy missing-type hydration and text emoji lookalikes. No real phone calls needed."
+    - "Real browser inbox icons exact uploaded asset bytes at320/390, no duplicated emoji/no overflow/unread preserved, row opens chat; light+dark if practical. No API mocking."
+  test_all: false
+agent_communication:
+  - agent: "main"
+    message: "Use trackedQA1/QA2 credentials, preserve all existing data. QA-only new messages/rooms allowed for testing this feature; cleanup only created fixtures, end only your own temporaryQA rooms. No signup unless needed (record any creds immediately), no payments/AI/call media. Existing room creation UI bug deferred by user and not part of tests; use API to prepare room share fixture. Return JSONreport+screenshots, don't edit appcode."
+
 ## Current task — consistent title typography (approved phase1)
 ## Call/Practice + native-language captions — September 18 continuation (latest)
+### NEW currentincrement — privacy/10min calls +stage/moderators (testing pending)
+- Userlatest (Bengali): practicecalltoprequestcardonlyuntilacceptthenfullcall, nohistoryanywhere,600secsafteractualconnection; ordinarydirectcallsFULLUIbeforeaccept/historyunchanged. Stage&moderatorinvitationssmallAccept/Rejectcards, noforcedpromotion; owner-onlymoderatorlistAdd/Remove; modpurplebadge/nohostseatshift/noownership/noincome; modinvites/mutes/removes/endsroom; creatorawayreservedcoffeeseat/returnasowner; roomgiftfinancialincomeONLYowner.
+- Implemented backendroom_permissions,routes/room_stage,room_moderators,rooms+rtc_core+rtc+call_practice+server; frontendroompage/components/room/*/CallContext/RoomSessionContext/tabslayouts/api/incall. allnewflowsrequiretestsnow. DetailedrequirementsPRDtopnewsection. OldRCreceiptproblemunchangedandoutsidecurrenttask.
 - FINALiteration37correction:7/7backendPASSEDafterfixingharnessunknownfakeendpoint404vs410andtrueparallelconcurrencysubmits. Real/market/buyviplegacy410safeguardworks. Exactreport /app/test_reports/pytest/iteration37_corrected.xml. Noappcompatendpointinvented.
 - FINALvoiceverification064926 mainactualspeechfixturesviaAPI -> Aplay/BplayApausedrewound/Bsingleplay/endnoautonext/replayA/navigationstopsall=PASS. PaidGiftmutual/gendercustomiconRoundFlags/longmodalopenapplyreset+smallviewportchecksPASSiniter37.
 - FINALSDKpositivepurchaseattempt061...070118: clickedactualSDK'Testvalidpurchase' returnsreceiptbutproabsent; actualentitlementelevate_familiar_pro,submonthly,correctbackendUID; buildconfig.env.browserkeymatches. Correctproductupsertkeptpro6attached butdidnotfix. NotSDKpreviewlimitation,nofakegrant; upstreamcontract/mappingunresolved, supportescalationresponsehandeduser. Livepurchasesguardfalse; disabledcoincheckoutexplicitpending. DoNOTcalltestpurchaseProactivationorrestoreverified. Newmismatcherrorcopy&repeatbuyguardthenfinalminorlintpending.

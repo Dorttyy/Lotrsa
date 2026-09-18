@@ -17,8 +17,13 @@ export async function getPushPermissionStatus(): Promise<PushPermissionStatus> {
   return status;
 }
 
-async function sendTokenToBackend(): Promise<void> {
+export async function sendTokenToBackend(): Promise<void> {
   if (!Notifications) return;
+  if (Platform.OS === "android") await Notifications.setNotificationChannelAsync("default", {
+    name: "Messages, calls and activity", importance: Notifications.AndroidImportance.HIGH,
+    sound: "default", vibrationPattern: [0, 200, 150, 200],
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
+  });
   const tokenResp = await Notifications.getDevicePushTokenAsync();
   await api.post("/register-push", {
     user_id: "", // backend always overrides this with the authenticated user
@@ -82,7 +87,7 @@ export async function registerForPush(): Promise<void> {
 export async function requestPushPermissionFromSettings(): Promise<PushPermissionStatus> {
   if (!pushSupported || !Notifications) return "unsupported";
   const { status, canAskAgain } = await Notifications.getPermissionsAsync();
-  if (status === "granted") return status;
+    if (status === "granted") { await sendTokenToBackend(); return status; }
   if (!canAskAgain) {
     Alert.alert(
       "Notifications disabled",

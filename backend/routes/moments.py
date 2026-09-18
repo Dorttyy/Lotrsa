@@ -35,9 +35,10 @@ async def _notify(
     push it — a push failure must never block the like/comment action."""
     if recipient_id == actor_id:
         return
+    notification_id = str(uuid.uuid4())
     await notifications_col.insert_one(
         {
-            "_id": str(uuid.uuid4()),
+            "_id": notification_id,
             "user_id": recipient_id,
             "actor_id": actor_id,
             "type": ntype,
@@ -55,7 +56,8 @@ async def _notify(
             message += f': "{text[:80]}"'
         await send_push(
             recipients=[recipient_id],
-            data={"title": actor_name, "message": message},
+            data={"title": actor_name, "message": message, "action_url": f"/moment/{moment_id}"},
+            idempotency_key=f"activity:{notification_id}",
         )
     except Exception as e:
         logger.warning(f"Push notification failed (non-blocking): {e}")

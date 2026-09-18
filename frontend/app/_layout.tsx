@@ -37,6 +37,7 @@ import { Ionicons, MaterialCommunityIcons } from "@/src/ui/icons";
 
 import { AuthProvider } from "@/src/context/AuthContext";
 import { initializeRevenueCat, SubscriptionProvider } from "@/src/billing/revenuecat";
+import { NativeNotificationBridge } from "@/src/components/NativeNotificationBridge";
 import { CallProvider } from "@/src/context/CallContext";
 import { NetworkProvider, useNetwork } from "@/src/context/NetworkContext";
 import { NotificationsProvider } from "@/src/context/NotificationsContext";
@@ -116,6 +117,7 @@ function ThemedApp() {
       <SubscriptionProvider>
       <NotificationsProvider>
         <CallProvider>
+            <NativeNotificationBridge />
           <RoomSessionProvider>
             <StatusBar style={mode === "dark" ? "light" : "dark"} />
             <Stack

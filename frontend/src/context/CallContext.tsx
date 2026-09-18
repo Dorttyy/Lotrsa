@@ -31,7 +31,6 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Avatar } from "@/src/components/Avatar";
-import { CaptionPanel } from "@/src/components/call/CaptionPanel";
 import { IncomingCallPopup } from "@/src/components/call/IncomingCallPopup";
 import { stopVoicePlayback } from "@/src/utils/voice-playback";
 import { VipBadge } from "@/src/components/Badges";
@@ -121,11 +120,14 @@ interface CallState {
   callId: string;
   offerSdp?: any;
   expiresAt?: number;
+  practice?: boolean;
+  endsAt?: number;
 }
 
 interface CallContextValue {
   startCall: (peer: User, reservedCallId?: string, expiresAt?: number) => Promise<void>;
   busy: boolean;
+  recoverIncoming: (callId?: string) => Promise<boolean>;
   sendSignal: (data: Record<string, unknown>) => void;
   subscribe: (fn: SignalHandler) => () => void;
 }
@@ -207,6 +209,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   const [call, setCallState] = useState<CallState | null>(null);
   const [muted, setMuted] = useState(false);
   const [speakerOn, setSpeakerOn] = useState(false);
+  const [audioRouteError, setAudioRouteError] = useState("");
   const [seconds, setSeconds] = useState(0);
   const [peerSpeaking, setPeerSpeaking] = useState(false);
 
@@ -293,7 +296,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     const current = callRef.current;
     if (current) {
       finalizeSession(current.callId, outcome);
-      if (isCallerRef.current) {
+      if (isCallerRef.current && !current.practice) {
         if (callActiveSinceRef.current) {
           logCallEvent(
             current.peer.id,
@@ -371,7 +374,11 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
       throw new Error("Call cancelled");
     }
     const pc = new rtc.PC(config);
-    stream.getTracks().forEach((t: any) => pc.addTrack(t, stream));
+    stream.getTracks().forEach((t: any) => {
+      // A ringing request is not a conversation: do not transmit the mic yet.
+      t.enabled = callRef.current?.status === "active";
+      pc.addTrack(t, stream);
+    });
     preferOpus(pc);
     pc.onicecandidate = (e: any) => {
       const c = callRef.current;
@@ -456,7 +463,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
       try {
-        setCall({ status: "outgoing", phase: "outgoing", peer, callId, expiresAt });
+        setCall({ status: "outgoing", phase: "outgoing", peer, callId, expiresAt, practice: !!reservedCallId });
         ringTimeoutRef.current = setTimeout(() => {
           if (isCurrentCall(callId) && callRef.current?.status === "outgoing") {
             sendSignal({ type: "call_end", to: peer.id, call_id: callId });
@@ -476,7 +483,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
           call_id: callId,
           sdp: offer,
         });
-        setPhase("ringing");
+        // Calling stays visible until the receiving app acknowledges delivery.
         startingRef.current = false;
       } catch (err: any) {
         finalizeSession(callId, "FAILED");
@@ -493,6 +500,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   const acceptCall = async () => {
     const current = callRef.current;
     if (!current?.offerSdp || current.status !== "incoming") return;
+    if (wsRef.current?.readyState !== WebSocket.OPEN) {
+      notify("Connecting", "The call connection is starting. Please try Accept again in a moment.");
+      return;
+    }
     if (!webrtcAvailable()) {
       sendSignal({
         type: "call_decline",
@@ -507,6 +518,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
     try {
+      if (ringTimeoutRef.current) { clearTimeout(ringTimeoutRef.current); ringTimeoutRef.current = null; }
       setCall({ ...current, status: "active", phase: "connecting" });
       const pc = await createPeer(current.peer.id, current.callId);
       await pc.setRemoteDescription(current.offerSdp);
@@ -572,9 +584,12 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const toggleSpeaker = () => {
-    const next = !speakerOn;
-    audioSession.setSpeaker(next);
-    setSpeakerOn(next);
+    try {
+      const next = !speakerOn;
+      audioSession.setSpeaker(next);
+      setSpeakerOn(next);
+      setAudioRouteError("");
+    } catch (e: any) { setAudioRouteError(e.message || "Could not change the speaker. Please check your audio device."); }
   };
 
   const handleEvent = useCallback(async (event: any) => {
@@ -582,6 +597,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     const current = callRef.current;
     switch (event.type) {
       case "call_offer": {
+        if (current && current.callId === event.call_id && current.status === "incoming") {
+          sendSignal({ type: "call_ringing", to: event.from, call_id: event.call_id });
+          return;
+        }
         // Renegotiation / ICE restart on the live call.
         if (
           current &&
@@ -615,6 +634,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
           return;
         }
         if (!event.call_id) return;
+        if (event.expires_at && event.expires_at <= Date.now()) return;
+        pendingIceRef.current = [...pendingIceRef.current, ...(event.queued_ice || [])];
         setCall({
           status: "incoming",
           phase: "incoming",
@@ -622,8 +643,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
           callId: event.call_id,
           offerSdp: event.sdp,
           expiresAt: event.expires_at || Date.now() + RING_TIMEOUT_MS,
+          practice: event.practice === true,
         });
         isCallerRef.current = false;
+        sendSignal({ type: "call_ringing", to: event.from, call_id: event.call_id });
         callActiveSinceRef.current = null;
         ringTimeoutRef.current = setTimeout(() => {
           const ringing = callRef.current;
@@ -631,6 +654,12 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         }, Math.max(0, (event.expires_at || Date.now() + RING_TIMEOUT_MS) - Date.now()));
         break;
       }
+      case "call_ringing":
+        if (current && current.callId === event.call_id && current.status === "outgoing") setPhase("ringing");
+        break;
+      case "call_connected":
+        if (current && current.callId === event.call_id && current.practice) setCall({ ...current, endsAt: event.ends_at });
+        break;
       case "call_answer":
         if (!current || current.callId !== event.call_id || !pcRef.current) break;
         try {
@@ -640,6 +669,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
           }
           if (current.status === "outgoing") {
             setCall({ ...current, status: "active", phase: "connecting" });
+            localStreamRef.current?.getAudioTracks?.().forEach((track: any) => { track.enabled = true; });
           }
           await pcRef.current.setRemoteDescription(event.sdp);
           await flushIce();
@@ -654,8 +684,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         break;
       case "call_unavailable":
-        // Peer is offline right now — keep ringing silently. If they don't
-        // come online and answer, the normal ring timeout ends the call.
+        // Offline/no acknowledgement is Calling, with the same gentle ringback.
+        if (current && current.callId === event.call_id && current.status === "outgoing") setPhase("outgoing");
         break;
       case "call_invalid":
         // The server rejected this session (expired / not a participant).
@@ -668,7 +698,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
       case "call_end":
         if (current && (!event.call_id || current.callId === event.call_id)) {
           const connected = !!callActiveSinceRef.current;
-          if (isCallerRef.current) {
+          if (isCallerRef.current && !current.practice) {
             if (connected) {
               logCallEvent(
                 current.peer.id,
@@ -689,6 +719,21 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const recoverIncoming = useCallback(async (callId?: string) => {
+    const current = callRef.current;
+    if (current) {
+      if (current.status === "incoming") sendSignal({ type: "call_ringing", to: current.peer.id, call_id: current.callId });
+      return !callId || current.callId === callId;
+    }
+    try {
+      const data = await api.get<{ offers: any[] }>("/rtc/incoming");
+      const offer = data.offers.find(o => !callId || o.call_id === callId);
+      if (!offer) return false;
+      await handleEvent(offer);
+      return true;
+    } catch { return false; }
+  }, [handleEvent, sendSignal]);
+
   useEffect(() => {
     if (!user) return;
     let closed = false;
@@ -708,6 +753,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
       const ws = new WebSocket(wsUrl());
       wsRef.current = ws;
       ws.onopen = () => {
+        void recoverIncoming();
         // Mobile carriers / proxies drop idle sockets — a light keepalive keeps
         // incoming calls and room events flowing in real time.
         if (ping) clearInterval(ping);
@@ -765,6 +811,34 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => clearInterval(t);
   }, [call?.phase]);
 
+  // Absolute server deadline, with polling fallback after socket/background gaps.
+  useEffect(() => {
+    if (!call?.practice || call.status !== "active") return;
+    const callId = call.callId;
+    let alive = true;
+    const check = async () => {
+      try {
+        const state = await api.get<{ ends_at?: number; status: string }>(`/rtc/calls/${callId}/state`);
+        const current = callRef.current;
+        if (alive && current?.callId === callId && state.ends_at && current.endsAt !== state.ends_at) setCall({ ...current, endsAt: state.ends_at });
+      } catch (e: any) {
+        if (alive && e.status === 404 && isCurrentCall(callId)) teardown("COMPLETED");
+      }
+    };
+    void check();
+    const poll = setInterval(check, 5000);
+    const appState = AppState.addEventListener("change", state => { if (state === "active") void check(); });
+    return () => { alive = false; clearInterval(poll); appState.remove(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [call?.callId, call?.status, call?.practice]);
+
+  useEffect(() => {
+    if (!call?.practice || !call.endsAt) return;
+    const timer = setTimeout(endCall, Math.max(0, call.endsAt - Date.now()));
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [call?.callId, call?.endsAt]);
+
   // Real speaking detection for the remote party (Web Audio on web, getStats
   // audio levels on native) + lightweight connection-quality monitoring.
   useEffect(() => {
@@ -794,24 +868,30 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (call?.status !== "active") return;
     audioSession.start(false);
+    const unsubscribeRoute = audioSession.onRouteChanged(route => {
+      if (route) setSpeakerOn(route === "SPEAKER_PHONE");
+    });
+    setAudioRouteError("");
     return () => {
+      unsubscribeRoute();
       audioSession.stop();
       setSpeakerOn(false);
     };
   }, [call?.status]);
 
-  // Ringtone + vibration while an incoming call is ringing.
+  // Soft outgoing ringback in both Calling and Ringing, and incoming ringtone.
   const ringtone = useAudioPlayer(require("../../assets/sounds/ringtone.wav"));
   useEffect(() => {
-    if (call?.status !== "incoming") return;
+    if (call?.status !== "incoming" && call?.status !== "outgoing") return;
     try {
       ringtone.loop = true;
+      ringtone.volume = call.status === "outgoing" ? 0.16 : 0.35;
       ringtone.seekTo(0);
       ringtone.play();
     } catch {
       // audio unavailable (e.g. web autoplay policy); vibration still works
     }
-    if (Platform.OS !== "web") {
+    if (Platform.OS !== "web" && call.status === "incoming") {
       Vibration.vibrate([600, 1000], true);
     }
     return () => {
@@ -837,10 +917,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-    <CallContext.Provider value={{ startCall, sendSignal, subscribe, busy: !!call }}>
+    <CallContext.Provider value={{ startCall, sendSignal, subscribe, busy: !!call, recoverIncoming }}>
       {children}
       <Modal visible={!!call} transparent animationType="fade" onRequestClose={endCall}>
-        {call && call.status !== "active" ? <IncomingCallPopup peer={call.peer} outgoing={call.status === "outgoing"} expiresAt={call.expiresAt!} onAccept={acceptCall} onReject={call.status === "outgoing" ? endCall : declineCall} /> : call && (
+        {call && call.practice && call.status !== "active" ? <IncomingCallPopup peer={call.peer} outgoing={call.status === "outgoing"} ringing={call.phase === "ringing"} expiresAt={call.expiresAt!} onAccept={acceptCall} onReject={call.status === "outgoing" ? endCall : declineCall} /> : call && (
           <LinearGradient
             colors={["#0B1B2E", "#14335A", "#0B1B2E"]}
             style={[
@@ -854,8 +934,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
           >
             <ScrollView style={styles.callScroll} contentContainerStyle={styles.callContent} showsVerticalScrollIndicator={false}>
             <View style={styles.topArea}>
-              <Text style={styles.callKind}>
-                Audio call
+              <Text testID="call-kind" style={styles.callKind}>
+                {call.practice ? "Practice call" : "Audio call"}
               </Text>
               {call.status === "active" && (
                 <View style={styles.timerPill} testID="call-timer">
@@ -865,6 +945,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
                   </Text>
                 </View>
               )}
+              {call.practice && <Text testID="practice-call-duration-limit" style={styles.actionLabel}>{call.endsAt ? `${Math.max(0, Math.ceil((call.endsAt - Date.now()) / 1000))} seconds remaining` : "Up to 10 minutes · No call history"}</Text>}
             </View>
 
             <View style={styles.centerArea}>
@@ -892,14 +973,16 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
               </View>
               <Text testID="call-connection-status" style={styles.status}>
                 {call.status === "active" && activeStatusText()}
+                {call.status === "incoming" && "Incoming audio call"}
+                {call.status === "outgoing" && (call.phase === "ringing" ? "Ringing…" : "Calling…")}
               </Text>
             </View>
 
-            {call.status === "active" && <CaptionPanel key={call.callId} callId={call.callId} stream={localStreamRef.current} muted={muted} connected={call.phase === "connected"} subscribe={subscribe} />}
 
             <View style={styles.actions}>
               {(
                 <>
+                  {call.status === "incoming" && <View style={styles.actionCol}><Pressable testID="call-accept-btn" accessibilityLabel="Accept call" style={[styles.actionBtn, styles.accept]} onPress={acceptCall}><Ionicons name="call" size={26} color="#FFFFFF" /></Pressable><Text style={styles.actionLabel}>Accept</Text></View>}
                   {call.status === "active" && (
                     <>
                       <View style={styles.actionCol}>
@@ -918,29 +1001,32 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
                           {muted ? "Unmute" : "Mute"}
                         </Text>
                       </View>
-                      {Platform.OS !== "web" && (
+                      {audioSession.available && (
                         <View style={styles.actionCol}>
                           <Pressable
                             testID="call-speaker-btn"
-                            style={[styles.actionBtn, styles.neutral, speakerOn && styles.neutralActive]}
+                            accessibilityRole="switch"
+                            accessibilityLabel="Loudspeaker"
+                            accessibilityState={{ checked: speakerOn, disabled: !audioSession.available }}
+                            style={[styles.actionBtn, styles.neutral, speakerOn && styles.neutralActive, !audioSession.available && { opacity: 0.4 }]}
                             onPress={toggleSpeaker}
                           >
                             <Ionicons
-                              name={speakerOn ? "volume-high" : "volume-low"}
+                              name={speakerOn ? "volume-high" : "volume-mute"}
                               size={26}
                               color="#FFF"
                             />
                           </Pressable>
-                          <Text style={styles.actionLabel}>Speaker</Text>
+                          <Text testID="call-speaker-label" style={styles.actionLabel}>{speakerOn ? "Speaker on" : "Speaker off"}</Text>
                         </View>
                       )}
                     </>
                   )}
                   <View style={styles.actionCol}>
                     <Pressable
-                      testID="call-end-btn"
+                      testID={call.status === "incoming" ? "call-decline-btn" : "call-end-btn"}
                       style={[styles.actionBtn, styles.danger]}
-                      onPress={endCall}
+                      onPress={call.status === "incoming" ? declineCall : endCall}
                     >
                       <Ionicons
                         name="call"
@@ -949,11 +1035,13 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
                         style={{ transform: [{ rotate: "135deg" }] }}
                       />
                     </Pressable>
-                    <Text style={styles.actionLabel}>End</Text>
+                    <Text style={styles.actionLabel}>{call.status === "incoming" ? "Reject" : "End"}</Text>
                   </View>
                 </>
               )}
             </View>
+            {!!audioRouteError && <Text testID="call-speaker-error" style={styles.deviceNote}>{audioRouteError}</Text>}
+            {call.status === "active" && !audioSession.available && <Text testID="call-speaker-device-note" style={styles.deviceNote}>Speaker switching needs the installed mobile app. This preview uses your device’s selected audio output.</Text>}
             </ScrollView>
           </LinearGradient>
         )}
@@ -1044,6 +1132,7 @@ const makeStyles = (colors: ThemeColors) =>
       gap: spacing.lg,
       alignItems: "flex-end",
     },
+    deviceNote: { color: "rgba(255,255,255,0.7)", fontSize: 11, lineHeight: 17, textAlign: "center" },
     actionCol: {
       alignItems: "center",
       gap: spacing.sm,

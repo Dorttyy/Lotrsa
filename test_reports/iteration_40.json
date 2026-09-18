@@ -1,0 +1,80 @@
+{
+  "summary": "Executed targeted backend + mobile-web frontend regression for iteration-40 push/call/room privacy scope. Backend largely passed; frontend room creation flow did not enter room screen from create modal in public preview.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/rtc/incoming + WS call_ringing ownership path",
+        "issue": "Automated test was skipped due receiver busy precondition (409 conflicts from existing runtime state); needs deterministic cleanup/retest."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Create Room modal",
+        "issue": "After entering title and selecting language chip, tapping Start Voiceroom did not navigate to room screen in repeated public-preview attempts.",
+        "testID": "room-create-submit-btn",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "voice list -> create room -> join room",
+        "issue": "Room creation integration appears broken/intermittent on web preview; room-screen never appeared although modal remained open and no inline error surfaced.",
+        "affected_testIDs": [
+          "room-create-fab",
+          "room-title-input",
+          "room-language-row",
+          "room-lang-en",
+          "room-create-submit-btn",
+          "room-screen"
+        ]
+      },
+      {
+        "flow": "Public preview availability",
+        "issue": "Observed transient Cloudflare 502 once during UI run; later retry loaded normally.",
+        "affected_testIDs": []
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Create Room modal",
+        "issues": [
+          "Language row visually kept showing 'Select' during runs despite language chips present, making state unclear to user while attempting create."
+        ]
+      }
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration40_push_calls_rooms_privacy.py",
+    "/app/test_reports/pytest/iteration40_backend.xml",
+    "/app/test_reports/artifacts_iter40_load/frontend_load.png",
+    "/app/test_reports/artifacts_iter40_ui/voice_screen.jpeg",
+    "/app/test_reports/artifacts_iter40_ui_final/ui_failure.jpeg",
+    "/app/test_reports/artifacts_iter40_ui_probe/create_modal_after_lang.jpeg"
+  ],
+  "action_items": [
+    "Fix create-room submit flow on web preview so Start Voiceroom reliably opens room-screen.",
+    "Investigate why language selection UI can still display 'Select' while create attempts are made.",
+    "Add deterministic pre-test cleanup for call busy states so incoming/ringing ownership regression can run without skip."
+  ],
+  "critical_code_review_comments": [
+    "backend/routes/push.py reads EMERGENT_PUSH_KEY with default 'placeholder'; aligns with honest 503 behavior, but still uses fallback default instead of strict fail-fast env policy.",
+    "backend/server.py seeds admin password with default 'Admin1234!' when ADMIN_PASSWORD missing (security/config hardening gap)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration40_push_calls_rooms_privacy.py",
+    "/app/test_reports/iteration_40.json"
+  ],
+  "success_rate": {
+    "backend": "86% (6 passed, 1 skipped, 0 failed)",
+    "frontend": "50% (basic auth+voice load passes, critical create->room transition failed)"
+  },
+  "seed_data_creation": "Created TEST_iter40_* room/call/message records during tests; teardown attempted room end + call cancel.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Public preview intermittently served 502 during one run; rerun UI on same public URL before deep debugging. Reuse backend test file and specifically retest skipped incoming/ringing ownership after clearing busy user states.",
+  "rca_of_issue": "UI reproduction: login QA1 -> /voice -> room-create-fab -> set title + language chip -> tap room-create-submit-btn -> modal remains, room-screen absent within 18-20s and no explicit error. Likely root causes: create action not firing on web in this state, or API rejection not surfaced to UI."
+}

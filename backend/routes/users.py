@@ -334,6 +334,7 @@ async def toggle_follow(user_id: str, current_user: CurrentUser):
                 data={
                     "title": current_user.get("name") or "New follower",
                     "message": f"{current_user.get('name') or 'Someone'} started following you",
+                    "action_url": f"/user/{current_user['_id']}",
                 },
             )
         except Exception as e:
@@ -562,6 +563,7 @@ async def get_user(user_id: str, current_user: CurrentUser):
                     data={
                         "title": "New profile visitor",
                         "message": f"{current_user.get('name') or 'Someone'} viewed your profile",
+                        "action_url": f"/user/{current_user['_id']}",
                     },
                 )
             except Exception as e:

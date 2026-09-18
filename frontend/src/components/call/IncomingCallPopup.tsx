@@ -9,8 +9,8 @@ import { Ionicons } from "@/src/ui/icons";
 import { User } from "@/src/utils/api";
 
 /** Only a top request card while ringing; full call UI opens after acceptance. */
-export function IncomingCallPopup({ peer, outgoing, expiresAt, onAccept, onReject }: {
-  peer: User; outgoing: boolean; expiresAt: number; onAccept: () => void; onReject: () => void;
+export function IncomingCallPopup({ peer, outgoing, ringing, expiresAt, onAccept, onReject }: {
+  peer: User; outgoing: boolean; ringing: boolean; expiresAt: number; onAccept: () => void; onReject: () => void;
 }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -25,7 +25,7 @@ export function IncomingCallPopup({ peer, outgoing, expiresAt, onAccept, onRejec
         <View style={[s.countdown, remaining <= 10 && { backgroundColor: colors.surfaceSecondary }]}><Ionicons name="time-outline" size={14} color={remaining <= 10 ? colors.error : colors.brand} /><Text testID="call-ring-countdown" accessibilityLabel={`${remaining} seconds remaining`} style={[s.countText, remaining <= 10 && { color: colors.error }]}>{remaining}s</Text></View>
       </View>
       <View style={s.person}><ProfileAvatar testID="ringing-peer-avatar" user={peer} online={false} />
-        <View style={s.identity}><Text testID="ringing-peer-name" numberOfLines={2} style={s.name}>{peer.name}</Text><Text testID="call-request-description" style={s.description}>{outgoing ? "Waiting for an answer…" : "Wants to talk with you"}{peer.native_language ? ` · ${langName(peer.native_language)}` : ""}</Text></View>
+        <View style={s.identity}><Text testID="ringing-peer-name" numberOfLines={2} style={s.name}>{peer.name}</Text><Text testID="call-request-description" style={s.description}>{outgoing ? ringing ? "Ringing…" : "Calling…" : "Wants to talk with you"}{peer.native_language ? ` · ${langName(peer.native_language)}` : ""}</Text></View>
       </View>
       <View style={s.progressTrack}><View testID="call-ring-progress" style={[s.progress, { width: `${Math.min(100, remaining / 45 * 100)}%` }]} /></View>
       <View style={s.actions}>

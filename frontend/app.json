@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "frontend",
+    "name": "LinguaConnect",
     "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,13 +14,16 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Share photos from your gallery in chat",
         "NSMicrophoneUsageDescription": "Record voice messages and join voice rooms",
+        "NSBluetoothAlwaysUsageDescription": "Use Bluetooth headsets for calls",
         "UIBackgroundModes": [
           "audio",
+          "remote-notification",
           "voip"
         ]
       }
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0E9AE0"
@@ -34,6 +37,8 @@
         "MODIFY_AUDIO_SETTINGS",
         "BLUETOOTH",
         "BLUETOOTH_CONNECT",
+        "POST_NOTIFICATIONS",
+        "VIBRATE",
         "WAKE_LOCK",
         "INTERNET",
         "ACCESS_NETWORK_STATE"
@@ -57,7 +62,14 @@
       ],
       "expo-font",
       "expo-audio",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#0E9AE0",
+          "defaultChannel": "default"
+        }
+      ],
       [
         "@config-plugins/react-native-webrtc",
         {

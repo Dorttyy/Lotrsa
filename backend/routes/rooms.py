@@ -19,6 +19,7 @@ from models import (
 )
 import rtc_core
 from ws_manager import manager
+from room_permissions import can_manage, require_manager, manager_query, protect_member
 
 router = APIRouter(prefix="/rooms", tags=["rooms"])
 
@@ -90,19 +91,32 @@ async def _normalize_pomodoro(doc: dict) -> dict | None:
     return p
 
 
-async def room_detail(doc: dict) -> dict:
+def room_view(detail: dict, doc: dict, viewer_id: str | None) -> dict:
+    manage = bool(viewer_id and can_manage(doc, viewer_id))
+    return {**detail, "members": [{**member,
+        "hand_raised": member.get("hand_raised", False) if manage or member["id"] == viewer_id else False,
+        "stage_invited": member.get("stage_invited", False) if manage or member["id"] == viewer_id else False,
+        "moderator_invited": member.get("moderator_invited", False) if manage or member["id"] == viewer_id else False,
+    } for member in detail["members"]]}
+
+
+async def room_detail(doc: dict, viewer_id: str | None = None) -> dict:
     member_ids = list(doc.get("members", {}).keys())
     gift_totals = doc.get("gift_totals") or {}
     gifter_totals = doc.get("gifter_totals") or {}
     # Include gifters/recipients who may have already left the room.
-    fetch_ids = list({*member_ids, *gift_totals.keys(), *gifter_totals.keys()})
+    fetch_ids = list({doc["host_id"], *member_ids, *doc.get("moderators", []), *gift_totals.keys(), *gifter_totals.keys()})
     user_docs = await users_col.find({"_id": {"$in": fetch_ids}}).to_list(200)
     users_by_id = {u["_id"]: u for u in user_docs}
     members = []
     for uid, m in doc.get("members", {}).items():
         u = users_by_id.get(uid)
         if u:
-            members.append({**user_card(u), "role": m["role"], "mic_on": m["mic_on"], "hand_raised": m["hand_raised"]})
+            invitation = m.get("stage_invite") or {}
+            members.append({**user_card(u), "role": m["role"], "mic_on": m["mic_on"], "hand_raised": m["hand_raised"],
+                            "is_moderator": uid in doc.get("moderators", []),
+                            "moderator_invited": (m.get("moderator_invite") or {}).get("expires_at", 0) > datetime.now(timezone.utc).timestamp() * 1000,
+                            "stage_invited": bool(invitation and can_manage(doc, invitation.get("from")) and invitation.get("expires_at", 0) > datetime.now(timezone.utc).timestamp() * 1000)})
     host = users_by_id.get(doc["host_id"])
     # "most_gifted" = the room's most celebrated members — ranked by gifts
     # they RECEIVED (not sent), shown with a crown badge in the room UI.
@@ -118,7 +132,7 @@ async def room_detail(doc: dict) -> dict:
         u = users_by_id.get(uid)
         if u and coins > 0:
             top_gifters.append({**user_card(u), "coins": coins})
-    return {
+    detail = {
         "id": doc["_id"],
         "title": doc["title"],
         "language": doc["language"],
@@ -129,6 +143,9 @@ async def room_detail(doc: dict) -> dict:
         "background": doc.get("background"),
         "announcement": doc.get("announcement"),
         "host": user_card(host) if host else None,
+        "host_present": doc["host_id"] in doc.get("members", {}),
+        "moderators": doc.get("moderators", []),
+        "moderator_members": [user_card(users_by_id[uid]) for uid in doc.get("moderators", []) if uid in users_by_id],
         "host_level": max(1, (host or {}).get("streak_count") or 1),
         "is_live": doc["is_live"],
         "members": members,
@@ -139,6 +156,7 @@ async def room_detail(doc: dict) -> dict:
         "top_gifters": top_gifters,
         "created_at": doc["created_at"],
     }
+    return room_view(detail, doc, viewer_id)
 
 
 def room_summary(doc: dict, host: dict | None, user_map: dict | None = None) -> dict:
@@ -172,11 +190,12 @@ async def broadcast_room(doc: dict, extra: dict | None = None):
     # Membership may have changed — let WebRTC signaling authorization see it
     # immediately instead of waiting for the cache TTL.
     rtc_core.invalidate_room(doc["_id"])
-    detail = await room_detail(doc)
-    event = {"type": "room_update", "room": detail}
-    if extra:
-        event.update(extra)
-    await manager.broadcast(list(doc.get("members", {}).keys()), event)
+    detail = await room_detail(doc, doc["host_id"])
+    for uid in list(doc.get("members", {})):
+        event = {"type": "room_update", "room": room_view(detail, doc, uid)}
+        if extra:
+            event.update(extra)
+        await manager.send_to_user(uid, event)
 
 
 @router.get("")
@@ -275,6 +294,7 @@ async def create_room(body: RoomCreate, current_user: CurrentUser):
             current_user["_id"]: {"role": "host", "mic_on": True, "hand_raised": False}
         },
         "chat_muted": False,
+        "moderators": [],
         "gift_totals": {},
         "gifter_totals": {},
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -286,7 +306,7 @@ async def create_room(body: RoomCreate, current_user: CurrentUser):
         await _share_room_to_moments(doc, current_user["_id"])
     if not body.is_private:
         await _notify_followers_of_room(doc, current_user)
-    return await room_detail(doc)
+    return await room_detail(doc, current_user["_id"])
 
 
 voiceroom_notices_col = db["voiceroom_notices"]
@@ -385,7 +405,7 @@ async def voiceroom_notices_list(current_user: CurrentUser):
 @router.get("/{room_id}")
 async def get_room(room_id: str, current_user: CurrentUser):
     doc = await get_live_room(room_id)
-    return await room_detail(doc)
+    return await room_detail(doc, current_user["_id"])
 
 
 @router.post("/{room_id}/join")
@@ -403,7 +423,7 @@ async def join_room(room_id: str, current_user: CurrentUser):
             status_code=403, detail="You have been removed from this room by the host"
         )
     if uid not in doc["members"]:
-        doc["members"][uid] = {"role": "listener", "mic_on": False, "hand_raised": False}
+        doc["members"][uid] = {"role": "host" if uid == doc["host_id"] else "listener", "mic_on": False, "hand_raised": False}
         await rooms_col.update_one(
             {"_id": room_id}, {"$set": {f"members.{uid}": doc["members"][uid]}}
         )
@@ -411,7 +431,7 @@ async def join_room(room_id: str, current_user: CurrentUser):
             "_id": str(uuid.uuid4()),
             "room_id": room_id,
             "sender": None,
-            "text": f"Welcome {current_user.get('name', 'a new member')} to the room! 🎉",
+            "text": f"{current_user.get('name', 'A new member')} joined the room",
             "type": "system",
             "gift": None,
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -422,18 +442,18 @@ async def join_room(room_id: str, current_user: CurrentUser):
             list(doc["members"].keys()),
             {"type": "room_message", "message": _message_public(welcome)},
         )
-    return await room_detail(doc)
+    return await room_detail(doc, current_user["_id"])
 
 
 @router.post("/{room_id}/leave")
 async def leave_room(room_id: str, current_user: CurrentUser):
     doc = await get_live_room(room_id)
     uid = current_user["_id"]
-    if uid == doc["host_id"]:
-        return await end_room(room_id, current_user)
     if uid in doc["members"]:
         doc["members"].pop(uid)
         await rooms_col.update_one({"_id": room_id}, {"$unset": {f"members.{uid}": ""}})
+        # Ownership stays unchanged while the host is away. Empty rooms close.
+        await rooms_col.update_one({"_id": room_id, "members": {}}, {"$set": {"is_live": False}})
         await broadcast_room(doc)
         await manager.send_to_user(uid, {"type": "room_left", "room_id": room_id})
     return {"ok": True}
@@ -442,9 +462,8 @@ async def leave_room(room_id: str, current_user: CurrentUser):
 @router.post("/{room_id}/end")
 async def end_room(room_id: str, current_user: CurrentUser):
     doc = await get_live_room(room_id)
-    if doc["host_id"] != current_user["_id"]:
-        raise HTTPException(status_code=403, detail="Only the host can end the room")
-    await rooms_col.update_one({"_id": room_id}, {"$set": {"is_live": False}})
+    require_manager(doc, current_user["_id"])
+    await rooms_col.update_one({"_id": room_id, **manager_query(current_user["_id"])}, {"$set": {"is_live": False}})
     rtc_core.invalidate_room(room_id)
     await manager.broadcast(
         list(doc["members"].keys()), {"type": "room_ended", "room_id": room_id}
@@ -470,8 +489,7 @@ async def update_room_settings(
 ):
     """Host edits room info (same fields as the create page); broadcasts update."""
     doc = await get_live_room(room_id)
-    if doc["host_id"] != current_user["_id"]:
-        raise HTTPException(status_code=403, detail="Only the host can edit the room")
+    require_manager(doc, current_user["_id"])
     updates: dict = {}
     if body.title is not None and body.title.strip():
         updates["title"] = body.title.strip()
@@ -484,7 +502,7 @@ async def update_room_settings(
     if body.is_private is not None:
         updates["is_private"] = body.is_private
     if updates:
-        await rooms_col.update_one({"_id": room_id}, {"$set": updates})
+        await rooms_col.update_one({"_id": room_id, **manager_query(current_user["_id"])}, {"$set": updates})
     doc = await rooms_col.find_one({"_id": room_id})
     await broadcast_room(doc)
     return {"ok": True}
@@ -494,10 +512,9 @@ async def update_room_settings(
 async def rename_room(room_id: str, body: RoomTitleUpdate, current_user: CurrentUser):
     """Host renames the live room; all members get a room_update broadcast."""
     doc = await get_live_room(room_id)
-    if doc["host_id"] != current_user["_id"]:
-        raise HTTPException(status_code=403, detail="Only the host can rename the room")
+    require_manager(doc, current_user["_id"])
     await rooms_col.update_one(
-        {"_id": room_id}, {"$set": {"title": body.title.strip()}}
+        {"_id": room_id, **manager_query(current_user["_id"])}, {"$set": {"title": body.title.strip()}}
     )
     doc = await rooms_col.find_one({"_id": room_id})
     await broadcast_room(doc)
@@ -511,9 +528,11 @@ async def toggle_hand(room_id: str, current_user: CurrentUser):
     member = doc["members"].get(uid)
     if not member:
         raise HTTPException(status_code=403, detail="Join the room first")
+    if member["role"] != "listener":
+        raise HTTPException(409, "You are already on stage.")
     member["hand_raised"] = not member["hand_raised"]
     await rooms_col.update_one(
-        {"_id": room_id}, {"$set": {f"members.{uid}.hand_raised": member["hand_raised"]}}
+        {"_id": room_id, "is_live": True, f"members.{uid}.role": "listener"}, {"$set": {f"members.{uid}.hand_raised": member["hand_raised"]}}
     )
     await broadcast_room(doc)
     return {"hand_raised": member["hand_raised"]}
@@ -530,7 +549,7 @@ async def toggle_mic(room_id: str, current_user: CurrentUser):
         raise HTTPException(status_code=403, detail="Only speakers can use the mic")
     member["mic_on"] = not member["mic_on"]
     await rooms_col.update_one(
-        {"_id": room_id}, {"$set": {f"members.{uid}.mic_on": member["mic_on"]}}
+        {"_id": room_id, "is_live": True, f"members.{uid}.role": {"$in": ["speaker", "host"]}}, {"$set": {f"members.{uid}.mic_on": member["mic_on"]}}
     )
     await broadcast_room(doc)
     return {"mic_on": member["mic_on"]}
@@ -539,21 +558,29 @@ async def toggle_mic(room_id: str, current_user: CurrentUser):
 @router.post("/{room_id}/role")
 async def change_role(room_id: str, body: RoomRoleUpdate, current_user: CurrentUser):
     doc = await get_live_room(room_id)
-    if doc["host_id"] != current_user["_id"]:
-        raise HTTPException(status_code=403, detail="Only the host can change roles")
+    require_manager(doc, current_user["_id"])
+    protect_member(doc, current_user["_id"], body.user_id)
     member = doc["members"].get(body.user_id)
     if not member:
         raise HTTPException(status_code=404, detail="Member not in room")
     if body.user_id == doc["host_id"]:
         raise HTTPException(status_code=400, detail="Cannot change the host's role")
+    if body.role == "speaker" and (member["role"] != "listener" or not member.get("hand_raised")):
+        raise HTTPException(409, "Send an invitation first, or accept a raised-hand request.")
+    condition = {"_id": room_id, "is_live": True, **manager_query(current_user["_id"]), f"members.{body.user_id}": {"$exists": True}}
+    if body.role == "speaker":
+        condition[f"members.{body.user_id}.hand_raised"] = True
+        condition[f"members.{body.user_id}.role"] = "listener"
     member["role"] = body.role
     member["hand_raised"] = False
-    if body.role == "listener":
-        member["mic_on"] = False
-    await rooms_col.update_one(
-        {"_id": room_id}, {"$set": {f"members.{body.user_id}": member}}
+    member["mic_on"] = body.role == "speaker"
+    member.pop("stage_invite", None)
+    result = await rooms_col.update_one(
+        condition, {"$set": {f"members.{body.user_id}": member}}
     )
-    await broadcast_room(doc)
+    if not result.matched_count:
+        raise HTTPException(409, "This stage request is no longer available.")
+    await broadcast_room(await get_live_room(room_id))
     return {"ok": True}
 
 
@@ -561,63 +588,32 @@ async def change_role(room_id: str, body: RoomRoleUpdate, current_user: CurrentU
 async def transfer_host(
     room_id: str, body: RoomUserAction, current_user: CurrentUser
 ):
-    """Host hands the room over to another member and stays live.
-
-    The current host is demoted to speaker and the chosen member becomes the
-    new host (host_id + role updated). Used so the host can leave without
-    ending the room (HelloTalk style)."""
     doc = await get_live_room(room_id)
-    old_host = current_user["_id"]
-    if doc["host_id"] != old_host:
+    if doc["host_id"] != current_user["_id"]:
         raise HTTPException(status_code=403, detail="Only the host can transfer the room")
-    if body.user_id == old_host:
-        raise HTTPException(status_code=400, detail="You are already the host")
-    new_member = doc["members"].get(body.user_id)
-    if not new_member:
-        raise HTTPException(status_code=404, detail="Member not in room")
-
-    # Promote the chosen member to host, demote the previous host to speaker.
-    new_member["role"] = "host"
-    new_member["mic_on"] = True
-    new_member["hand_raised"] = False
-    doc["members"][body.user_id] = new_member
-    if old_host in doc["members"]:
-        doc["members"][old_host]["role"] = "speaker"
-    doc["host_id"] = body.user_id
-
-    await rooms_col.update_one(
-        {"_id": room_id},
-        {
-            "$set": {
-                "host_id": body.user_id,
-                f"members.{body.user_id}": new_member,
-                f"members.{old_host}.role": "speaker",
-            }
-        },
-    )
-    await broadcast_room(doc)
-    return await room_detail(doc)
+    raise HTTPException(410, "Room ownership stays with its creator. Invite a moderator instead.")
 
 
 @router.post("/{room_id}/kick")
 async def kick_member(room_id: str, body: RoomUserAction, current_user: CurrentUser):
     """Host removes (and bans) a member from the room — HelloTalk style."""
     doc = await get_live_room(room_id)
-    if doc["host_id"] != current_user["_id"]:
-        raise HTTPException(status_code=403, detail="Only the host can remove members")
+    require_manager(doc, current_user["_id"])
+    protect_member(doc, current_user["_id"], body.user_id)
     if body.user_id == doc["host_id"]:
         raise HTTPException(status_code=400, detail="The host cannot be removed")
     if body.user_id in doc["members"]:
         doc["members"].pop(body.user_id)
         await rooms_col.update_one(
-            {"_id": room_id},
+            {"_id": room_id, **manager_query(current_user["_id"])},
             {
                 "$unset": {f"members.{body.user_id}": ""},
                 "$addToSet": {"banned": body.user_id},
+                "$pull": {"moderators": body.user_id},
             },
         )
         await manager.send_to_user(
-            body.user_id, {"type": "room_kicked", "room_id": room_id}
+            body.user_id, {"type": "room_kicked", "room_id": room_id, "reason": "removed", "message": "You have been removed from this room."}
         )
         await broadcast_room(doc)
     return {"ok": True}
@@ -627,16 +623,16 @@ async def kick_member(room_id: str, body: RoomUserAction, current_user: CurrentU
 async def dismiss_hand(room_id: str, body: RoomUserAction, current_user: CurrentUser):
     """Host rejects a raise-hand request (lowers the member's hand)."""
     doc = await get_live_room(room_id)
-    if doc["host_id"] != current_user["_id"]:
-        raise HTTPException(status_code=403, detail="Only the host can dismiss requests")
+    require_manager(doc, current_user["_id"])
     member = doc["members"].get(body.user_id)
     if not member:
         raise HTTPException(status_code=404, detail="Member not in room")
     member["hand_raised"] = False
     await rooms_col.update_one(
-        {"_id": room_id}, {"$set": {f"members.{body.user_id}.hand_raised": False}}
+        {"_id": room_id, "is_live": True, **manager_query(current_user["_id"]), f"members.{body.user_id}.role": "listener"}, {"$set": {f"members.{body.user_id}.hand_raised": False}}
     )
-    await broadcast_room(doc)
+    await broadcast_room(await get_live_room(room_id))
+    await manager.send_to_user(body.user_id, {"type": "room_stage_request_rejected", "room_id": room_id})
     return {"ok": True}
 
 
@@ -644,10 +640,9 @@ async def dismiss_hand(room_id: str, body: RoomUserAction, current_user: Current
 async def toggle_chat_mute(room_id: str, current_user: CurrentUser):
     """Host toggles muting text chat for everyone except the host."""
     doc = await get_live_room(room_id)
-    if doc["host_id"] != current_user["_id"]:
-        raise HTTPException(status_code=403, detail="Only the host can mute room chat")
+    require_manager(doc, current_user["_id"])
     muted = not doc.get("chat_muted")
-    await rooms_col.update_one({"_id": room_id}, {"$set": {"chat_muted": muted}})
+    await rooms_col.update_one({"_id": room_id, **manager_query(current_user["_id"])}, {"$set": {"chat_muted": muted}})
     doc["chat_muted"] = muted
     await broadcast_room(doc)
     return {"chat_muted": muted}
@@ -661,8 +656,7 @@ class PomodoroActionIn(BaseModel):
 async def pomodoro_action(room_id: str, body: PomodoroActionIn, current_user: CurrentUser):
     """Host controls the shared study timer. Broadcasts a room_update."""
     doc = await get_live_room(room_id)
-    if doc["host_id"] != current_user["_id"]:
-        raise HTTPException(status_code=403, detail="Only the host controls the timer")
+    require_manager(doc, current_user["_id"])
     p = await _normalize_pomodoro(doc) or _pomodoro_defaults()
     now = datetime.now(timezone.utc)
     if body.action == "start" and not p["running"]:
@@ -684,7 +678,7 @@ async def pomodoro_action(room_id: str, body: PomodoroActionIn, current_user: Cu
             p["ends_at"] = (now + timedelta(seconds=dur)).isoformat()
         else:
             p["remaining_sec"] = dur
-    await rooms_col.update_one({"_id": room_id}, {"$set": {"pomodoro": p}})
+    await rooms_col.update_one({"_id": room_id, **manager_query(current_user["_id"])}, {"$set": {"pomodoro": p}})
     doc["pomodoro"] = p
     await broadcast_room(doc)
     return {"ok": True, "pomodoro": p}
@@ -705,7 +699,7 @@ async def send_room_message(room_id: str, body: RoomMessageCreate, current_user:
     doc = await get_live_room(room_id)
     if current_user["_id"] not in doc["members"]:
         raise HTTPException(status_code=403, detail="Join the room first")
-    if doc.get("chat_muted") and current_user["_id"] != doc["host_id"]:
+    if doc.get("chat_muted") and not can_manage(doc, current_user["_id"]):
         raise HTTPException(status_code=403, detail="Chat has been muted by the host")
     msg = {
         "_id": str(uuid.uuid4()),
@@ -741,10 +735,13 @@ async def send_gift(room_id: str, body: RoomGiftCreate, current_user: CurrentUse
         raise HTTPException(status_code=400, detail="Not enough coins for this gift")
     receiver = await users_col.find_one({"_id": body.to_user_id})
     receiver_name = receiver.get("name", "someone") if receiver else "someone"
-    new_coins = coins - gift["price"]
-    await users_col.update_one(
-        {"_id": current_user["_id"]}, {"$set": {"coins": new_coins}}
+    debited = await users_col.update_one(
+        {"_id": current_user["_id"], "coins": {"$gte": gift["price"]}}, {"$inc": {"coins": -gift["price"]}}
     )
+    if not debited.modified_count:
+        raise HTTPException(400, "Not enough coins for this gift")
+    wallet = await users_col.find_one({"_id": current_user["_id"]}, {"_id": 0, "coins": 1})
+    new_coins = wallet["coins"]
     current_user["coins"] = new_coins
     await rooms_col.update_one(
         {"_id": room_id},
@@ -757,13 +754,17 @@ async def send_gift(room_id: str, body: RoomGiftCreate, current_user: CurrentUse
             }
         },
     )
-    # Permanent ledger entry + diamond credit for the receiver (price/10).
+    # Room earnings belong solely to its immutable owner. The selected member
+    # is the on-screen gift recipient, never the financial beneficiary.
+    beneficiary = doc["host_id"]
     diamonds = round(gift["price"] / 10, 2)
     await db["gift_ledger"].insert_one(
         {
             "_id": str(uuid.uuid4()),
             "from_id": current_user["_id"],
-            "to_id": body.to_user_id,
+            "to_id": beneficiary,
+            "room_id": room_id,
+            "display_recipient_id": body.to_user_id,
             "emoji": gift["emoji"],
             "name": gift["name"],
             "price": gift["price"],
@@ -772,15 +773,16 @@ async def send_gift(room_id: str, body: RoomGiftCreate, current_user: CurrentUse
         }
     )
     await users_col.update_one(
-        {"_id": body.to_user_id}, {"$inc": {"diamonds": diamonds}}
+        {"_id": beneficiary}, {"$inc": {"diamonds": diamonds}}
     )
     await db["wallet_tx"].insert_one(
         {
             "_id": str(uuid.uuid4()),
-            "user_id": body.to_user_id,
+            "user_id": beneficiary,
             "kind": "diamond",
             "amount": diamonds,
-            "label": f"Gift received {gift['emoji']}",
+            "label": f"Room gift income: {gift['name']}",
+            "room_id": room_id,
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
     )

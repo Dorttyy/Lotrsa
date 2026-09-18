@@ -376,7 +376,7 @@ export default function Voice() {
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
               >
-                <Text style={styles.crTitle}>Create a Room</Text>
+                <Text testID="create-room-title" style={styles.crTitle}>Create a Room</Text>
 
                 {/* What will you talk about? */}
                 <View style={styles.crInputCard}>
@@ -835,7 +835,7 @@ const makeStyles = (colors: ThemeColors) =>
     list: {
       padding: spacing.lg,
       paddingBottom: 110,
-      gap: spacing.md,
+      gap: 10,
     },
     cardWrap: {
       borderRadius: radius.lg,
@@ -843,8 +843,8 @@ const makeStyles = (colors: ThemeColors) =>
     },
     card: {
       borderRadius: radius.lg,
-      padding: spacing.lg,
-      gap: spacing.md,
+      padding: 14,
+      gap: 9,
     },
     cardTop: {
       flexDirection: "row",
@@ -901,9 +901,9 @@ const makeStyles = (colors: ThemeColors) =>
     },
     cardTitle: {
       fontFamily: fonts.displaySemi,
-      fontSize: 17,
+      fontSize: 15,
       color: "#FFFFFF",
-      lineHeight: 23,
+      lineHeight: 20,
     },
     cardBottom: {
       flexDirection: "row",
@@ -1225,10 +1225,11 @@ const makeStyles = (colors: ThemeColors) =>
     },
     crTitle: {
       fontFamily: fonts.displayBold,
-      fontSize: 30,
+      fontSize: 23,
+      lineHeight: 30,
       color: colors.onSurface,
-      marginTop: 8,
-      marginBottom: 18,
+      marginTop: 4,
+      marginBottom: 14,
     },
     crInputCard: {
       flexDirection: "row",

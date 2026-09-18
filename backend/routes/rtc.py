@@ -54,8 +54,10 @@ async def start_call(body: CallStart, current_user: CurrentUser):
             status_code=403, detail="Unblock this user to start a call."
         )
     async with rtc_core.session_lock:
-        if await rtc_core.busy(caller_id) or await rtc_core.busy(body.receiver_id):
-            raise HTTPException(409, "One of you is already in a call or voice room.")
+        if await rtc_core.busy(caller_id):
+            raise HTTPException(409, "Leave your current call or voice room first.")
+        if await rtc_core.busy(body.receiver_id):
+            raise HTTPException(409, "User is on another call.")
         call_id = await rtc_core.create_session(caller_id, body.receiver_id)
     return {
         "call_id": call_id,
@@ -85,3 +87,21 @@ async def update_call_status(
     await manager.send_to_user(peer, {"type": "call_end", "call_id": call_id,
                                       "from": current_user["_id"]})
     return {"ok": True, "status": status_val}
+
+
+@router.get("/calls/{call_id}/state")
+async def call_state(call_id: str, current_user: CurrentUser):
+    s = rtc_core.session(call_id)
+    if not s:
+        raise HTTPException(404, "Call has ended.")
+    if current_user["_id"] not in (s["caller"], s["receiver"]):
+        raise HTTPException(403, "Not a participant.")
+    return {"practice": bool(s.get("practice")), "status": s["status"], "ends_at": s.get("ends_at")}
+
+
+@router.get("/incoming")
+async def pending_incoming(current_user: CurrentUser):
+    """Recover an unexpired offer after waking/opening the app from a push.
+    SDP and candidates stay in session memory only and go ONLY to the receiver.
+    """
+    return {"offers": rtc_core.pending_offers(current_user["_id"])}

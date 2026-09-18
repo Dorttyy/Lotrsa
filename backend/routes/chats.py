@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from auth_utils import CurrentUser
 from config_utils import get_app_config
+from chat_previews import hydrate_legacy_previews, message_preview
 from db import audio_col, conversations_col, follows_col, gift_unlocks_col, media_col, messages_col, practice_unlocks_col, rooms_col, users_col
 from db import db as _appdb
 
@@ -50,14 +51,15 @@ class ChatGiftCreate(BaseModel):
     gift_id: str = Field(min_length=1, max_length=20)
 
 
-async def _push_new_message(partner_id: str, muted: bool, sender_name: str, preview: str) -> None:
+async def _push_new_message(partner_id: str, muted: bool, sender_name: str, preview: str, conversation_id: str, message_id: str) -> None:
     """Best-effort push for a new chat message — never blocks message delivery."""
     if muted:
         return
     try:
         await send_push(
             recipients=[partner_id],
-            data={"title": sender_name, "message": preview[:120]},
+            data={"title": sender_name, "message": preview[:120], "action_url": f"/chat/{conversation_id}"},
+            idempotency_key=f"message:{message_id}:{partner_id}",
         )
     except Exception as e:
         logger.warning(f"Push notification failed (non-blocking): {e}")
@@ -368,6 +370,7 @@ async def list_conversations(current_user: CurrentUser):
     partner_ids = list(
         {next((p for p in d["participant_ids"] if p != uid), uid) for d in docs}
     )
+    await hydrate_legacy_previews(docs)
     partners = (
         await users_col.find({"_id": {"$in": partner_ids}}).to_list(len(partner_ids))
         if partner_ids
@@ -396,6 +399,7 @@ async def list_conversations(current_user: CurrentUser):
 @router.get("/{conversation_id}")
 async def get_conversation(conversation_id: str, current_user: CurrentUser):
     doc = await get_owned_conversation(conversation_id, current_user["_id"])
+    await hydrate_legacy_previews([doc])
     return await conversation_public(doc, current_user["_id"])
 
 
@@ -624,6 +628,8 @@ async def _fanout_new_message(conv, conversation_id, current_user, msg, preview)
             bool(conv.get("muted", {}).get(oid)),
             current_user.get("name") or "New message",
             preview,
+            conv["_id"],
+            msg["id"],
         )
 
 
@@ -679,7 +685,7 @@ async def send_message(conversation_id: str, body: MessageCreate, current_user: 
     preview = doc["text"]
     text_update: dict = {
         "$set": {
-            "last_message": {"text": preview, "sender_id": current_user["_id"], "created_at": now},
+            "last_message": message_preview(doc, preview),
             "updated_at": now,
         },
     }
@@ -795,7 +801,7 @@ async def send_gift(
     preview = f"{gift['emoji']} {gift['name']}"
     gift_update: dict = {
         "$set": {
-            "last_message": {"text": preview, "sender_id": current_user["_id"], "created_at": now},
+            "last_message": message_preview(doc, preview),
             "updated_at": now,
         },
     }
@@ -851,11 +857,7 @@ async def log_call(
         preview = "📞 Call"
     call_update: dict = {
         "$set": {
-            "last_message": {
-                "text": preview,
-                "sender_id": current_user["_id"],
-                "created_at": now,
-            },
+            "last_message": message_preview(doc, preview),
             "updated_at": now,
         },
     }
@@ -901,11 +903,7 @@ async def send_sticker(
     msg = await message_public_async(doc)
     sticker_update: dict = {
         "$set": {
-            "last_message": {
-                "text": "😊 Stickers",
-                "sender_id": current_user["_id"],
-                "created_at": now,
-            },
+            "last_message": message_preview(doc, "😊 Stickers"),
             "updated_at": now,
         },
     }
@@ -1202,7 +1200,7 @@ async def send_voice_message(
     msg = message_public(doc)
     voice_update: dict = {
         "$set": {
-            "last_message": {"text": f"🔊 {max(1, round((body.duration_ms or 1000) / 1000))}s", "sender_id": current_user["_id"], "created_at": now},
+            "last_message": message_preview(doc, f"🔊 {max(1, round((body.duration_ms or 1000) / 1000))}s"),
             "updated_at": now,
         },
     }
@@ -1249,7 +1247,7 @@ async def send_image_message(
     msg = message_public(doc)
     image_update: dict = {
         "$set": {
-            "last_message": {"text": "📷 Photo", "sender_id": current_user["_id"], "created_at": now},
+            "last_message": message_preview(doc, "📷 Photo"),
             "updated_at": now,
         },
     }

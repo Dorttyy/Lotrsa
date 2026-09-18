@@ -23,3 +23,23 @@ if (pushSupported) {
 
 /** `null` on web, in classic Expo Go, or if the native module failed to load. */
 export const Notifications = notificationsModule;
+
+// Register at module scope: foreground delivery can happen before a screen
+// mounts. Native system banners handle background/terminated app delivery.
+if (pushSupported && notificationsModule) {
+  notificationsModule.setNotificationHandler({ handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }) });
+  if (Platform.OS === "android") {
+    void notificationsModule.setNotificationChannelAsync("default", {
+      name: "Messages, calls and activity",
+      importance: notificationsModule.AndroidImportance.HIGH,
+      sound: "default",
+      vibrationPattern: [0, 200, 150, 200],
+      lockscreenVisibility: notificationsModule.AndroidNotificationVisibility.PRIVATE,
+    }).catch(() => {});
+  }
+}

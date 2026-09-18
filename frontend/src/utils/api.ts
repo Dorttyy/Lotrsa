@@ -183,6 +183,16 @@ export interface Message {
   created_at: string;
 }
 
+export interface ChatMessagePreview {
+  text: string;
+  sender_id: string;
+  created_at: string;
+  type?: Message["type"] | "gift";
+  call_status?: Message["call_status"];
+  duration_ms?: number | null;
+  room_id?: string | null;
+}
+
 export interface Conversation {
   id: string;
   partner: User | null;
@@ -192,7 +202,7 @@ export interface Conversation {
   member_count?: number;
   member_ids?: string[];
   members_preview?: User[];
-  last_message: { text: string; sender_id: string; created_at: string } | null;
+  last_message: ChatMessagePreview | null;
   unread: number;
   muted?: boolean;
   partner_read_at?: string | null;
@@ -297,6 +307,9 @@ export interface MomentComment {
 }
 
 export interface RoomMember extends User {
+  stage_invited?: boolean;
+  is_moderator?: boolean;
+  moderator_invited?: boolean;
   role: "host" | "speaker" | "listener";
   mic_on: boolean;
   hand_raised: boolean;
@@ -316,6 +329,9 @@ export interface RoomPomodoro {
 }
 
 export interface Room {
+  moderators?: string[];
+  moderator_members?: User[];
+  host_present?: boolean;
   id: string;
   title: string;
   language: string;

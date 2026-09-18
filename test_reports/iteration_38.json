@@ -1,0 +1,79 @@
+{
+  "summary": "Executed targeted backend+frontend verification for practice-call privacy/timer, room stage+moderator authority, owner-away invariants, and owner-only room gift income. Backend scoped suite passed; frontend smoke passed partially with one concrete UI/runtime issue and several high-priority multi-user UI flows still unverified.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Voice room render list",
+        "issue": "Console runtime error on room entry: duplicate React key detected (`Encountered two children with the same key ...`). This can cause unstable member tile rendering.",
+        "testID": "room-screen",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Full 3-browser voice-room moderation scenario (hand raise accept/reject, invite audience accept/reject, host/mod remove/kick across clients)",
+        "issue": "Not fully executed in this run (single-browser Playwright limitation here). Backend API behavior was validated via pytest, but cross-client UI sync remains pending.",
+        "affected_testIDs": [
+          "room-hand-requests-btn",
+          "room-moderators-btn",
+          "room-member-sheet"
+        ]
+      },
+      {
+        "flow": "Practice call exact privacy deltas against inbox/messages/history baseline before/after for both users",
+        "issue": "Backend privacy contract validated at call-session persistence level (`calls` doc absent for practice) and timer start rules; full UI baseline delta validation not fully executed.",
+        "affected_testIDs": [
+          "call-screen",
+          "chat-screen"
+        ]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Connect tab (320x568)",
+        "issues": [
+          "Multiple card text rows/chips appear heavily truncated on the smallest tested viewport; needs explicit small-height layout pass."
+        ]
+      }
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration38_practice_rooms_moderators.py",
+    "/app/test_reports/pytest/iteration38_backend.xml",
+    "/app/test_reports/iter38_ui/room_320x568.jpeg",
+    "/app/test_reports/iter38_ui/room_390x844.jpeg",
+    "/app/test_reports/iter38_ui/room_430x844.jpeg",
+    "/app/test_reports/iter38_ui/tabs_320x568.jpeg",
+    "/app/test_reports/iter38_ui/tabs_390x844.jpeg",
+    "/app/test_reports/iter38_ui/tabs_430x844.jpeg"
+  ],
+  "action_items": [
+    "Fix duplicate-key source in room member/stage rendering to remove unstable React reconciliation.",
+    "Run true multi-user frontend verification (>=3 simultaneous clients) for stage/moderator consent and authority UI sync.",
+    "Complete explicit practice-vs-normal call UI contract checks (small-card vs full UI, no inbox/history mutation for practice, normal history preserved).",
+    "Investigate repeated Expo log traces pointing to RoomSessionContext render path and confirm no hidden runtime exception remains."
+  ],
+  "critical_code_review_comments": [
+    "`/app/backend/routes/chats.py` is 1293 lines (exceeds modularity guideline; high maintenance and regression risk).",
+    "Expo log shows repeated `Web ERROR` stack references to `RoomSessionContext.tsx:184` during previous runs; even without full message text, this should be root-caused."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration38_practice_rooms_moderators.py",
+    "/app/tests/cleanup_iteration38.py",
+    "/app/test_reports/iteration_38.json"
+  ],
+  "success_rate": {
+    "backend": "100% (7/7 scoped tests)",
+    "frontend": "55% (critical smoke paths passed; multi-user moderation/practice UI scenarios pending)"
+  },
+  "seed_data_creation": "Temporary QA2 coin top-up (5000) used for room gift test; restored to original balances in fixture teardown.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Start from iteration38 backend suite (all green). For frontend, prioritize multi-client room testing and reproduce duplicate-key console error after creating/joining room. Use existing selectors validated here: auth-* , room-create-* , room-screen, room-menu-btn, room-moderators-btn.",
+  "rca_of_issue": "Duplicate key warning likely originates from rendering member/listener arrays where IDs are reused across stage/audience sections or duplicated source arrays after room updates. Repro: login QA1 -> Voice -> create room -> open room; console prints duplicate key error with a UUID-like key. Mitigation: ensure each mapped list uses unique stable keys scoped by section (e.g., `stage-${id}` / `aud-${id}`) and dedupe merged arrays before render."
+}

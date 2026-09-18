@@ -28,7 +28,7 @@ const TABS: TabDef[] = [
 export default function VocabTabsLayout() {
   const { colors } = useLearnTheme();
   const insets = useSafeAreaInsets();
-  const bottomGap = Math.max(insets.bottom, 12) + 10;
+  const bottomGap = Math.max(insets.bottom, 8);
 
   return (
     <Tabs
@@ -39,19 +39,25 @@ export default function VocabTabsLayout() {
         tabBarInactiveTintColor: colors.textDim,
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: {
+          lineHeight: 16,
+          minHeight: 16,
+          flexShrink: 0,
           fontSize: 11,
           fontWeight: "700",
         },
         tabBarItemStyle: {
-          paddingTop: 4,
+          paddingTop: 2,
+          paddingBottom: 2,
         },
+        tabBarIconStyle: { height: 32 },
+        tabBarLabelPosition: "below-icon",
         tabBarStyle: {
           backgroundColor: colors.tabBg,
           borderTopColor: colors.border,
           borderTopWidth: colors.mode === "light" ? StyleSheet.hairlineWidth : 0,
-          height: 68 + bottomGap,
+          height: 64 + bottomGap,
           paddingBottom: bottomGap,
-          paddingTop: 8,
+          paddingTop: 4,
           ...Platform.select({
             ios: {
               shadowColor: "#000",

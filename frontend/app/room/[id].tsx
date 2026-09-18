@@ -19,10 +19,10 @@ import {
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { AppSwitch } from "@/src/components/AppSwitch";
-import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 
 import { Avatar } from "@/src/components/Avatar";
 import { RaiseHandIcon } from "@/src/components/RaiseHandIcon";
@@ -33,7 +33,12 @@ import { useAuth } from "@/src/context/AuthContext";
 import { useCall } from "@/src/context/CallContext";
 import { useRoomSession } from "@/src/context/RoomSessionContext";
 import { useTheme } from "@/src/context/ThemeContext";
-import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
+import { fonts, radius, spacing, ThemeColors, genderColors } from "@/src/theme";
+import { StageRequestsSheet } from "@/src/components/room/StageRequestsSheet";
+import { MemberStageActions } from "@/src/components/room/MemberStageActions";
+import { ModeratorsSheet } from "@/src/components/room/ModeratorsSheet";
+import { WaitingForStage } from "@/src/components/room/WaitingForStage";
+import { RemovedFromRoom } from "@/src/components/room/RemovedFromRoom";
 import { api, Conversation, Room, RoomGift, RoomMember, RoomMessage } from "@/src/utils/api";
 import { webrtcAvailable } from "@/src/utils/webrtc";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -71,12 +76,13 @@ const MAX_LISTENERS_SHOWN = 6;
 
 export default function RoomScreen() {
   const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user, setUser } = useAuth();
   const { subscribe } = useCall();
   const { colors, mode } = useTheme();
-  const styles = React.useMemo(() => makeStyles(colors), [colors]);
+  const styles = React.useMemo(() => makeStyles(colors, insets.bottom), [colors, insets.bottom]);
   const [room, setRoom] = useState<Room | null>(null);
   const [messages, setMessages] = useState<RoomMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -132,10 +138,6 @@ export default function RoomScreen() {
     Keyboard.dismiss();
     setInputFocused(false);
   }, []);
-  const [joinAnnouncement, setJoinAnnouncement] = useState<{
-    key: string;
-    text: string;
-  } | null>(null);
   const [isFollowingHost, setIsFollowingHost] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
   const [gifts, setGifts] = useState<RoomGift[]>([]);
@@ -150,9 +152,30 @@ export default function RoomScreen() {
   const chatListRef = useRef<FlatList<RoomMessage>>(null);
   // HelloTalk-style extras: ended-summary overlay.
   const [ended, setEnded] = useState(false);
+  const [removed, setRemoved] = useState(false);
+  const [roomNotice, setRoomNotice] = useState("");
   // Member profile sheet (opens when tapping someone on stage / in audience).
   const [memberSheet, setMemberSheet] = useState<RoomMember | null>(null);
   const [sheetFollowing, setSheetFollowing] = useState(false);
+  const [stageBusy, setStageBusy] = useState(false);
+  const stageLock = useRef(false);
+  const [stageError, setStageError] = useState("");
+  useEffect(() => {
+    if (!roomNotice) return;
+    const timer = setTimeout(() => setRoomNotice(""), 7000);
+    return () => clearTimeout(timer);
+  }, [roomNotice]);
+
+  const stageAction = async (path: string, data?: object) => {
+    if (stageLock.current) return;
+    stageLock.current = true; setStageBusy(true); setStageError("");
+    try {
+      await api.post(`/rooms/${id}/${path}`, data);
+      const fresh = await api.get<Room>(`/rooms/${id}`);
+      setRoom(fresh); session.updateRoom(fresh);
+    } catch (e: any) { setStageError(e.message || "Could not update the stage. Please try again."); }
+    finally { stageLock.current = false; setStageBusy(false); }
+  };
 
   const followSheetMember = async (member: RoomMember) => {
     try {
@@ -180,6 +203,8 @@ export default function RoomScreen() {
   const members: RoomMember[] = room?.members || [];
   const me = members.find((m) => m.id === user?.id);
   const isHost = me?.role === "host";
+  const isOwner = room?.host?.id === user?.id;
+  const canManage = !!me && (isOwner || !!me.is_moderator);
   const isSpeaker = isHost || me?.role === "speaker";
   // Raised hands are private moderation info: only the host (and moderators,
   // when the host appoints them) can see who raised a hand.
@@ -251,17 +276,8 @@ export default function RoomScreen() {
     const unsub = subscribe((event: any) => {
       if (event.type === "room_update" && event.room?.id === id) {
         setRoom(event.room);
+        setMemberSheet(previous => previous ? event.room.members.find((m: RoomMember) => m.id === previous.id) || null : null);
         session.updateRoom(event.room);
-        if (event.joined && event.joined.id !== user?.id) {
-          const key = `${event.joined.id}-${Date.now()}`;
-          setJoinAnnouncement({
-            key,
-            text: `${event.joined.name} joined the room 🎉`,
-          });
-          setTimeout(() => {
-            setJoinAnnouncement((cur) => (cur?.key === key ? null : cur));
-          }, 3000);
-        }
       } else if (event.type === "room_message" && event.message?.room_id === id) {
         const incoming = event.message as RoomMessage;
         setMessages((prev) =>
@@ -289,10 +305,17 @@ export default function RoomScreen() {
             )
             .catch(() => {});
         }
-      } else if (event.type === "room_ended" && event.room_id === id) {
+      } else if (event.type === "room_invitation_result" && event.room_id === id) {
+        setRoomNotice(`${event.name} ${event.accepted ? "accepted" : "rejected"} your ${event.kind === "moderator" ? "moderator" : "stage"} invitation.`);
+      } else if (event.type === "room_stage_request_rejected" && event.room_id === id) {
+        setRoomNotice("Your stage request was rejected.");
+      } else if ((event.type === "room_ended" || event.type === "room_kicked") && event.room_id === id) {
+        setMemberSheet(null); setHandModalOpen(false); setAudienceModalOpen(false);
+        setHostPickOpen(false); setExitSheetOpen(false); setMenuOpen(false);
         endedRef.current = true;
         session.endSession();
-        setEnded(true);
+        if (event.type === "room_kicked") setRemoved(true);
+        else setEnded(true);
       }
     });
     return unsub;
@@ -304,31 +327,32 @@ export default function RoomScreen() {
     }
   }, [messages.length]);
 
-  // Non-host leaves the room entirely (host uses the transfer flow / Close).
+  // Leaving never transfers room ownership.
   const leave = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    endedRef.current = true;
-    session.endSession();
+    if (stageLock.current) return;
+    stageLock.current = true; setStageBusy(true);
     try {
       await api.post(`/rooms/${id}/leave`);
-    } finally {
+      endedRef.current = true;
+      session.endSession();
       router.back();
-    }
+    } catch (e: any) { setStageError(e.message || "Could not leave. Please try again."); }
+    finally { stageLock.current = false; setStageBusy(false); }
   };
 
   // Host permanently closes the room for everyone — then sees the summary.
   const closeRoom = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    endedRef.current = true;
-    session.endSession();
-    setExitSheetOpen(false);
+    if (stageLock.current) return;
+    stageLock.current = true; setStageBusy(true);
     try {
       await api.post(`/rooms/${id}/end`);
-    } catch {
-      // ignore
-    } finally {
+      endedRef.current = true;
+      session.endSession();
       setEnded(true);
-    }
+    } catch (e: any) { setStageError(e.message || "Could not close this room. Please try again."); }
+    finally { setExitSheetOpen(false); stageLock.current = false; setStageBusy(false); }
   };
 
   // Edit-room sheet (host) — mirrors the create-room page fields.
@@ -381,38 +405,10 @@ export default function RoomScreen() {
     }
   };
 
-  // Host hands the room to a chosen member, then leaves (room stays live).
-  const transferHostAndLeave = async (member: RoomMember) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setHostPickOpen(false);
-    endedRef.current = true;
-    try {
-      await api.post(`/rooms/${id}/transfer-host`, { user_id: member.id });
-      await api.post(`/rooms/${id}/leave`);
-    } catch (e) {
-      endedRef.current = false;
-      Alert.alert(
-        "Couldn't hand over",
-        e instanceof Error ? e.message : "Please try again.",
-      );
-      return;
-    }
-    session.endSession();
-    router.back();
-  };
-
-  // Host taps Leave: must promote a new host first if others are present.
+  // Owner may step away without giving away ownership or income.
   const hostLeaveFlow = () => {
     setExitSheetOpen(false);
-    const others = members.filter((m) => m.id !== user?.id);
-    if (others.length === 0) {
-      Alert.alert(
-        "No one to hand over to",
-        "You're alone here. Use Close to end the room instead.",
-      );
-      return;
-    }
-    setHostPickOpen(true);
+    void leave();
   };
 
   // Switch to another recommended room: leave the current one, then open the new.
@@ -443,8 +439,8 @@ export default function RoomScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await api.post(`/rooms/${id}/mic`);
-    } catch {
-      // room may have ended
+    } catch (e: any) {
+      setStageError(e.message || "Could not change the microphone.");
     }
   };
 
@@ -457,35 +453,16 @@ export default function RoomScreen() {
     }
   };
 
-  const changeRole = async (member: RoomMember, role: "speaker" | "listener") => {
-    try {
-      await api.post(`/rooms/${id}/role`, { user_id: member.id, role });
-    } catch {
-      // ignore
-    }
-  };
+  const changeRole = (member: RoomMember, role: "speaker" | "listener") => stageAction("role", { user_id: member.id, role });
 
-  const kickMember = async (member: RoomMember) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    try {
-      await api.post(`/rooms/${id}/kick`, { user_id: member.id });
-    } catch {
-      // ignore
-    }
-  };
+  const kickMember = (member: RoomMember) => stageAction("kick", { user_id: member.id });
 
-  const dismissHand = async (member: RoomMember) => {
-    try {
-      await api.post(`/rooms/${id}/hand/dismiss`, { user_id: member.id });
-    } catch {
-      // ignore
-    }
-  };
+  const dismissHand = (member: RoomMember) => stageAction("hand/dismiss", { user_id: member.id });
 
   const sendText = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
-    if (room?.chat_muted && !isHost) {
+    if (room?.chat_muted && !canManage) {
       Alert.alert("Chat muted", "The host has muted text chat right now.");
       return;
     }
@@ -679,11 +656,6 @@ export default function RoomScreen() {
 
   const onAvatarPress = (member: RoomMember) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (member.id === user?.id) {
-      if (isSpeaker) toggleMic();
-      else toggleHand();
-      return;
-    }
     setSheetFollowing(false);
     setMemberSheet(member);
     api
@@ -727,7 +699,8 @@ export default function RoomScreen() {
   const stageMembers = [hostMember, ...speakers].filter(
     (m): m is RoomMember => !!m,
   );
-  const emptySeatCount = Math.max(0, STAGE_SEATS - stageMembers.length);
+  const hostAway = !hostMember;
+  const emptySeatCount = Math.max(0, STAGE_SEATS - stageMembers.length - (hostAway ? 1 : 0));
   const shownListeners = listeners.slice(0, MAX_LISTENERS_SHOWN);
   const extraListeners = listeners.length - shownListeners.length;
   const giftTarget = members.find((m) => m.id === giftTargetId);
@@ -784,6 +757,7 @@ export default function RoomScreen() {
             <Ionicons name="home" size={9} color="#FFFFFF" />
           </View>
         )}
+        {member.is_moderator && member.role !== "host" && <View testID={`moderator-badge-${member.id}`} style={[styles.hostHomeBadge, styles.moderatorBadge]}><Ionicons name="shield-checkmark" size={10} color="#FFFFFF" /></View>}
         <Text style={styles.memberName} numberOfLines={1}>
           {member.id === user?.id ? "You" : member.name.split(" ")[0]}
         </Text>
@@ -810,6 +784,7 @@ export default function RoomScreen() {
           <RaiseHandIcon size={10} color="#FFF" />
         </View>
       )}
+      {member.is_moderator && <View testID={`moderator-badge-${member.id}`} style={[styles.hostHomeBadge, styles.moderatorBadge]}><Ionicons name="shield-checkmark" size={10} color="#FFFFFF" /></View>}
       <Text style={styles.listenerName} numberOfLines={1}>
         {member.id === user?.id ? "You" : member.name.split(" ")[0]}
       </Text>
@@ -826,7 +801,7 @@ export default function RoomScreen() {
       <View style={styles.emptySeatCircle}>
         <RaiseHandIcon size={24} color="rgba(255,255,255,0.85)" />
       </View>
-      <Text style={styles.seatNum}>{stageMembers.length + i + 1}</Text>
+      <Text style={styles.seatNum}>{stageMembers.length + i + 1 + (hostAway ? 1 : 0)}</Text>
     </Pressable>
   );
 
@@ -840,7 +815,7 @@ export default function RoomScreen() {
               <Text style={styles.title} numberOfLines={1}>
                 {room.title}
               </Text>
-              {isHost && (
+              {canManage && (
                 <Pressable
                   testID="room-rename-btn"
                   style={styles.renameBtn}
@@ -909,7 +884,7 @@ export default function RoomScreen() {
             <Pressable
               testID="room-menu-btn"
               style={styles.menuBtn}
-              onPress={() => (isHost ? setExitSheetOpen(true) : setMenuOpen(true))}
+              onPress={() => (canManage ? setExitSheetOpen(true) : setMenuOpen(true))}
             >
               <Ionicons name="ellipsis-horizontal" size={20} color="#FFFFFF" />
             </Pressable>
@@ -933,46 +908,11 @@ export default function RoomScreen() {
           </View>
         )}
 
-        {isHost && handRequests.length > 0 && (
-          <Pressable
-            testID="room-hand-requests-btn"
-            style={styles.handNotifyBar}
-            onPress={() => setHandModalOpen(true)}
-          >
-            <View style={styles.handNotifyIconWrap}>
-              <RaiseHandIcon size={16} color="#FFFFFF" />
-              <View style={styles.handNotifyBadge}>
-                <Text style={styles.handNotifyBadgeText}>{handRequests.length}</Text>
-              </View>
-            </View>
-            <Text style={styles.handNotifyText}>
-              {handRequests.length === 1
-                ? `${handRequests[0].name} wants to join the stage`
-                : `${handRequests.length} people want to join the stage`}
-            </Text>
-            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
-          </Pressable>
-        )}
-
-        {joinAnnouncement && (
-          <Animated.View
-            key={joinAnnouncement.key}
-            entering={FadeInDown.duration(220)}
-            exiting={FadeOutUp.duration(220)}
-            style={styles.joinAnnouncement}
-            testID="room-join-announcement"
-          >
-            <Ionicons name="megaphone" size={13} color="#FFFFFF" />
-            <Text style={styles.joinAnnouncementText} numberOfLines={1}>
-              {joinAnnouncement.text}
-            </Text>
-          </Animated.View>
-        )}
 
         {room?.mode === "study" && room?.pomodoro && (
           <PomodoroCard
             pomodoro={room.pomodoro}
-            isHost={isHost}
+            isHost={canManage}
             onAction={(a) =>
               api.post(`/rooms/${id}/pomodoro`, { action: a }).catch(() => {})
             }
@@ -993,6 +933,7 @@ export default function RoomScreen() {
             }}
           >
             <View style={styles.stageGrid}>
+              {hostAway && <View testID="room-host-away-seat" style={styles.emptySeat}><View style={styles.emptySeatCircle}><Ionicons name="cafe" size={30} color="#FCD34D" /></View><Text testID="room-host-away-label" style={styles.memberName}>Host is away</Text></View>}
               {stageMembers.map(renderStageMember)}
               {Array.from({ length: emptySeatCount }).map((_, i) =>
                 renderEmptySeat(i),
@@ -1058,7 +999,7 @@ export default function RoomScreen() {
                   ))}
                 </View>
               </Pressable>
-              {!isHost && (
+              {!canManage && (
                 <Pressable
                   testID="room-rail-vip"
                   style={styles.railVip}
@@ -1074,12 +1015,12 @@ export default function RoomScreen() {
                 testID="room-rail-hand"
                 style={[
                   styles.railHand,
-                  !isHost && me?.hand_raised && styles.railHandActive,
+                  !canManage && me?.hand_raised && styles.railHandActive,
                 ]}
-                onPress={() => (isHost ? setHandModalOpen(true) : toggleHand())}
+                onPress={() => (canManage ? setHandModalOpen(true) : toggleHand())}
               >
-                <RaiseHandIcon size={21} color="#FFFFFF" />
-                {isHost && handRequests.length > 0 && (
+                {!canManage && me?.hand_raised ? <WaitingForStage /> : <RaiseHandIcon size={21} color="#FFFFFF" />}
+                {canManage && handRequests.length > 0 && (
                   <View style={styles.railHandBadge}>
                     <Text style={styles.railHandBadgeText}>
                       {handRequests.length}
@@ -1226,20 +1167,22 @@ export default function RoomScreen() {
             </View>
           )}
 
+          {!!roomNotice && <Pressable testID="room-action-notice" accessibilityLiveRegion="polite" onPress={() => setRoomNotice("")} style={styles.roomNotice}><Text style={styles.stageErrorText}>{roomNotice}</Text><Ionicons name="close" size={18} color="#FFFFFF" /></Pressable>}
+          {!!stageError && <Pressable testID="room-stage-error" onPress={() => setStageError("")} style={styles.stageErrorBox}><Text style={styles.stageErrorText}>{stageError}</Text><Ionicons name="close" size={18} color="#FFFFFF" /></Pressable>}
           <View style={styles.controls}>
             <TextInput
               ref={chatInputRef}
               testID="room-chat-input"
               style={[styles.input, inputFocused && styles.inputFocused]}
               placeholder={
-                room.chat_muted && !isHost
+                room.chat_muted && !canManage
                   ? "Chat muted by host"
                   : "Comment..."
               }
               placeholderTextColor="rgba(255,255,255,0.45)"
               value={draft}
               onChangeText={setDraft}
-              editable={!(room.chat_muted && !isHost)}
+              editable={!(room.chat_muted && !canManage)}
               onSubmitEditing={sendMessage}
               onFocus={() => setInputFocused(true)}
               onBlur={() => setInputFocused(false)}
@@ -1468,13 +1411,16 @@ export default function RoomScreen() {
           animationType="slide"
           onRequestClose={() => setMemberSheet(null)}
         >
+          <View style={[styles.memberModalHost, { paddingTop: insets.top + 16 }]}>
           <Pressable
+            testID="room-member-sheet-backdrop"
             style={styles.msBackdrop}
             onPress={() => setMemberSheet(null)}
           />
           {memberSheet && (
-            <View
-              style={[styles.msPanel, { paddingBottom: 30 + insets.bottom }]}
+            <ScrollView
+              style={[styles.msPanel, { height: Math.min(screenHeight * 0.64, 540) }]}
+              contentContainerStyle={{ padding: 20, paddingBottom: 24 + insets.bottom }}
               testID="room-member-sheet"
             >
               <View style={styles.msTopRow}>
@@ -1485,7 +1431,7 @@ export default function RoomScreen() {
                   flagCode={countryToCode(memberSheet.country)}
                 />
                 <View style={{ flex: 1 }} />
-                {!isHost && (
+                {!isHost && memberSheet.id !== user?.id && (
                   <Pressable
                     testID="room-ms-follow"
                     style={[
@@ -1499,7 +1445,7 @@ export default function RoomScreen() {
                     </Text>
                   </Pressable>
                 )}
-                {isHost && (
+                {isHost && memberSheet.id !== user?.id && (
                   <Pressable
                     testID="room-ms-partner"
                     style={styles.msPillBtn}
@@ -1509,50 +1455,14 @@ export default function RoomScreen() {
                     <Text style={styles.msPillText}>Partner</Text>
                   </Pressable>
                 )}
-                {isHost && memberSheet.role !== "host" && (
-                  <Pressable
-                    testID="room-ms-stage"
-                    style={styles.msPillBtn}
-                    onPress={() => {
-                      const m = memberSheet;
-                      setMemberSheet(null);
-                      changeRole(
-                        m,
-                        m.role === "listener" ? "speaker" : "listener",
-                      );
-                    }}
-                  >
-                    <Ionicons
-                      name={memberSheet.role === "listener" ? "mic" : "mic-off"}
-                      size={15}
-                      color="#E6E1FF"
-                    />
-                    <Text style={styles.msPillText}>
-                      {memberSheet.role === "listener" ? "Invite" : "Remove"}
-                    </Text>
-                  </Pressable>
-                )}
                 <Pressable
-                  testID="room-ms-more"
+                  testID="room-ms-close"
+                  accessibilityLabel="Close member profile"
                   style={styles.msMoreBtn}
-                  onPress={() => {
-                    if (!isHost || memberSheet.role === "host") return;
-                    const m = memberSheet;
-                    Alert.alert(m.name, undefined, [
-                      {
-                        text: "Remove from room",
-                        style: "destructive",
-                        onPress: () => {
-                          setMemberSheet(null);
-                          kickMember(m);
-                        },
-                      },
-                      { text: "Cancel", style: "cancel" },
-                    ]);
-                  }}
+                  onPress={() => setMemberSheet(null)}
                 >
                   <Ionicons
-                    name="ellipsis-horizontal"
+                    name="close"
                     size={18}
                     color="#E6E1FF"
                   />
@@ -1561,10 +1471,11 @@ export default function RoomScreen() {
 
               <View style={styles.msNameRow}>
                 <Text style={styles.msName}>{memberSheet.name}</Text>
-                {!!memberSheet.age && (
-                  <View style={styles.msAgePill}>
-                    <Text style={styles.msAgeText}>
-                      {memberSheet.gender === "male" ? "♂" : "♀"} {memberSheet.age}
+                {(memberSheet.gender === "male" || memberSheet.gender === "female") && (
+                  <View testID={`room-member-gender-${memberSheet.gender}`} style={[styles.msAgePill, { backgroundColor: memberSheet.gender === "male" ? genderColors.maleBackground : genderColors.femaleBackground }]}>
+                    <Ionicons name={memberSheet.gender} size={14} color={genderColors[memberSheet.gender]} />
+                    <Text style={[styles.msAgeText, { color: genderColors[memberSheet.gender] }]}>
+                      {memberSheet.age || ""}
                     </Text>
                   </View>
                 )}
@@ -1574,6 +1485,20 @@ export default function RoomScreen() {
                   </View>
                 )}
               </View>
+              {memberSheet.is_moderator && <View testID="room-member-moderator-label" style={styles.modLabel}><Ionicons name="shield-checkmark" size={16} color="#A78BFA" /><Text style={styles.msPillText}>Moderator</Text></View>}
+              <MemberStageActions member={memberSheet} isHost={canManage} isOwner={isOwner} isSelf={memberSheet.id === user?.id} busy={stageBusy} onAction={action => {
+                const member = memberSheet;
+                setMemberSheet(null);
+                if (action === "invite") void stageAction("stage/invite", { user_id: member.id });
+                else if (action === "mute") void stageAction("stage/mute", { user_id: member.id });
+                else if (action === "remove-stage") void changeRole(member, "listener");
+                else if (action === "kick") void kickMember(member);
+                else if (action === "moderator-add") void stageAction("moderators/invite", { user_id: member.id });
+                else if (action === "moderator-remove") void stageAction("moderators/remove", { user_id: member.id });
+                else if (action === "self-mute") void toggleMic();
+                else if (action === "leave-room") void leave();
+                else void stageAction("stage/leave");
+              }} />
               <View style={styles.msLangRow}>
                 <Text style={styles.msLangText}>
                   {(memberSheet.native_language || "??").toUpperCase()}
@@ -1610,7 +1535,7 @@ export default function RoomScreen() {
                 />
               </Pressable>
 
-              <Pressable
+              {memberSheet.id !== user?.id && <Pressable
                 testID="room-ms-gift"
                 style={styles.msGiftBtn}
                 onPress={() => {
@@ -1621,9 +1546,10 @@ export default function RoomScreen() {
               >
                 <Ionicons name="gift" size={18} color="#FFFFFF" />
                 <Text style={styles.msGiftText}>Send Gift</Text>
-              </Pressable>
-            </View>
+              </Pressable>}
+            </ScrollView>
           )}
+          </View>
         </Modal>
 
         {/* Voiceroom-ended summary overlay */}
@@ -1848,6 +1774,7 @@ export default function RoomScreen() {
                 >
                   <Text style={styles.actionSheetText}>Minimize the room</Text>
                 </Pressable>
+                {isOwner && <><View style={styles.actionSheetDivider} /><Pressable testID="room-moderators-btn" style={styles.actionSheetRow} onPress={() => { setExitSheetOpen(false); setHostPickOpen(true); }}><Text style={styles.actionSheetText}>Moderators · {room.moderators?.length || 0}</Text></Pressable></>}
                 <View style={styles.actionSheetDivider} />
                 <Pressable
                   testID="exit-leave-btn"
@@ -1863,7 +1790,7 @@ export default function RoomScreen() {
                 >
                   <Text style={styles.actionSheetText}>Leave</Text>
                 </Pressable>
-                {isHost && (
+                {canManage && (
                   <>
                     <View style={styles.actionSheetDivider} />
                     <Pressable
@@ -1933,57 +1860,7 @@ export default function RoomScreen() {
           </Pressable>
         </Modal>
 
-        {/* Host picks a member to hand the room over to, then leaves */}
-        <Modal
-          visible={hostPickOpen}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setHostPickOpen(false)}
-        >
-          <Pressable
-            style={styles.modalBackdrop}
-            onPress={() => setHostPickOpen(false)}
-          >
-            <View style={styles.menuSheet}>
-              <Text style={styles.menuTitle}>Choose a new host</Text>
-              <Text style={styles.pickerSub}>
-                Pick someone to take over so the room keeps going.
-              </Text>
-              <ScrollView style={{ maxHeight: 320 }}>
-                {members
-                  .filter((m) => m.id !== user?.id)
-                  .map((m) => (
-                    <Pressable
-                      key={m.id}
-                      testID={`host-pick-${m.id}`}
-                      style={styles.pickerRow}
-                      onPress={() => transferHostAndLeave(m)}
-                    >
-                      <Avatar
-                        name={m.name}
-                        url={m.avatar_url}
-                        size={40}
-                        flagCode={countryToCode(m.country)}
-                      />
-                      <View style={{ flex: 1, marginLeft: spacing.md }}>
-                        <Text style={styles.pickerName} numberOfLines={1}>
-                          {m.name}
-                        </Text>
-                        <Text style={styles.pickerRole}>
-                          {m.role === "speaker" ? "Speaker" : "Listener"}
-                        </Text>
-                      </View>
-                      <Ionicons
-                        name="chevron-forward"
-                        size={18}
-                        color="rgba(255,255,255,0.5)"
-                      />
-                    </Pressable>
-                  ))}
-              </ScrollView>
-            </View>
-          </Pressable>
-        </Modal>
+        <ModeratorsSheet visible={hostPickOpen && isOwner} room={room} busy={stageBusy} error={stageError} notice={roomNotice} onClose={() => setHostPickOpen(false)} onInvite={m => stageAction("moderators/invite", { user_id: m.id })} onRemove={m => stageAction("moderators/remove", { user_id: m.id })} />
 
         {/* Share to Chat: pick a conversation */}
         <Modal
@@ -2068,7 +1945,7 @@ export default function RoomScreen() {
                 <Ionicons name="person-add-outline" size={18} color="#FFFFFF" />
                 <Text style={styles.menuText}>Invite friends</Text>
               </Pressable>
-              {isHost && (
+              {canManage && (
                 <Pressable
                   style={styles.menuRow}
                   testID="room-tools-mute-btn"
@@ -2084,7 +1961,7 @@ export default function RoomScreen() {
                   </Text>
                 </Pressable>
               )}
-              {isHost && !room.is_private && (
+              {canManage && !room.is_private && (
                 <Pressable
                   style={styles.menuRow}
                   testID="room-share-moments-btn"
@@ -2098,55 +1975,8 @@ export default function RoomScreen() {
           </Pressable>
         </Modal>
 
-        <Modal
-          visible={handModalOpen}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setHandModalOpen(false)}
-        >
-          <Pressable
-            style={styles.modalBackdrop}
-            onPress={() => setHandModalOpen(false)}
-          >
-            <Pressable style={styles.menuSheet} onPress={() => {}}>
-              <Text style={styles.menuTitle}>
-                ✋ Stage requests · {handRequests.length}
-              </Text>
-              {handRequests.length === 0 ? (
-                <Text style={styles.menuText}>No pending requests.</Text>
-              ) : (
-                handRequests.map((m) => (
-                  <View key={m.id} style={styles.requestRow}>
-                    <Avatar
-                      name={m.name}
-                      url={m.avatar_url}
-                      size={36}
-                      flagCode={countryToCode(m.country)}
-                    />
-                    <Text style={styles.requestName} numberOfLines={1}>
-                      {m.name}
-                    </Text>
-                    <Pressable
-                      testID={`hand-accept-${m.id}`}
-                      style={styles.acceptBtn}
-                      onPress={() => changeRole(m, "speaker")}
-                    >
-                      <Text style={styles.acceptText}>Invite</Text>
-                    </Pressable>
-                    <Pressable
-                      testID={`hand-dismiss-${m.id}`}
-                      style={styles.dismissBtn}
-                      onPress={() => dismissHand(m)}
-                      hitSlop={6}
-                    >
-                      <Ionicons name="close" size={16} color="#F87171" />
-                    </Pressable>
-                  </View>
-                ))
-              )}
-            </Pressable>
-          </Pressable>
-        </Modal>
+        <StageRequestsSheet visible={handModalOpen && canManage} members={handRequests} busy={stageBusy} error={stageError} onClose={() => setHandModalOpen(false)} onAccept={m => changeRole(m, "speaker")} onReject={dismissHand} />
+        {removed && <RemovedFromRoom onLeave={() => router.replace("/(tabs)/voice")} />}
 
         <Modal
           visible={audienceModalOpen}
@@ -2159,8 +1989,8 @@ export default function RoomScreen() {
             onPress={() => setAudienceModalOpen(false)}
           >
             <Pressable style={styles.menuSheet} onPress={() => {}}>
-              <Text style={styles.menuTitle}>Audience · {listeners.length}</Text>
-              <ScrollView style={{ maxHeight: 360 }}>
+              <Text testID="room-audience-title" style={styles.menuTitle}>Audience · {listeners.length}</Text>
+              <ScrollView style={{ maxHeight: 360, flexShrink: 1 }}>
                 {listeners.map((m) => (
                   <Pressable
                     key={m.id}
@@ -2245,7 +2075,7 @@ export default function RoomScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, bottomInset = 0) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -2281,7 +2111,8 @@ const makeStyles = (colors: ThemeColors) =>
     },
     title: {
       fontFamily: fonts.display,
-      fontSize: 24,
+      fontSize: 19,
+      lineHeight: 25,
       color: "#FFFFFF",
       flexShrink: 1,
       maxWidth: 160,
@@ -2592,15 +2423,16 @@ const makeStyles = (colors: ThemeColors) =>
       color: colors.onBrand,
     },
     msBackdrop: {
-      flex: 1,
+      ...StyleSheet.absoluteFill,
       backgroundColor: "rgba(5,3,20,0.45)",
     },
     msPanel: {
+      maxHeight: "70%",
+      flexGrow: 0,
+      flexShrink: 1,
       backgroundColor: "#241D4F",
       borderTopLeftRadius: 26,
       borderTopRightRadius: 26,
-      padding: 20,
-      paddingBottom: 30,
     },
     msTopRow: {
       flexDirection: "row",
@@ -2622,8 +2454,8 @@ const makeStyles = (colors: ThemeColors) =>
       color: "#E6E1FF",
     },
     msMoreBtn: {
-      width: 38,
-      height: 38,
+      width: 44,
+      height: 44,
       borderRadius: 19,
       backgroundColor: "rgba(255,255,255,0.14)",
       alignItems: "center",
@@ -2634,14 +2466,18 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: "center",
       gap: 8,
       marginTop: 12,
+      flexWrap: "wrap",
     },
     msName: {
       fontFamily: fonts.displayBold,
       fontSize: 21,
       color: "#FFFFFF",
+      flexShrink: 1,
     },
     msAgePill: {
-      backgroundColor: "#DB2777",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
       borderRadius: 10,
       paddingHorizontal: 8,
       paddingVertical: 2,
@@ -3331,7 +3167,7 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: "center",
       gap: 6,
       paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
+      paddingVertical: spacing.sm + 4,
     },
     input: {
       flex: 1,
@@ -3398,13 +3234,24 @@ const makeStyles = (colors: ThemeColors) =>
       justifyContent: "flex-end",
     },
     menuSheet: {
+      maxHeight: "85%",
+      flexShrink: 1,
       backgroundColor: "#2A2154",
       borderTopLeftRadius: radius.lg,
       borderTopRightRadius: radius.lg,
       padding: spacing.lg,
       gap: 4,
-      paddingBottom: spacing.xl,
+      paddingBottom: spacing.xl + bottomInset,
     },
+    memberModalHost: { ...StyleSheet.absoluteFill, justifyContent: "flex-end" },
+    roomNotice: { flexDirection: "row", alignItems: "center", padding: 12, marginHorizontal: 16, marginBottom: 8, borderRadius: 12, backgroundColor: "#3C3178", gap: 8, minHeight: 44 },
+    moderatorBadge: { backgroundColor: "#7C3AED" },
+    modLabel: { flexDirection: "row", gap: 6, alignItems: "center", marginTop: 12 },
+    stageErrorBox: { flexDirection: "row", alignItems: "center", padding: 12, marginHorizontal: 16, borderRadius: 12, backgroundColor: "#8B2536", gap: 8, minHeight: 44 },
+    stageErrorText: { flex: 1, color: "#FFFFFF", fontSize: 12, lineHeight: 18 },
+    stageStatusRow: { flexDirection: "row", gap: 8, alignItems: "center", paddingHorizontal: 16 },
+    stageStatusText: { flexShrink: 1, color: "#FFFFFF", fontFamily: fonts.textSemi, fontSize: 11, lineHeight: 17 },
+    stageLeaveButton: { minHeight: 44, paddingHorizontal: 12, marginLeft: "auto", borderRadius: 22, backgroundColor: "rgba(255,255,255,0.12)", justifyContent: "center" },
     menuTitle: {
       fontFamily: fonts.displaySemi,
       fontSize: 15,

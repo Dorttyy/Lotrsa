@@ -15,6 +15,7 @@ import {
 
 import { Avatar } from "@/src/components/Avatar";
 import { GroupAvatar } from "@/src/components/GroupAvatar";
+import { ChatLastMessage } from "@/src/components/ChatLastMessage";
 import { SpeakingBars } from "@/src/components/SpeakingBars";
 import { VipBadge } from "@/src/components/Badges";
 import { countryToCode } from "@/src/constants/countries";
@@ -460,9 +461,7 @@ export default function Chats() {
                       </Text>
                     </View>
                   ) : (
-                    <Text style={styles.rowSnippet} numberOfLines={1}>
-                      {item.last_message?.text || "Say hello 👋"}
-                    </Text>
+                    <ChatLastMessage message={item.last_message} conversationId={item.id} />
                   )}
                   {item.unread > 0 && (
                     <View style={styles.badge} testID={`chat-unread-${item.id}`}>

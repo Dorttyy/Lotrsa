@@ -18,6 +18,7 @@ from db import calls_col, rooms_col
 load_dotenv()
 session_lock = asyncio.Lock()
 RING_TIMEOUT_SECONDS = 45
+PRACTICE_MAX_SECONDS = 600
 _expiry_tasks: set[asyncio.Task] = set()
 
 
@@ -112,10 +113,11 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-async def create_session(caller_id: str, receiver_id: str) -> str:
+async def create_session(caller_id: str, receiver_id: str, *, practice: bool = False) -> str:
     call_id = str(uuid.uuid4())
     _sessions[call_id] = {
         "caller": caller_id,
+        "practice": practice,
         "receiver": receiver_id,
         "status": RINGING,
         "created": time.monotonic(),
@@ -125,7 +127,8 @@ async def create_session(caller_id: str, receiver_id: str) -> str:
         "caption_consent": {},
         "expires_at": int((time.time() + RING_TIMEOUT_SECONDS) * 1000),
     }
-    await calls_col.insert_one(
+    if not practice:
+        await calls_col.insert_one(
         {
             "_id": call_id,
             "caller_id": caller_id,
@@ -153,6 +156,29 @@ def _prune() -> None:
 
 def session(call_id: str) -> dict | None:
     return _sessions.get(call_id)
+
+
+def pending_offers(user_id: str) -> list[dict]:
+    now = time.time() * 1000
+    return [{**s["offer"], "queued_ice": s.get("early_ice", [])} for s in _sessions.values()
+            if s["receiver"] == user_id and s["status"] == RINGING and not s.get("accepted")
+            and s.get("expires_at", 0) > now and s.get("offer")]
+
+
+async def push_call_once(call_id: str):
+    s = session(call_id)
+    if not s or not s.get("offer") or s.get("push_attempted"):
+        return
+    s["push_attempted"] = True
+    try:
+        from routes.push import send_push
+        await send_push([s["receiver"]], {
+            "title": "Incoming audio call", "message": "Someone is calling you. Open the app to answer.",
+            "action_url": f"/incoming-call?call_id={call_id}",
+        }, idempotency_key=f"call:{call_id}")
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning("Incoming call push unavailable; live signaling remains active.")
 
 
 def pending_random_calls(user_id: str) -> list[tuple[str, str]]:
@@ -199,6 +225,16 @@ async def mark_connected(call_id: str) -> None:
         return
     s["status"] = CONNECTED
     s["connected_at"] = time.monotonic()
+    if s.get("practice"):
+        s["ends_at"] = int((time.time() + PRACTICE_MAX_SECONDS) * 1000)
+        from ws_manager import manager
+        await manager.broadcast([s["caller"], s["receiver"]], {
+            "type": "call_connected", "call_id": call_id, "ends_at": s["ends_at"],
+        })
+        task = asyncio.create_task(expire_practice(call_id))
+        _expiry_tasks.add(task)
+        task.add_done_callback(_expiry_tasks.discard)
+        return
     await calls_col.update_one(
         {"_id": call_id},
         {"$set": {"status": CONNECTED, "connected_at": _now_iso()}},
@@ -215,6 +251,13 @@ async def finish(call_id: str, status: str | None = None) -> None:
     final = status or (COMPLETED if connected_at else MISSED)
     duration_ms = int((time.monotonic() - connected_at) * 1000) if connected_at else None
     s["status"] = final
+    s.pop("offer", None)
+    s.pop("early_ice", None)
+    if s.get("practice"):
+        # Discovery calls are ephemeral: no calls document, chat message,
+        # notification or persistent call history. Release all metadata now.
+        _sessions.pop(call_id, None)
+        return
     await calls_col.update_one(
         {"_id": call_id},
         {
@@ -225,6 +268,18 @@ async def finish(call_id: str, status: str | None = None) -> None:
             }
         },
     )
+
+
+async def expire_practice(call_id: str):
+    await asyncio.sleep(PRACTICE_MAX_SECONDS)
+    s = session(call_id)
+    if not s or s["status"] != CONNECTED or not s.get("practice"):
+        return
+    from ws_manager import manager
+    await finish(call_id, COMPLETED)
+    await manager.broadcast([s["caller"], s["receiver"]], {
+        "type": "call_end", "call_id": call_id, "reason": "duration_limit",
+    })
 
 
 # --------------------------------------------------------------------------- #

@@ -1,0 +1,49 @@
+{
+  "summary": "Completed requested inbox-preview increment validation across backend + mobile web. Backend regression passed 9/9 for voice/call/room/text snapshot metadata and legacy missing-type hydration. Frontend mobile checks at 390x844 and 320x740 confirmed preview icon rendering, emoji-prefix stripping, row navigation, search/filter behavior, no horizontal overflow, and dark-mode readability/restore.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration41_inbox_preview_icons.py",
+    "/app/test_reports/pytest/iteration41_backend.xml",
+    "/app/test_reports/artifacts_iter41_load/frontend_load_390.jpeg",
+    "/app/test_reports/artifacts_iter41_ui/chats_390x844.jpeg",
+    "/app/test_reports/artifacts_iter41_ui/chats_320x740.jpeg",
+    "/app/test_reports/artifacts_iter41_ui/chats_dark_320x740.jpeg",
+    "/app/test_reports/artifacts_iter41_ui_search/search_QA_390.jpeg"
+  ],
+  "action_items": [
+    "Native physical-device visual verification remains optional follow-up; only mobile web runtime was tested."
+  ],
+  "main_agent_followup": {
+    "plain_text_ui": "PASS: sent one QA-only literal text '📞 Missed call' via actual chat composer (message f73ea08d-c2a1-49fb-9e8b-4c4477f7657b). Inbox at320 keeps the emoji text and has zero call/voice/room media-icon nodes for that conversation; no horizontal overflow. Existing phone glyph on the separate real missed-call row remains visible.",
+    "evidence": "/root/.emergent/automation_output/20260918_105032/console_20260918_105032.log; screenshot chat-icons-plain-text-pass.jpeg from screenshot tool",
+    "static": "5 changed source files lint clean; identical16 pre-existing TypeScript diagnostics before/after.",
+    "scope": "No auth, payment, RTC, room-navigation changes. QA test audio payloads used only for preview metadata; no audio playback/native verification claimed."
+  },
+  "critical_code_review_comments": [
+    "backend/routes/chats.py is very large (>1200 lines), exceeding the 700-line guideline and increasing regression risk for message-preview behavior.",
+    "frontend/app/(tabs)/chats.tsx is very large (>800 lines); consider splitting list/header/filter/theme concerns into smaller modules for safer iteration.",
+    "frontend/src/utils/api.ts relies on EXPO_PUBLIC_BACKEND_URL; environment policy in project docs also references EXPO_BACKEND_URL, so keeping both aligned is important."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration41_inbox_preview_icons.py",
+    "/app/test_reports/iteration_41.json"
+  ],
+  "success_rate": {
+    "backend": "100% (9/9)",
+    "frontend": "100% for requested inbox-preview scope"
+  },
+  "seed_data_creation": "Created QA-only fixtures: text/call/voice/room preview messages, one temporary room share, one QA1-admin voice conversation, and one QA group room-share conversation. Temporary rooms were ended after tests.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Primary QA DM conversation id remains 98ea1271-de38-4a76-8be9-c24210657858. Additional fixture rows now exist (voice and room previews) making icon checks deterministic in chats list. Search regression probe with query 'QA' returned before=4, after=1.",
+  "rca_of_issue": "No blocking defect reproduced in this increment. Earlier partial misses were due insufficient fixture diversity; this run seeded explicit call/voice/room latest-message cases and validated both API responses and UI rendering states."
+}

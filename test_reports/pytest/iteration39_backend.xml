@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="7" time="6.178" timestamp="2026-09-18T09:35:54.764176+00:00" hostname="agent-env-da20f7cf-66a0-4b04-8311-f80514897e4d"><testcase classname="backend.tests.test_iteration38_practice_rooms_moderators.TestPracticePrivacyAndTimer" name="test_practice_call_sets_ends_at_only_after_both_media_ready_and_keeps_calls_collection_clean" time="1.716"><failure message="AssertionError: {&quot;detail&quot;:&quot;Leave your current call or voice room before starting another.&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409]&gt;.status_code">backend/tests/test_iteration38_practice_rooms_moderators.py:227: in test_practice_call_sets_ends_at_only_after_both_media_ready_and_keeps_calls_collection_clean
+    asyncio.run(_case())
+/usr/local/lib/python3.11/asyncio/runners.py:190: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/asyncio/base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+backend/tests/test_iteration38_practice_rooms_moderators.py:172: in _case
+    assert call.status_code == 200, call.text
+E   AssertionError: {"detail":"Leave your current call or voice room before starting another."}
+E   assert 409 == 200
+E    +  where 409 = &lt;Response [409]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration38_practice_rooms_moderators.TestPracticePrivacyAndTimer" name="test_unit_expire_practice_broadcasts_duration_limit_and_clears_session" time="0.166" /><testcase classname="backend.tests.test_iteration38_practice_rooms_moderators.TestRoomStageAndModerators" name="test_moderator_invite_reject_then_accept_preserves_role_and_sets_badge" time="0.607" /><testcase classname="backend.tests.test_iteration38_practice_rooms_moderators.TestRoomStageAndModerators" name="test_moderator_authority_and_hierarchy_restrictions" time="0.729" /><testcase classname="backend.tests.test_iteration38_practice_rooms_moderators.TestRoomStageAndModerators" name="test_stage_invite_accept_reject_and_forced_promotion_block" time="1.086" /><testcase classname="backend.tests.test_iteration38_practice_rooms_moderators.TestRoomStageAndModerators" name="test_owner_leave_rejoin_keeps_host_identity_and_moderator_can_end" time="0.643" /><testcase classname="backend.tests.test_iteration38_practice_rooms_moderators.TestRoomStageAndModerators" name="test_room_gift_credits_owner_not_moderator" time="1.057" /></testsuite></testsuites>

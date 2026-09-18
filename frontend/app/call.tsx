@@ -75,10 +75,6 @@ export default function CallScreen() {
         <View style={s.flex}><View style={s.partnerNameRow}><Text testID={`practice-partner-name-${peer.id}`} numberOfLines={1} style={[s.subtitle, s.partnerName]}>{peer.name}</Text>{peer.is_vip && <VipBadge small tier={peer.vip_tier} />}</View><Text testID={`practice-partner-languages-${peer.id}`} style={s.copy}>{langName(peer.native_language)} <Text style={s.arrow}>→</Text> {peer.practice_language === "all" ? "All languages" : langName(peer.practice_language)}</Text></View>
         <Pressable testID={`practice-call-${peer.id}`} accessibilityLabel={`Call ${peer.name}`} disabled={!p.available || p.pending || p.busy || p.searching || p.loading} onPress={() => p.callPartner(peer)} style={({ pressed }) => [s.callBtn, { opacity: !p.available || p.pending || p.searching || p.loading || pressed ? 0.4 : 1 }]}><Ionicons name="call" size={20} color={colors.brand} /></Pressable>
       </View>)}</View>}
-      <View style={s.captionInfo}><View style={s.captionIcon}><Ionicons name="language" size={20} color={colors.brand} /></View><View style={s.flex}>
-        <Text testID="practice-native-language" style={s.captionTitle}>Feel at home in {langName(user?.native_language)}</Text>
-        <Text testID="practice-caption-info" style={s.copy}>Your live transcript is translated into your native language. Enable captions together during a call.</Text>
-      </View></View>
       <View style={s.safety}><Ionicons name="shield-checkmark-outline" size={14} color={colors.onSurfaceSecondary} /><Text testID="practice-safety-note" style={s.safetyText}>Your choice. Your pace. Leave any call, anytime.</Text></View>
     </ScrollView>
     {filterOpen && <CallFilterSheet applied={preferences} onApply={setPreferences} onClose={() => setFilterOpen(false)} />}

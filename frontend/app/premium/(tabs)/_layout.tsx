@@ -9,7 +9,7 @@ import { premiumColors } from "@/src/premium/theme";
 
 export default function PremiumTabsLayout() {
   const insets = useSafeAreaInsets();
-  const bottomGap = Math.max(insets.bottom, 12) + 10;
+  const bottomGap = Math.max(insets.bottom, 8);
 
   return (
     <Tabs
@@ -19,19 +19,25 @@ export default function PremiumTabsLayout() {
         tabBarInactiveTintColor: premiumColors.onSurfaceTertiary,
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: {
+          lineHeight: 16,
+          minHeight: 16,
+          flexShrink: 0,
           fontFamily: fonts.textBold,
           fontSize: 11,
         },
         tabBarItemStyle: {
-          paddingTop: 4,
+          paddingTop: 2,
+          paddingBottom: 2,
         },
+        tabBarIconStyle: { height: 32 },
+        tabBarLabelPosition: "below-icon",
         tabBarStyle: {
           backgroundColor: premiumColors.surface,
           borderTopColor: premiumColors.divider,
           borderTopWidth: StyleSheet.hairlineWidth,
-          height: 68 + bottomGap,
+          height: 64 + bottomGap,
           paddingBottom: bottomGap,
-          paddingTop: 8,
+          paddingTop: 4,
           ...Platform.select({
             ios: {
               shadowColor: premiumColors.gold,

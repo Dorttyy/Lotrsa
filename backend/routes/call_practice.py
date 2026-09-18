@@ -95,9 +95,8 @@ async def reserve(me: dict, peer: dict, random_match: bool = False):
     if await rtc_core.busy(uid):
         raise HTTPException(409, "Leave your current call or voice room before starting another.")
     if await rtc_core.busy(pid):
-        raise HTTPException(409, "This partner is no longer available.")
-    cid = await rtc_core.create_session(uid, pid)
-    rtc_core.session(cid)["practice"] = True
+        raise HTTPException(409, "User is on another call.")
+    cid = await rtc_core.create_session(uid, pid, practice=True)
     rtc_core.session(cid)["random_match"] = random_match
     queue.pop(uid, None)
     queue.pop(pid, None)

@@ -411,8 +411,8 @@ export default function ChatScreen() {
   const transcribeVoice = async (msg: Message) => {
     if (!msg.audio_id || transcribing) return;
     if (msg.transcript) {
-      // Already transcribed — toggle the caption off.
-      patchMessage(msg.id, { transcript: null });
+      // Keep the transcript cached when collapsed; expanding never retranscribes.
+      setTrExpanded(prev => ({ ...prev, [msg.id]: !(prev[msg.id] ?? true) }));
       return;
     }
     setTranscribing(msg.id);
@@ -421,6 +421,7 @@ export default function ChatScreen() {
         audio_id: msg.audio_id,
       });
       patchMessage(msg.id, { transcript: res.text || "(no speech detected)" });
+      setTrExpanded(prev => ({ ...prev, [msg.id]: true }));
       Haptics.selectionAsync().catch(() => {});
     } catch (e) {
       notify(
@@ -2023,6 +2024,7 @@ export default function ChatScreen() {
                       (isVoice ? (
                         hasTranscript ? (
                           <View style={styles.trCtrlV}>
+                            {voiceShown && <>
                             <Pressable
                               testID={`side-speak-btn-${item.id}`}
                               style={styles.trBtn}
@@ -2060,8 +2062,11 @@ export default function ChatScreen() {
                                 </Text>
                               )}
                             </Pressable>
+                            </>}
                             <Pressable
                               testID={`side-collapse-btn-${item.id}`}
+                              accessibilityLabel={voiceShown ? "Collapse voice translation" : "Expand voice translation"}
+                              accessibilityState={{ expanded: voiceShown }}
                               style={styles.trBtn}
                               onPress={() =>
                                 setTrExpanded((p) => ({
@@ -3309,11 +3314,11 @@ const makeStyles = (colors: ThemeColors) =>
       gap: 8,
     },
     trCtrlV: {
-      alignSelf: "stretch",
-      justifyContent: "space-between",
+      alignSelf: "center",
+      justifyContent: "center",
       alignItems: "center",
       marginLeft: 6,
-      gap: 8,
+      gap: 4,
     },
     trCtrlH: {
       flexDirection: "row",
