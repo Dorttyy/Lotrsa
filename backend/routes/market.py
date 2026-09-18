@@ -123,6 +123,8 @@ async def buy_item(body: BuyRequest, current_user: CurrentUser):
     item = ITEM_MAP.get(body.item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
+    if item["type"] == "vip":
+        raise HTTPException(410, "VIP is purchased through the app store, not with coins.")
     override = await market_config_col.find_one({"_id": body.item_id}) or {}
     if override.get("disabled"):
         raise HTTPException(status_code=400, detail="Item is currently unavailable")
@@ -184,12 +186,7 @@ async def buy_item(body: BuyRequest, current_user: CurrentUser):
 
 @router.post("/topup")
 async def topup(body: TopupRequest, current_user: CurrentUser):
-    """Demo top-up — adds coins instantly (real payments come later)."""
-    if body.amount not in TOPUP_AMOUNTS:
-        raise HTTPException(status_code=400, detail="Invalid top-up amount")
-    coins = current_user.get("coins", 0) + body.amount
-    await users_col.update_one({"_id": current_user["_id"]}, {"$set": {"coins": coins}})
-    return {"coins": coins}
+    raise HTTPException(410, "Coin purchases require a verified Google Play or App Store transaction.")
 
 
 # --------------------------------------------------------------------------- #
@@ -289,13 +286,7 @@ async def wallet(current_user: CurrentUser):
 
 @router.post("/topup-pack")
 async def topup_pack(body: TopupBody, current_user: CurrentUser):
-    if body.coins not in TOPUP_PACKS:
-        raise HTTPException(status_code=400, detail="Invalid package")
-    await users_col.update_one(
-        {"_id": current_user["_id"]}, {"$inc": {"coins": body.coins}}
-    )
-    await _tx(current_user["_id"], "coin", body.coins, f"Top up ({TOPUP_PACKS[body.coins]})")
-    return {"ok": True, "coins": current_user.get("coins", 0) + body.coins}
+    raise HTTPException(410, "Coin packs are awaiting verified store billing setup. Your existing coins are unchanged.")
 
 
 @router.post("/redeem")
@@ -313,29 +304,7 @@ async def redeem(body: RedeemBody, current_user: CurrentUser):
         await _tx(current_user["_id"], "coin", coins_gained, "Diamond exchange (+10% bonus)")
         return {"ok": True, "coins_gained": coins_gained}
     if body.what == "vip":
-        cost = VIP_COST.get(body.days or 0)
-        if not cost:
-            raise HTTPException(status_code=400, detail="Invalid VIP package")
-        if diamonds < cost:
-            raise HTTPException(status_code=400, detail=f"You need {cost} diamonds for {body.days} days of VIP")
-        from datetime import timedelta as _td
-
-        cur = current_user.get("vip_until")
-        base = datetime.now(timezone.utc)
-        try:
-            if cur:
-                cur_dt = datetime.fromisoformat(cur)
-                if cur_dt > base:
-                    base = cur_dt
-        except ValueError:
-            pass
-        until = (base + _td(days=body.days)).isoformat()
-        await users_col.update_one(
-            {"_id": current_user["_id"]},
-            {"$inc": {"diamonds": -cost}, "$set": {"is_vip": True, "vip_until": until}},
-        )
-        await _tx(current_user["_id"], "diamond", -cost, f"Redeemed {body.days}d VIP")
-        return {"ok": True, "vip_until": until}
+        raise HTTPException(410, "VIP is purchased through the app store. Diamonds remain available for coin exchange.")
     raise HTTPException(status_code=400, detail="Invalid redeem type")
 
 

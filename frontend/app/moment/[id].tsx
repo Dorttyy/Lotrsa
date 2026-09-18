@@ -1,10 +1,9 @@
 import { Ionicons } from "@/src/ui/icons";
+import { useExclusiveVoicePlayer } from "@/src/hooks/use-exclusive-voice-player";
 import {
   AudioModule,
   RecordingPresets,
   setAudioModeAsync,
-  useAudioPlayer,
-  useAudioPlayerStatus,
   useAudioRecorder,
 } from "expo-audio";
 import * as Clipboard from "expo-clipboard";
@@ -1331,16 +1330,7 @@ function RecPreviewPill({
   bars: number[];
 }) {
   const { colors: themeColors } = useTheme();
-  const player = useAudioPlayer(uri || null);
-  const status = useAudioPlayerStatus(player);
-  const toggle = () => {
-    if (status.playing) {
-      player.pause();
-    } else {
-      if (status.didJustFinish) player.seekTo(0);
-      player.play();
-    }
-  };
+  const { status, toggle } = useExclusiveVoicePlayer(uri || null);
   return (
     <View
       style={[pillStyles.pill, { backgroundColor: themeColors.brand }]}

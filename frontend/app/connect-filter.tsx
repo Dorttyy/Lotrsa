@@ -15,12 +15,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppSwitch } from "@/src/components/AppSwitch";
-import { CountryFlagIcon, FlagIcon } from "@/src/components/FlagIcon";
+import { RoundFlag as CountryFlagIcon, RoundFlag as FlagIcon } from "@/src/components/RoundFlag";
 import { citiesFor } from "@/src/constants/cities";
 import { COUNTRIES } from "@/src/constants/countries";
 import { LANGUAGES, langName } from "@/src/constants/languages";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
+import { genderColors } from "@/src/theme";
 
 const LEVELS = ["Beginner", "Elementary", "Intermediate", "Advanced", "Proficient"];
 const AGES = [18, 25, 35, 50, 90];
@@ -363,11 +364,11 @@ export default function ConnectFilter() {
                 <Pressable
                   key={g}
                   testID={`cf-gender-${g}`}
-                  style={[styles.genderPill, gender === g && styles.genderPillOn]}
+                  style={[styles.genderPill, gender === g && (g === "all" ? styles.genderPillOn : { backgroundColor: g === "female" ? genderColors.femaleBackground : genderColors.maleBackground })]}
                   onPress={() => setGender(g)}
                 >
                   <Ionicons
-                    name={g === "all" ? "people-outline" : "person-outline"}
+                    name={g === "all" ? "people-outline" : g}
                     size={15}
                     color={
                       gender === g ? colors.onBrand : colors.onSurfaceSecondary
@@ -376,7 +377,7 @@ export default function ConnectFilter() {
                   <Text
                     style={[
                       styles.genderText,
-                      gender === g && styles.genderTextOn,
+                      gender === g && (g === "all" ? styles.genderTextOn : { color: genderColors[g] }),
                     ]}
                   >
                     {g === "all" ? "Any" : g === "female" ? "Female" : "Male"}

@@ -117,7 +117,7 @@ export default function ProSession() {
       {/* Tutor primary feed (65%) */}
       <View style={styles.tutorFeed}>
         {showRemoteVideo ? (
-          <VideoStream stream={remoteStream} style={StyleSheet.absoluteFillObject as any} />
+          <VideoStream stream={remoteStream} style={StyleSheet.absoluteFill as any} />
         ) : (
           <>
             {tutor?.avatar_url ? (
@@ -161,7 +161,7 @@ export default function ProSession() {
         {/* Student PiP (35%) */}
         <View style={styles.pip}>
           {showLocalVideo ? (
-            <VideoStream stream={localStream} muted mirror style={StyleSheet.absoluteFillObject as any} />
+            <VideoStream stream={localStream} muted mirror style={StyleSheet.absoluteFill as any} />
           ) : (
             <View style={styles.pipInner}>
               {camOn ? (
@@ -268,9 +268,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#0B0A09" },
   center: { alignItems: "center", justifyContent: "center" },
   tutorFeed: { flex: 1, backgroundColor: "#171310" },
-  feedImg: { ...StyleSheet.absoluteFillObject, opacity: 0.9 },
-  feedScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(11,10,9,0.45)" },
-  waitingBox: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 12 },
+  feedImg: { ...StyleSheet.absoluteFill, opacity: 0.9 },
+  feedScrim: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(11,10,9,0.45)" },
+  waitingBox: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center", gap: 12 },
   waitingText: { fontFamily: proFonts.sansMedium, fontSize: 14, color: "#fff", textAlign: "center", paddingHorizontal: 30 },
   feedTopBar: {
     flexDirection: "row",

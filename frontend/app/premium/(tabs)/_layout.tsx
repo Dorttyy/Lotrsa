@@ -29,7 +29,7 @@ export default function PremiumTabsLayout() {
           backgroundColor: premiumColors.surface,
           borderTopColor: premiumColors.divider,
           borderTopWidth: StyleSheet.hairlineWidth,
-          height: 56 + bottomGap,
+          height: 68 + bottomGap,
           paddingBottom: bottomGap,
           paddingTop: 8,
           ...Platform.select({

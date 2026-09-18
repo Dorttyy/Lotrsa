@@ -526,7 +526,7 @@ const makeStyles = (colors: ThemeColors) =>
     flex: 1,
   },
   dim: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(0, 0, 0, 0.10)",
   },
   highlightPill: {

@@ -49,7 +49,7 @@ export default function VocabTabsLayout() {
           backgroundColor: colors.tabBg,
           borderTopColor: colors.border,
           borderTopWidth: colors.mode === "light" ? StyleSheet.hairlineWidth : 0,
-          height: 56 + bottomGap,
+          height: 68 + bottomGap,
           paddingBottom: bottomGap,
           paddingTop: 8,
           ...Platform.select({

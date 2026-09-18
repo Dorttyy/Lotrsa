@@ -127,7 +127,7 @@ export const RoomSessionProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsub = subscribe((event: any) => {
       if (event.type === "room_update" && event.room?.id === activeRoomId) {
         setRoom(event.room);
-      } else if (event.type === "room_ended" && event.room_id === activeRoomId) {
+      } else if ((event.type === "room_ended" || event.type === "room_kicked") && event.room_id === activeRoomId) {
         endSession();
       }
     });
@@ -145,9 +145,11 @@ export const RoomSessionProvider: React.FC<{ children: React.ReactNode }> = ({
         if (!alive) return;
         setRoom(r);
         const stillIn = (r.members || []).some((m) => m.id === user?.id);
-        if (!stillIn) endSession();
-      } catch {
-        if (alive) endSession();
+        if (!stillIn || r.is_live === false) endSession();
+      } catch (error: any) {
+        // A brief offline/5xx response must not kill an otherwise recoverable
+        // WebRTC room. Only definitive loss of access ends the audio session.
+        if (alive && (error?.status === 403 || error?.status === 404)) endSession();
       }
     };
     const iv = setInterval(tick, 5000);
@@ -233,7 +235,7 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   bubbleRing: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 30,
     borderWidth: 2,
     borderColor: "#10B981",

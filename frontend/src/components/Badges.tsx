@@ -1,6 +1,7 @@
 import { Ionicons } from "@/src/ui/icons";
 import React from "react";
 import { StyleSheet, View } from "react-native";
+import { genderColors } from "@/src/theme";
 import Svg, {
   Defs,
   LinearGradient,
@@ -24,14 +25,14 @@ export const GenderBadge: React.FC<{
           width: size + 6,
           height: size + 6,
           borderRadius: (size + 6) / 2,
-          backgroundColor: male ? "rgba(59,130,246,0.15)" : "rgba(236,72,153,0.15)",
+          backgroundColor: male ? genderColors.maleBackground : genderColors.femaleBackground,
         },
       ]}
     >
       <Ionicons
         name={male ? "male" : "female"}
         size={size}
-        color={male ? "#3B82F6" : "#EC4899"}
+        color={male ? genderColors.male : genderColors.female}
       />
     </View>
   );

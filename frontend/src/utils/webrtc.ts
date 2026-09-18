@@ -28,10 +28,18 @@ export const AUDIO_CONSTRAINTS = {
 };
 
 let iceCache: { at: number; config: any } | null = null;
+let icePending: Promise<any> | null = null;
 const ICE_TTL_MS = 10 * 60 * 1000;
 
 export const getIceConfig = async (): Promise<any> => {
   if (iceCache && Date.now() - iceCache.at < ICE_TTL_MS) return iceCache.config;
+  if (icePending) return icePending;
+  icePending = fetchIceConfig();
+  try { return await icePending; }
+  finally { icePending = null; }
+};
+
+const fetchIceConfig = async (): Promise<any> => {
   try {
     const res = await api.get<{ iceServers: any[] }>("/rtc/config");
     const config = {

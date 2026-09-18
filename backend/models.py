@@ -267,7 +267,7 @@ def user_public(doc: dict) -> dict:
         "is_guest": bool(doc.get("is_guest")),
         "paid_practice": bool(doc.get("paid_practice")),
         "practice_rate": int(doc.get("practice_rate") or 50),
-        "gift_gate": bool(doc.get("gift_gate")),
+        "gift_gate": bool(doc.get("gift_gate")) and not bool(doc.get("paid_practice")),
         "gift_gate_min": int(doc.get("gift_gate_min") or 20),
     }
 
@@ -296,6 +296,6 @@ def user_card(doc: dict) -> dict:
         "bio": doc.get("bio"),
         "paid_practice": bool(doc.get("paid_practice")),
         "practice_rate": int(doc.get("practice_rate") or 50),
-        "gift_gate": bool(doc.get("gift_gate")),
+        "gift_gate": bool(doc.get("gift_gate")) and not bool(doc.get("paid_practice")),
         "gift_gate_min": int(doc.get("gift_gate_min") or 20),
     }

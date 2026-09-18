@@ -464,7 +464,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     rowLabel: { flex: 1, fontFamily: fonts.textSemi, fontSize: 15.5, color: colors.onSurface },
     modalRoot: { flex: 1, alignItems: "center", justifyContent: "center", padding: 26 },
-    modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(15,23,42,0.5)" },
+    modalBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(15,23,42,0.5)" },
     modalCard: {
       width: "100%",
       backgroundColor: colors.surface,

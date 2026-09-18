@@ -1,0 +1,66 @@
+{
+  "summary": "Iteration 36 tested new practice-filter backend matching/validation plus 45s/30s RTC countdown behavior, then ran mobile-first call UI checks (filter sheet + top ringing cards) with two QA accounts.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/rtc/practice/partners",
+        "issue": "Country filter positive-match assertion was skipped in automated run because QA2 profile had no country value to match against; invalid-value 422 checks still passed."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "CallFilterSheet",
+        "issue": "Intermittent web/mobile rendering issue: in one reproducible run, filter sheet opened with geometry far below viewport (sheet top ~747 at vh 667) and country picker became untappable (Element is outside viewport). In another run it rendered correctly and Apply worked.",
+        "testID": "call-filter-sheet / call-filter-country-picker",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Call filter full interaction (country/native/search chips/apply)",
+        "issue": "Flow is flaky in automation: sometimes works and applies, sometimes picker taps fail due off-viewport sheet position in same build.",
+        "affected_testIDs": [
+          "call-open-filters",
+          "call-filter-country-picker",
+          "call-filter-apply"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration36_practice_filters_rtc.py",
+    "/app/test_reports/pytest/iteration36.xml",
+    "/app/test_reports/iter36_shots/filter_open_final.jpg",
+    "/app/test_reports/iter36_shots/ringing_cards.jpg",
+    "/app/test_reports/iter36_shots/outgoing_top_card.jpg",
+    "/app/test_reports/iter36_shots/incoming_top_card.jpg",
+    "/app/test_reports/iter36_shots/call_connected_after_accept.jpg"
+  ],
+  "action_items": [
+    "Stabilize CallFilterSheet web positioning/open sequence (likely modal+KAV/animation timing race) so picker rows are always in viewport and tappable.",
+    "For deterministic QA, set/seed country metadata on at least one approved QA profile so country filter positive-match checks can always be executed.",
+    "Re-run full filter interaction regression after sheet positioning fix (country/native/chips + backdrop discard + reset/apply clear)."
+  ],
+  "critical_code_review_comments": [
+    "Backend target features tested in this iteration passed: direct-call re-checks stored availability filters, random match enforces both sides' preferences, /rtc/calls and random reserve return authoritative expires_at, 45s no-answer and 30s connecting timeouts broadcast call_end.",
+    "Minor API hygiene: use-practice-calls currently builds partner URL with trailing '&' when no filters are active (`...partners?language=all&`); functional but noisy."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration36_practice_filters_rtc.py",
+    "/app/test_reports/iteration_36.json"
+  ],
+  "success_rate": {
+    "backend": "83% (5 passed / 1 skipped in iteration36 target suite)",
+    "frontend": "85% (ringing UX accept/reject/cancel/timeout + top card countdown passed; filter sheet interaction is flaky)"
+  },
+  "seed_data_creation": "No new accounts created. No DB seeds added. QA profiles restored for edited language fields in backend tests.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Do not assume filter sheet broken globally: single-context probe at 390x667 showed correct geometry and clickable Apply, but multi-step/mobile runs intermittently rendered sheet/picker off-viewport. Ringing UX is stable: outgoing/incoming top cards show countdown, no full controls pre-accept, accept opens call controls, reject/cancel/timeout close both overlays.",
+  "rca_of_issue": "Likely frontend race condition in filter modal positioning on web (modal open while state/loading/layout animation in progress). Repro pattern: open /call, trigger filters quickly in longer scripted flow; picker tap fails with outside-viewport error and geometry reports sheet below viewport. Mitigation during testing: wait until filter button enabled and use isolated single-context open; this reduced failure but did not remove intermittent behavior."
+}

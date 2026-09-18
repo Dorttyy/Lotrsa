@@ -50,7 +50,7 @@ export default function Connect() {
   const [catSheet, setCatSheet] = useState<null | "gender" | "city">(null);
   const [addLangOpen, setAddLangOpen] = useState(false);
   const [addingLang, setAddingLang] = useState(false);
-  const [vipBusy, setVipBusy] = useState(false);
+  const vipBusy = false;
 
   const load = useCallback(async () => {
     if (!user) return; // wait for auth to hydrate (fresh page loads)
@@ -204,15 +204,8 @@ export default function Connect() {
 
   const upgradeVip = async () => {
     if (vipBusy) return;
-    setVipBusy(true);
-    try {
-      const updated = await api.post<User>("/users/me/vip");
-      setUser(updated);
-    } catch {
-      Alert.alert("VIP", "Could not upgrade. Try again.");
-    } finally {
-      setVipBusy(false);
-    }
+    setAddLangOpen(false);
+    router.push("/vip");
   };
 
   const renderCard = ({ item }: { item: User }) => (
@@ -403,7 +396,7 @@ export default function Connect() {
                   ) : (
                     <>
                       <Ionicons name="diamond" size={18} color="#FFF" />
-                      <Text style={styles.vipBtnText}>Upgrade to VIP — Free</Text>
+                      <Text style={styles.vipBtnText}>View VIP plans</Text>
                     </>
                   )}
                 </Pressable>

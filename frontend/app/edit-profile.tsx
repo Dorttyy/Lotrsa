@@ -123,6 +123,8 @@ export default function EditProfile() {
   const [draftArr, setDraftArr] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [practiceModeSaving, setPracticeModeSaving] = useState(false);
+  const practiceModeLock = React.useRef(false);
   const [savingLevelFor, setSavingLevelFor] = useState<string | null>(null);
   // Inline text editing — edits happen right in the row, no modal.
   const [inlineKey, setInlineKey] = useState<string | null>(null);
@@ -151,13 +153,21 @@ export default function EditProfile() {
 
   // ── Paid Practice (offer coin-gated practice conversations) ──
   const togglePaidPractice = async (on: boolean) => {
+    if (practiceModeLock.current) return;
+    practiceModeLock.current = true;
+    setPracticeModeSaving(true);
+    setErr(null);
     try {
       await persist({
         paid_practice: on,
+        ...(on ? { gift_gate: false } : {}),
         ...(on && !user?.practice_rate ? { practice_rate: 50 } : {}),
       });
     } catch {
       setErr("Could not update paid practice.");
+    } finally {
+      practiceModeLock.current = false;
+      setPracticeModeSaving(false);
     }
   };
   const changePracticeRate = async (delta: number) => {
@@ -171,13 +181,21 @@ export default function EditProfile() {
 
   // ── Gift-Gated Messaging (require a gift before strangers can chat) ──
   const toggleGiftGate = async (on: boolean) => {
+    if (practiceModeLock.current) return;
+    practiceModeLock.current = true;
+    setPracticeModeSaving(true);
+    setErr(null);
     try {
       await persist({
         gift_gate: on,
+        ...(on ? { paid_practice: false } : {}),
         ...(on && !user?.gift_gate_min ? { gift_gate_min: 20 } : {}),
       });
     } catch {
       setErr("Could not update gift gate.");
+    } finally {
+      practiceModeLock.current = false;
+      setPracticeModeSaving(false);
     }
   };
   const changeGiftMin = async (delta: number) => {
@@ -420,7 +438,7 @@ export default function EditProfile() {
         "VIP members can teach up to 2 extra languages. Upgrade to unlock!",
         [
           { text: "Not now", style: "cancel" },
-          { text: "Get VIP", onPress: () => router.push("/market") },
+          { text: "Get VIP", onPress: () => router.push("/vip") },
         ],
       );
       return;
@@ -1069,6 +1087,7 @@ export default function EditProfile() {
 
         {/* Paid Practice */}
         <Text style={styles.sectionHeader}>Paid Practice</Text>
+        <Text testID="practice-mode-exclusivity-note" style={styles.ppSub}>Choose one: Paid Practice or Gift-Gated Messaging. Turning one on automatically turns the other off.</Text>
         <View style={styles.card}>
           <View style={styles.ppRow}>
             <View style={{ flex: 1, paddingRight: spacing.md }}>
@@ -1080,6 +1099,7 @@ export default function EditProfile() {
             </View>
             <AppSwitch
               testID="paid-practice-switch"
+              disabled={practiceModeSaving}
               value={!!user.paid_practice}
               onValueChange={togglePaidPractice}
             />
@@ -1123,6 +1143,7 @@ export default function EditProfile() {
             </View>
             <AppSwitch
               testID="gift-gate-switch"
+              disabled={practiceModeSaving}
               value={!!user.gift_gate}
               onValueChange={toggleGiftGate}
             />

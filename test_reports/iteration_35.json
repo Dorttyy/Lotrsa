@@ -1,0 +1,60 @@
+{
+  "summary": "Iteration 35 backend+frontend testing completed for new Call language filters, random radar/search cancel, queue reservation cancellation, two-context call accept overlay, and voice-room relay membership guards.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Call language chips with 3 saved learning languages",
+        "issue": "For non-VIP users, backend /api/users/me truncates learning_languages to 1 (users.py lines 67-74). QA1 needed VIP upgrade during test to realize All+Spanish+French+Bengali. This may conflict with requested 'up to 3 saved learning languages' behavior unless intentionally VIP-only.",
+        "affected_testIDs": [
+          "practice-language-all",
+          "practice-language-es",
+          "practice-language-fr",
+          "practice-language-bn"
+        ]
+      },
+      {
+        "flow": "Availability switch accessibility verification",
+        "issue": "practice-availability-switch did not expose aria-checked in web runtime (value null), reducing confidence for automated checked-state assertions though behavior remained functionally ON across filter changes.",
+        "affected_testIDs": [
+          "practice-availability-switch"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration35_calls_filters_rooms.py",
+    "/app/test_reports/pytest/iteration35.xml",
+    "/app/test_reports/iter35_shots/frontend_load_375.jpg",
+    "/app/test_reports/iter35_shots/frontend_iter35_success.jpg"
+  ],
+  "action_items": [
+    "Confirm product intent: should All+up-to-3 learning-language chips be available to non-VIP users as well? If yes, remove non-VIP truncation in /api/users/me for this scope.",
+    "Add deterministic checked-state attribute/test hook for practice availability switch on web to improve automation reliability.",
+    "Provide /tmp/call-refined.jpg artifact in environment if it remains a release validation requirement (file was not present during this run).",
+    "Optional follow-up: extend frontend room test to cover role-change/mute/end overlays and transient network failure handling in RoomSessionContext."
+  ],
+  "critical_code_review_comments": [
+    "users.py update_me currently enforces non-VIP learning_languages[:1], which constrains the new All+3 language filter feature under regular accounts.",
+    "Backend practice/queue and room relay logic is robust in this run: queue delete invalidates pending random reservations, and room relay blocks outsiders + revoked members."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration35_calls_filters_rooms.py",
+    "/app/test_reports/iteration_35.json"
+  ],
+  "success_rate": {
+    "backend": "100% (6/6 pytest tests passed)",
+    "frontend": "88% (core requested call/filter/random/call-overlay and room create/join passed; some accessibility/extended room scenarios remain)"
+  },
+  "seed_data_creation": "No new accounts created. Temporary QA1/QA2 language profile changes were restored. QA1 was temporarily upgraded to VIP to validate 3-language chip scenario.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Two isolated browser contexts worked via page.context.browser.new_context. Verified: All+es+fr+bn chips (with QA1 VIP), no English filler, All shows cross-language QA2 while es filter hides QA2, width 320/390/430 no overflow, random-search-animation toggles correctly, two-context accept opens full call overlay and controls work, one-language mode shows only All+Spanish, room create/join works. Console sanity check found no prior 'accessible=false' warning after mute flow.",
+  "rca_of_issue": "Main frontend blocker during early attempts was not selector instability; it was data-policy mismatch. Repro: set QA1 learning_languages=[es,fr,bn] via /api/users/me while non-VIP, then open /call. Observed only All+one language. Root cause: /backend/routes/users.py truncates non-VIP learning_languages to first entry. Mitigation for testing used temporary POST /api/users/me/vip before profile update, then restored profile afterwards."
+}

@@ -1,11 +1,11 @@
 import * as Clipboard from "expo-clipboard";
 import { Ionicons, MaterialCommunityIcons } from "@/src/ui/icons";
+import { genderColors } from "@/src/theme";
+import { useExclusiveVoicePlayer } from "@/src/hooks/use-exclusive-voice-player";
 import {
   AudioModule,
   RecordingPresets,
   setAudioModeAsync,
-  useAudioPlayer,
-  useAudioPlayerStatus,
   useAudioRecorder,
 } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
@@ -1297,7 +1297,7 @@ export default function ChatScreen() {
               <View
                 style={[
                   styles.genderPill,
-                  { backgroundColor: partner.gender === "female" ? "#EC4899" : "#3B82F6" },
+                  { backgroundColor: partner.gender === "female" ? genderColors.femaleBackground : genderColors.maleBackground },
                 ]}
               >
                 <Ionicons
@@ -1306,7 +1306,7 @@ export default function ChatScreen() {
                   color="#FFFFFF"
                 />
                 {partner.age ? (
-                  <Text style={styles.genderPillText}>{partner.age}</Text>
+                  <Text style={[styles.genderPillText, { color: partner.gender === "female" ? genderColors.female : genderColors.male }]}>{partner.age}</Text>
                 ) : null}
               </View>
             ) : null}
@@ -4167,16 +4167,7 @@ function ChatRecPreviewPill({
   bars: number[];
 }) {
   const { colors: themeColors } = useTheme();
-  const player = useAudioPlayer(uri || null);
-  const status = useAudioPlayerStatus(player);
-  const toggle = () => {
-    if (status.playing) {
-      player.pause();
-    } else {
-      if (status.didJustFinish) player.seekTo(0);
-      player.play();
-    }
-  };
+  const { status, toggle } = useExclusiveVoicePlayer(uri || null);
   return (
     <View
       style={[recPillStyles.pill, { backgroundColor: themeColors.brand }]}

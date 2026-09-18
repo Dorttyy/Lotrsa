@@ -1,0 +1,67 @@
+{
+  "summary": "Iteration 37 validated RevenueCat Test Store UI flow, billing safety endpoints, paid_practice/gift_gate mutual exclusion, call filter sheet geometry on 320/390/430, uploaded filter icon marker, and round-flag rendering. One backend P0 mismatch found.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/market/purchasevipitems",
+        "issue": "Returns 404 instead of expected 410 deprecation response for legacy VIP purchase route.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Voice exclusive playback (A stops when B starts)",
+        "issue": "Could not execute runtime exclusivity assertions because QA chat lacked >=2 voice-message bubbles in current dataset.",
+        "affected_testIDs": [
+          "voice-message-*-play"
+        ]
+      },
+      {
+        "flow": "Preview host stability",
+        "issue": "One transient Cloudflare 502 host error occurred during a restore attempt, then recovered immediately on retry.",
+        "affected_testIDs": []
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "Native home-bar/keyboard physical insets",
+        "issue": "Physical device verification unavailable in web browser automation; cannot claim all-phone native inset behavior." 
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration37_billing_and_practice_toggle.py",
+    "/app/test_reports/pytest/iteration37_backend.xml",
+    "/app/test_reports/iter37_shots/frontend_load_375.jpg",
+    "/app/test_reports/iter37_shots/call_filter_final.jpg",
+    "/app/test_reports/iter37_shots/final_state.jpg"
+  ],
+  "action_items": [
+    "Return explicit 410 for /api/market/purchasevipitems (legacy billing shutdown contract).",
+    "Add/seed two QA voice messages (or stable fixture chat) and rerun exclusive voice playback runtime checks.",
+    "Run native-device pass for home-bar/keyboard overlap claims before closing bottom-overlap scope."
+  ],
+  "critical_code_review_comments": [
+    "Backend mutual-exclusion logic behaved correctly in tests: both true -> 422, enabling one mode forced the other false, concurrent updates did not persist both true.",
+    "RevenueCat web Test Store behavior matched intended safety shape: SIMULATED banner shown, prices sourced from SDK offerings ($9.99/$79.99), cancel path did not activate Pro, and QA2 did not inherit QA1 subscription state.",
+    "Static sweep found no remaining StyleSheet.absoluteFillObject usage under frontend/app and frontend/src."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration37_billing_and_practice_toggle.py",
+    "/app/test_reports/iteration_37.json"
+  ],
+  "success_rate": {
+    "backend": "86% (6 passed / 1 failed)",
+    "frontend": "82% (core targeted flows passed; voice-exclusive runtime proof pending fixture/native limits)"
+  },
+  "seed_data_creation": "No new user accounts. QA2 paid/gift switches were restored to both false after UI checks.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use existing QA accounts only. For voice exclusivity verification, pre-seed at least two voice messages in QA conversation before running UI automation. Call filter geometry was stable at 320/390/430 in this run with apply button fully in viewport.",
+  "rca_of_issue": "Legacy endpoint deprecation inconsistency: most billing shutdown routes return HTTP 410 with guidance, but /api/market/purchasevipitems is currently unresolved by router and returns 404. This breaks the explicit shutdown contract expected by client and tests."
+}

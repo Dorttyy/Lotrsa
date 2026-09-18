@@ -239,6 +239,8 @@ import {
 
 import { MicGlyph, MicOffGlyph } from "@/src/ui/MicGlyph";
 import { resolveUploadedAction, UploadedActionIcon } from "@/src/ui/UploadedActionIcon";
+import { FilterGlyph } from "@/src/ui/FilterGlyph";
+import { genderColors } from "@/src/theme";
 
 type LucideCmp = React.ComponentType<{
   size?: number;
@@ -752,6 +754,12 @@ function createFamily() {
     testID,
     accessibilityLabel,
   }: IconProps) => {
+    const filterName = (name || "").replace(/-(outline|sharp)$/i, "");
+    if (filterName === "male") color = genderColors.male;
+    if (filterName === "female") color = genderColors.female;
+    if (["options", "filter", "funnel", "tune", "tune-variant", "tune-vertical"].includes(filterName)) {
+      return <FilterGlyph size={size} color={color} style={style} testID={testID} accessibilityLabel={accessibilityLabel} />;
+    }
     const artwork = resolveUploadedAction(name);
     if (artwork) {
       return (

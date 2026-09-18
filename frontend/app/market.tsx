@@ -21,12 +21,11 @@ import { fonts, radius, shadow, spacing, ThemeColors } from "@/src/theme";
 import { api, MarketItem, User } from "@/src/utils/api";
 
 const SECTIONS: { type: MarketItem["type"]; title: string; sub: string }[] = [
-  { type: "vip", title: "VIP Membership", sub: "Unlock 3 learning languages, unlimited chats & a VIP badge" },
   { type: "badge", title: "Name Badges", sub: "Show off next to your name — 7 days" },
   { type: "frame", title: "Avatar Rings", sub: "Beautiful ring around your avatar — 7 days" },
 ];
 
-const TOPUP_AMOUNTS = [100, 500, 1000, 2000];
+const TOPUP_AMOUNTS: number[] = [];
 
 export default function Market() {
   const router = useRouter();
@@ -39,7 +38,7 @@ export default function Market() {
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState<string | null>(null);
   const [topupOpen, setTopupOpen] = useState(false);
-  const [toppingUp, setToppingUp] = useState<number | null>(null);
+  const toppingUp: number | null = null;
 
   const load = useCallback(async () => {
     try {
@@ -79,19 +78,9 @@ export default function Market() {
     }
   };
 
-  const topup = async (amount: number) => {
-    if (toppingUp) return;
-    setToppingUp(amount);
-    try {
-      const res = await api.post<{ coins: number }>("/market/topup", { amount });
-      setCoins(res.coins);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setTopupOpen(false);
-    } catch (e) {
-      Alert.alert("Top Up", e instanceof Error ? e.message : "Could not top up.");
-    } finally {
-      setToppingUp(null);
-    }
+  const topup = async () => {
+    setTopupOpen(false);
+    router.push("/coins");
   };
 
   return (
@@ -100,12 +89,12 @@ export default function Market() {
         <BackButton testID="market-back-btn" />
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Marketplace</Text>
-          <Text style={styles.headerSub}>Spend coins on VIP, badges & rings</Text>
+          <Text style={styles.headerSub}>Spend your coins on gifts, badges & rings</Text>
         </View>
         <Pressable
           style={styles.wallet}
           testID="wallet-balance"
-          onPress={() => setTopupOpen(true)}
+          onPress={() => router.push("/coins")}
         >
           <Text style={styles.walletCoin}>🪙</Text>
           <Text style={styles.walletText}>{coins}</Text>
@@ -120,6 +109,7 @@ export default function Market() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.list}>
+          <View style={styles.card}><Text style={styles.cardName}>VIP Membership</Text><Text style={styles.cardDesc}>Subscriptions are purchased securely through your app store.</Text><Pressable testID="market-vip-store" onPress={() => router.push("/vip")} style={styles.buyBtn}><Text style={styles.buyText}>View VIP plans</Text></Pressable></View>
           {SECTIONS.map((section) => (
             <View key={section.type}>
               <Text style={styles.sectionTitle}>{section.title}</Text>
@@ -184,7 +174,7 @@ export default function Market() {
             <View style={styles.demoNote}>
               <Ionicons name="information-circle" size={16} color={colors.brand} />
               <Text style={styles.demoNoteText}>
-                Demo mode — coins are added instantly, no payment needed.
+                Coin purchases require verified store billing.
               </Text>
             </View>
             <View style={styles.amountGrid}>
@@ -193,7 +183,7 @@ export default function Market() {
                   key={amount}
                   testID={`topup-${amount}`}
                   style={styles.amountBtn}
-                  onPress={() => topup(amount)}
+                  onPress={topup}
                   disabled={toppingUp !== null}
                 >
                   {toppingUp === amount ? (

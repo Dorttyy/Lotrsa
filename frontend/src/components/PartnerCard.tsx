@@ -11,9 +11,8 @@ import dayjs from "dayjs";
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Avatar } from "@/src/components/Avatar";
+import { ProfileAvatar } from "@/src/components/ProfileAvatar";
 import { VipBadge } from "@/src/components/Badges";
-import { countryToCode } from "@/src/constants/countries";
 import { PROFICIENCY_LEVELS } from "@/src/constants/languages";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
@@ -117,15 +116,7 @@ export const PartnerCard: React.FC<Props> = ({
       onPress={onPress}
     >
       <View style={styles.avatarCol}>
-        <Avatar
-          name={item.name}
-          url={item.avatar_url}
-          size={54}
-          flagCode={countryToCode(item.country)}
-          online={item.is_online && !item.boosted}
-          frame={item.active_frame}
-          boosted={item.boosted}
-        />
+        <ProfileAvatar user={item} testID={`${testIDPrefix}-avatar-${item.id}`} />
         {item.boosted ? (
           <View
             style={styles.activeRow}

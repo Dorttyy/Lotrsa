@@ -160,6 +160,14 @@ export const radius = {
   pill: 999,
 };
 
+// Gender marks intentionally keep the same identity colours in both themes.
+export const genderColors = {
+  male: "#3B82F6",
+  female: "#EC4899",
+  maleBackground: "#3B82F626",
+  femaleBackground: "#EC489926",
+} as const;
+
 export const fonts = {
   // HelloTalk-style clean typography — Inter for both display headings and
   // body text. Weight scale: 400 (regular), 500 (medium), 600 (semibold),

@@ -270,9 +270,9 @@ async def ensure_gift_unlocked(current_user: dict, partner_id: str):
     """If the recipient requires a gift before chatting, the sender must have
     already sent a qualifying gift (recorded as a gift unlock)."""
     partner = await users_col.find_one(
-        {"_id": partner_id}, {"gift_gate": 1, "gift_gate_min": 1}
+        {"_id": partner_id}, {"gift_gate": 1, "gift_gate_min": 1, "paid_practice": 1}
     )
-    if not partner or not partner.get("gift_gate"):
+    if not partner or not partner.get("gift_gate") or partner.get("paid_practice"):
         return
     unlock = await gift_unlocks_col.find_one(
         {"buyer_id": current_user["_id"], "partner_id": partner_id}
@@ -759,10 +759,10 @@ async def send_gift(
     )
 
     partner = await users_col.find_one(
-        {"_id": partner_id}, {"gift_gate": 1, "gift_gate_min": 1}
+        {"_id": partner_id}, {"gift_gate": 1, "gift_gate_min": 1, "paid_practice": 1}
     )
     unlocked = False
-    if partner and partner.get("gift_gate"):
+    if partner and partner.get("gift_gate") and not partner.get("paid_practice"):
         if price >= int(partner.get("gift_gate_min") or 20):
             await gift_unlocks_col.update_one(
                 {"buyer_id": current_user["_id"], "partner_id": partner_id},

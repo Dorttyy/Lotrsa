@@ -1,0 +1,37 @@
+{
+  "date": "2026-09-18",
+  "overall_status": "partial_external_billing_blocker",
+  "backend_regression": {
+    "passed": 17,
+    "failed": 0,
+    "report": "/app/test_reports/pytest/final_backend_regression.xml",
+    "scope": ["RTC practice discovery/matching", "caption consent and real local speech translation", "call/room guards", "mutually exclusive paid/gift preferences", "legacy unverified purchase paths closed"]
+  },
+  "frontend_verified": [
+    "Call and Connect filter opening/search/apply/reset; round country/language flags; exact uploaded filter icon",
+    "Top outgoing/incoming call cards and shared countdown, accept/decline/cancel/end",
+    "Shared profile avatar presentation; gender colour consistency; tested phone viewport layouts",
+    "Actual voice A to B playback: A paused and rewound, B alone playing, one-shot finish, route blur stops audio",
+    "RevenueCat SDK offers recurring product prices, binds stable account ID and completes simulated Test Store receipt"
+  ],
+  "billing_blocker": {
+    "expected_entitlement": "pro",
+    "actual_sdk_entitlement_key": "elevate_familiar_pro",
+    "sdk_subscription_product": "monthly",
+    "identity_and_sdk_key_verified": true,
+    "same_price_products_upsert_retried": true,
+    "resolved": false,
+    "support_guidance_relayed_to_user": true,
+    "live_purchases_enabled": false,
+    "coins_store_checkout_available": false,
+    "no_client_side_backend_vip_grant": true
+  },
+  "remaining": [
+    "Resolve managed RevenueCat setup versus runtime entitlement/offerings contract",
+    "Verified native production VIP fulfilment, consumable coin verification and store-console prerequisites",
+    "Seven-day once-account/device trial, Google/Apple sign-in and email code login",
+    "Physical iOS/Android home-bar, keyboard, WebRTC/PCM and store purchase validation",
+    "16 pre-existing unrelated TypeScript diagnostics"
+  ],
+  "simulation_disclosure": "RevenueCat Test Store receipts are explicitly simulated; no real money charged. Other application APIs are not mocked."
+}

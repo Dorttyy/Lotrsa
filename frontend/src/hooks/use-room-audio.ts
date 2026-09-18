@@ -63,6 +63,9 @@ export function useRoomAudio({
   );
   const pendingIceRef = useRef<Map<string, any[]>>(new Map());
   const localStreamRef = useRef<any>(null);
+  const localStreamPendingRef = useRef<Promise<any> | null>(null);
+  const creatingPeersRef = useRef<Map<string, Promise<any>>>(new Map());
+  const aliveRef = useRef(true);
   const localMeterRef = useRef<LevelMeter | null>(null);
   const me = members.find((m) => m.id === myId);
   const iSpeak = !!me && (me.role === "host" || me.role === "speaker");
@@ -142,12 +145,17 @@ export function useRoomAudio({
 
   const ensureLocalStream = async () => {
     if (!iSpeakRef.current) return null;
+    if (localStreamPendingRef.current) return localStreamPendingRef.current;
     if (!localStreamRef.current) {
-      try {
+      const pending = (async () => { try {
         // Own the native audio session before opening the mic (iOS needs the
         // session configured first, otherwise capture can come up silent).
         if (getRTC()?.native) audioSession.start(true);
         const stream = await getMicStream();
+        if (!aliveRef.current || !iSpeakRef.current) {
+          stream.getTracks().forEach((t: any) => t.stop());
+          return null;
+        }
         localStreamRef.current = stream;
         stream.getAudioTracks().forEach((t: any) => {
           t.enabled = micOnRef.current;
@@ -159,6 +167,11 @@ export function useRoomAudio({
         alertMicError(err, "Can't turn on your mic");
         return null;
       }
+      return localStreamRef.current;
+      })();
+      localStreamPendingRef.current = pending;
+      try { return await pending; }
+      finally { localStreamPendingRef.current = null; }
     }
     return localStreamRef.current;
   };
@@ -222,14 +235,16 @@ export function useRoomAudio({
     reconnectTimersRef.current.set(peerId, timer);
   };
 
-  const createPeer = async (peerId: string) => {
+  const createPeerOnce = async (peerId: string) => {
     const rtc = getRTC();
     if (!rtc) throw new Error("webrtc-unavailable");
     const config = await getIceConfig();
+    if (!aliveRef.current) return null;
     const pc = new rtc.PC(config);
     peersRef.current.set(peerId, pc);
     setPeerState(peerId, "JOINING");
     const stream = await ensureLocalStream();
+    if (!aliveRef.current || peersRef.current.get(peerId) !== pc) { pc.close?.(); return null; }
     if (stream) {
       stream.getTracks().forEach((t: any) => pc.addTrack(t, stream));
     } else {
@@ -289,6 +304,20 @@ export function useRoomAudio({
     return pc;
   };
 
+  const createPeer = async (peerId: string) => {
+    const pending = creatingPeersRef.current.get(peerId);
+    if (pending) return pending;
+    const task = createPeerOnce(peerId);
+    creatingPeersRef.current.set(peerId, task);
+    try { return await task; }
+    finally { creatingPeersRef.current.delete(peerId); }
+  };
+
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => { aliveRef.current = false; };
+  }, []);
+
   // Connect/disconnect peers as membership changes
   useEffect(() => {
     if (!webrtcAvailable() || !me) return;
@@ -333,8 +362,11 @@ export function useRoomAudio({
             });
             return;
           }
+          const earlyIce = pendingIceRef.current.get(from) || [];
           closePeer(from);
+          pendingIceRef.current.set(from, earlyIce);
           const pc = await createPeer(from);
+          if (!pc) return;
           await pc.setRemoteDescription(event.sdp);
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
@@ -413,7 +445,6 @@ export function useRoomAudio({
       }
     }, LEVEL_POLL_MS);
     return () => clearInterval(iv);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onSpeakingChange, myId]);
 
   // Native audio session: route voice-room audio to the loudspeaker for the

@@ -1,10 +1,9 @@
 import { Ionicons, MaterialCommunityIcons } from "@/src/ui/icons";
+import { useExclusiveVoicePlayer } from "@/src/hooks/use-exclusive-voice-player";
 import {
   AudioModule,
   RecordingPresets,
   setAudioModeAsync,
-  useAudioPlayer,
-  useAudioPlayerStatus,
   useAudioRecorder,
 } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
@@ -100,24 +99,13 @@ function ClipPill({
   styles: ReturnType<typeof makeStyles>;
   onRemove: () => void;
 }) {
-  const player = useAudioPlayer(uri);
-  const status = useAudioPlayerStatus(player);
+  const { status, toggle } = useExclusiveVoicePlayer(uri);
   const totalSec =
     status.duration > 0 ? status.duration : durationMs / 1000;
   const shown = status.playing
     ? Math.max(0, totalSec - (status.currentTime || 0))
     : totalSec;
 
-  const toggle = () => {
-    if (status.playing) {
-      player.pause();
-    } else {
-      if (status.didJustFinish || (status.currentTime || 0) >= totalSec - 0.1) {
-        player.seekTo(0);
-      }
-      player.play();
-    }
-  };
 
   return (
     <View style={styles.clipPill} testID="compose-voice-chip">

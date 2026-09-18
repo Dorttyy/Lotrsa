@@ -1,4 +1,4 @@
-import { Ionicons, MaterialCommunityIcons } from "@/src/ui/icons";
+import { Ionicons } from "@/src/ui/icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -18,13 +18,6 @@ import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
 import { api } from "@/src/utils/api";
 
 const PURPLE = "#0E9AE0";
-const VIP_PACKS = [
-  { days: 3, cost: 94 },
-  { days: 7, cost: 218 },
-  { days: 30, cost: 931 },
-  { days: 60, cost: 1862 },
-  { days: 90, cost: 2793 },
-];
 
 const notify = (t: string, m: string) => {
   if (Platform.OS === "web") window.alert(`${t}\n\n${m}`);
@@ -38,7 +31,6 @@ export default function RedeemDiamonds() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [diamonds, setDiamonds] = useState(0);
-  const [selVip, setSelVip] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -60,16 +52,7 @@ export default function RedeemDiamonds() {
   };
 
   const redeemVip = async () => {
-    if (!selVip) return;
-    try {
-      await api.post("/market/redeem", { what: "vip", days: selVip });
-      api.get<any>("/auth/me").then(setUser).catch(() => {});
-      const w = await api.get<{ diamonds: number }>("/market/wallet");
-      setDiamonds(w.diamonds);
-      notify("VIP activated! 👑", `${selVip} days of VIP added to your account.`);
-    } catch (e) {
-      notify("Redeem VIP", e instanceof Error ? e.message : "Could not redeem.");
-    }
+    router.push("/vip");
   };
 
   return (
@@ -79,7 +62,7 @@ export default function RedeemDiamonds() {
           <Ionicons name="chevron-back" size={26} color={colors.onSurface} />
         </Pressable>
         <Text style={styles.title}>Redeem diamonds</Text>
-        <Pressable hitSlop={8} onPress={() => notify("Diamonds", "Earn diamonds when partners send you gifts. Redeem them for coins or VIP!")}>
+        <Pressable testID="diamonds-info" hitSlop={8} onPress={() => notify("Diamonds", "Earn diamonds when partners send you gifts and exchange them for coins. VIP subscriptions are purchased through your app store.")}>
           <Ionicons name="information-circle-outline" size={23} color={colors.onSurface} />
         </Pressable>
       </View>
@@ -114,41 +97,17 @@ export default function RedeemDiamonds() {
           </Pressable>
         </View>
 
-        <Text style={styles.section}>Redeem VIP</Text>
-        <View style={styles.grid}>
-          {VIP_PACKS.map((p) => {
-            const on = selVip === p.days;
-            return (
-              <Pressable
-                key={p.days}
-                testID={`rd-vip-${p.days}`}
-                style={[styles.vipCard, on && styles.vipCardOn]}
-                onPress={() => setSelVip(p.days)}
-              >
-                <View style={styles.vipBadge}>
-                  <MaterialCommunityIcons name="crown" size={20} color="#8A6D00" />
-                  <Text style={styles.vipBadgeText}>VIP</Text>
-                </View>
-                <Text style={styles.vipDays}>{p.days} days</Text>
-                <Text style={styles.dimText}>VIP Experience</Text>
-                <View style={styles.costPill}>
-                  <Text style={{ fontSize: 11 }}>💎</Text>
-                  <Text style={styles.costText}>{p.cost}</Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
+        <Text style={styles.section}>VIP Membership</Text>
+        <Text testID="diamonds-vip-store-note" style={styles.dimText}>VIP subscriptions are purchased through your app store in its local currency. Diamonds can still be exchanged for coins.</Text>
       </ScrollView>
 
       <View style={styles.footer}>
         <Pressable
           testID="rd-redeem-btn"
-          style={[styles.redeemBtn, !selVip && { opacity: 0.45 }]}
-          disabled={!selVip}
+          style={styles.redeemBtn}
           onPress={redeemVip}
         >
-          <Text style={styles.redeemBtnText}>Redeem diamonds</Text>
+          <Text style={styles.redeemBtnText}>View VIP subscriptions</Text>
         </Pressable>
       </View>
     </SafeAreaView>

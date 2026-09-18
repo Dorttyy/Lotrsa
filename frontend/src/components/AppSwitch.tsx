@@ -1,5 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import { useTheme } from "@/src/context/ThemeContext";
 
 /**
  * iOS-style pill switch used everywhere in the app (reference design):
@@ -14,27 +15,30 @@ export const AppSwitch: React.FC<{
   trackColor?: { true?: string; false?: string };
   thumbColor?: string; // accepted for API compat; thumb stays white
 }> = ({ value, onValueChange, disabled, testID, trackColor }) => {
-  const onColor = trackColor?.true || "#0E9AE0";
-  const offColor = trackColor?.false || "#DDDDE3";
+  const { colors } = useTheme();
+  const onColor = trackColor?.true || colors.brand;
+  const offColor = trackColor?.false || colors.borderStrong;
   return (
     <Pressable
       testID={testID}
+      role="switch"
+      aria-checked={value}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value, disabled: !!disabled }}
       disabled={disabled}
       onPress={() => onValueChange?.(!value)}
       hitSlop={6}
-      style={[
-        styles.track,
-        { backgroundColor: value ? onColor : offColor },
-        value ? styles.trackOn : styles.trackOff,
-        disabled && { opacity: 0.5 },
-      ]}
+      style={[styles.touchTarget, disabled && { opacity: 0.5 }]}
     >
+      <View style={[styles.track, { backgroundColor: value ? onColor : offColor }, value ? styles.trackOn : styles.trackOff]}>
       <View style={styles.thumb} />
+      </View>
     </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
+  touchTarget: { width: 50, height: 44, justifyContent: "center" },
   track: {
     width: 50,
     height: 30,

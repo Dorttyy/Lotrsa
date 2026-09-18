@@ -84,11 +84,11 @@ export default function MomentsReport() {
       <LinearGradient colors={["#0E9AE0", "#0A6B9E"]} style={StyleSheet.absoluteFill} />
       <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
         <View style={styles.header}>
-          <Pressable testID="rep-back" onPress={() => router.back()} hitSlop={10}>
+          <Pressable testID="rep-back" style={styles.headerAction} onPress={() => router.back()} hitSlop={10}>
             <Ionicons name="chevron-back" size={26} color="#FFFFFF" />
           </Pressable>
           <AppTitle variant="navigation" testID="moments-report-header-title" style={styles.title}>Weekly Moments Report</AppTitle>
-          <Pressable testID="rep-share" onPress={share} hitSlop={8}>
+          <Pressable testID="rep-share" style={styles.headerAction} onPress={share} hitSlop={8}>
             <Ionicons name="share-social" size={22} color="#FFFFFF" />
           </Pressable>
         </View>
@@ -211,9 +211,9 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       textAlign: "center",
       fontFamily: fonts.displayBold,
-      fontSize: 24,
       color: "#FFFFFF",
     },
+    headerAction: { width: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
     body: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
     range: {
       fontFamily: fonts.textBold,

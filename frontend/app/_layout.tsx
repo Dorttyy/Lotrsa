@@ -36,6 +36,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@/src/ui/icons";
 
 import { AuthProvider } from "@/src/context/AuthContext";
+import { initializeRevenueCat, SubscriptionProvider } from "@/src/billing/revenuecat";
 import { CallProvider } from "@/src/context/CallContext";
 import { NetworkProvider, useNetwork } from "@/src/context/NetworkContext";
 import { NotificationsProvider } from "@/src/context/NotificationsContext";
@@ -49,6 +50,7 @@ import { AppErrorScreen } from "@/src/components/AppErrorScreen";
 import { Notifications, pushSupported } from "@/src/utils/push-native";
 
 SplashScreen.preventAutoHideAsync();
+initializeRevenueCat();
 
 // Router-level crash screen — generic, no technical details or builder branding.
 export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
@@ -111,6 +113,7 @@ function ThemedApp() {
   }, [mode, colors.surface]);
   return (
     <AuthProvider>
+      <SubscriptionProvider>
       <NotificationsProvider>
         <CallProvider>
           <RoomSessionProvider>
@@ -128,6 +131,7 @@ function ThemedApp() {
           </RoomSessionProvider>
         </CallProvider>
       </NotificationsProvider>
+      </SubscriptionProvider>
     </AuthProvider>
   );
 }

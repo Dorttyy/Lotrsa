@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="4" time="8.590" timestamp="2026-09-18T04:46:35.837099+00:00" hostname="agent-env-da20f7cf-66a0-4b04-8311-f80514897e4d"><testcase classname="backend.tests.test_iteration34_calls_practice_captions.TestPracticeAvailabilityAndQueue" name="test_availability_requires_online_ws_and_partner_listing" time="1.675" /><testcase classname="backend.tests.test_iteration34_calls_practice_captions.TestPracticeAvailabilityAndQueue" name="test_queue_match_cancel_and_single_reserved_callid" time="1.043" /><testcase classname="backend.tests.test_iteration34_calls_practice_captions.TestRtcSignalingAndCaptionGates" name="test_participant_only_signaling_and_media_ready_connection_gate" time="1.841" /><testcase classname="backend.tests.test_iteration34_calls_practice_captions.TestCaptionEngineRuntime" name="test_caption_audio_validation_and_local_translation_output" time="3.894"><failure message="AssertionError: expected speech_detected=true for speech fixture, got {'ok': True, 'speech_detected': False}&#10;assert False is True&#10; +  where False = &lt;built-in method get of dict object at 0xfed83f92e2c0&gt;('speech_detected')&#10; +    where &lt;built-in method get of dict object at 0xfed83f92e2c0&gt; = {'ok': True, 'speech_detected': False}.get">backend/tests/test_iteration34_calls_practice_captions.py:514: in test_caption_audio_validation_and_local_translation_output
+    asyncio.run(_case())
+/usr/local/lib/python3.11/asyncio/runners.py:190: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/asyncio/base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+backend/tests/test_iteration34_calls_practice_captions.py:464: in _case
+    assert submit_data.get("speech_detected") is True, (
+E   AssertionError: expected speech_detected=true for speech fixture, got {'ok': True, 'speech_detected': False}
+E   assert False is True
+E    +  where False = &lt;built-in method get of dict object at 0xfed83f92e2c0&gt;('speech_detected')
+E    +    where &lt;built-in method get of dict object at 0xfed83f92e2c0&gt; = {'ok': True, 'speech_detected': False}.get</failure></testcase></testsuite></testsuites>

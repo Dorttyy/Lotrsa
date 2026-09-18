@@ -53,9 +53,13 @@ async def start_call(body: CallStart, current_user: CurrentUser):
         raise HTTPException(
             status_code=403, detail="Unblock this user to start a call."
         )
-    call_id = await rtc_core.create_session(caller_id, body.receiver_id)
+    async with rtc_core.session_lock:
+        if await rtc_core.busy(caller_id) or await rtc_core.busy(body.receiver_id):
+            raise HTTPException(409, "One of you is already in a call or voice room.")
+        call_id = await rtc_core.create_session(caller_id, body.receiver_id)
     return {
         "call_id": call_id,
+        "expires_at": rtc_core.session(call_id)["expires_at"],
         "receiver_online": manager.is_online(body.receiver_id),
         "receiver": user_card(receiver),
         "iceServers": rtc_core.ice_servers(),
@@ -77,4 +81,7 @@ async def update_call_status(
     if status_val not in rtc_core.TERMINAL:
         raise HTTPException(status_code=400, detail="Invalid call status")
     await rtc_core.finish(call_id, status_val)
+    peer = s["receiver"] if current_user["_id"] == s["caller"] else s["caller"]
+    await manager.send_to_user(peer, {"type": "call_end", "call_id": call_id,
+                                      "from": current_user["_id"]})
     return {"ok": True, "status": status_val}

@@ -1,4 +1,5 @@
 import { Ionicons } from "@/src/ui/icons";
+import { genderColors } from "@/src/theme";
 import dayjs from "dayjs";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -335,16 +336,16 @@ export default function UserProfile() {
             <Text style={styles.name} numberOfLines={1}>
               {profile.name}
             </Text>
-            <View style={styles.genderPill}>
+            {!!profile.gender && <View style={[styles.genderPill, { backgroundColor: profile.gender === "female" ? genderColors.femaleBackground : genderColors.maleBackground }]}>
               <Ionicons
                 name={profile.gender === "female" ? "female" : "male"}
                 size={12}
                 color="#FFFFFF"
               />
               {profile.age ? (
-                <Text style={styles.genderPillText}>{profile.age}</Text>
+                <Text style={[styles.genderPillText, { color: profile.gender === "female" ? genderColors.female : genderColors.male }]}>{profile.age}</Text>
               ) : null}
-            </View>
+            </View>}
             {profile.is_vip && <VipBadge tier={profile.vip_tier} />}
             <View style={{ flex: 1 }} />
             <View style={styles.statusRow}>

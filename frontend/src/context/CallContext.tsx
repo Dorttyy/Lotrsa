@@ -15,6 +15,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   Vibration,
@@ -30,6 +31,9 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Avatar } from "@/src/components/Avatar";
+import { CaptionPanel } from "@/src/components/call/CaptionPanel";
+import { IncomingCallPopup } from "@/src/components/call/IncomingCallPopup";
+import { stopVoicePlayback } from "@/src/utils/voice-playback";
 import { VipBadge } from "@/src/components/Badges";
 import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -116,10 +120,12 @@ interface CallState {
   peer: User;
   callId: string;
   offerSdp?: any;
+  expiresAt?: number;
 }
 
 interface CallContextValue {
-  startCall: (peer: User) => void;
+  startCall: (peer: User, reservedCallId?: string, expiresAt?: number) => Promise<void>;
+  busy: boolean;
   sendSignal: (data: Record<string, unknown>) => void;
   subscribe: (fn: SignalHandler) => () => void;
 }
@@ -163,6 +169,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   // chat as a call-event bubble when it ends.
   const callActiveSinceRef = useRef<number | null>(null);
   const isCallerRef = useRef<boolean>(false);
+  const isCurrentCall = (callId: string) => callRef.current?.callId === callId;
 
   // Records the call outcome as a message in the chat with the peer. Only the
   // caller logs (avoids duplicate bubbles); the message syncs to both sides.
@@ -204,6 +211,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   const [peerSpeaking, setPeerSpeaking] = useState(false);
 
   const setCall = (c: CallState | null) => {
+    if (c && !callRef.current) stopVoicePlayback();
     callRef.current = c;
     setCallState(c);
   };
@@ -261,6 +269,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     setMuted(false);
     setSeconds(0);
     setPeerSpeaking(false);
+    audioSession.stop();
   };
 
   /** Apply buffered ICE candidates once the remote description is set. */
@@ -346,13 +355,21 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     }, ICE_RESTART_DELAY_MS);
   };
 
-  const createPeer = async (peerId: string) => {
+  const createPeer = async (peerId: string, callId: string) => {
     const rtc = getRTC();
     if (!rtc) throw new Error("webrtc-unavailable");
     if (rtc.native) audioSession.start(false);
     const stream = await getMicStream();
+    if (!isCurrentCall(callId)) {
+      stream.getTracks().forEach((t: any) => t.stop());
+      throw new Error("Call cancelled");
+    }
     localStreamRef.current = stream;
     const config = await getIceConfig();
+    if (!isCurrentCall(callId)) {
+      stream.getTracks().forEach((t: any) => t.stop());
+      throw new Error("Call cancelled");
+    }
     const pc = new rtc.PC(config);
     stream.getTracks().forEach((t: any) => pc.addTrack(t, stream));
     preferOpus(pc);
@@ -375,6 +392,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         clearTimeout(giveUpTimerRef.current as any);
         giveUpTimerRef.current = null;
         if (!callActiveSinceRef.current) callActiveSinceRef.current = Date.now();
+        const c = callRef.current;
+        if (c) sendSignal({ type: "call_media_ready", to: peerId, call_id: c.callId });
         setPhase("connected");
       } else if (state === "disconnected" || state === "failed") {
         beginRecovery();
@@ -401,9 +420,13 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const startCall = useCallback(
-    async (peer: User) => {
-      if (callRef.current || startingRef.current) return;
+    async (peer: User, reservedCallId?: string, reservedExpiresAt?: number) => {
+      if (callRef.current || startingRef.current) {
+        if (reservedCallId) await finalizeSession(reservedCallId, "CANCELLED");
+        return;
+      }
       if (!webrtcAvailable()) {
+        if (reservedCallId) await finalizeSession(reservedCallId, "FAILED");
         notify(
           "Audio calls",
           Platform.OS === "web"
@@ -412,26 +435,41 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         );
         return;
       }
+      if (wsRef.current?.readyState !== WebSocket.OPEN) {
+        if (reservedCallId) await finalizeSession(reservedCallId, "FAILED");
+        notify("Connecting", "Please wait for the call connection and try again.");
+        return;
+      }
       startingRef.current = true;
       let callId: string;
+      let expiresAt = Date.now() + RING_TIMEOUT_MS;
       try {
         // The server authorizes the pair and owns the callId.
-        const session = await api.post<{ call_id: string }>("/rtc/calls", {
+        const session = reservedCallId ? { call_id: reservedCallId, expires_at: reservedExpiresAt } : await api.post<{ call_id: string; expires_at: number }>("/rtc/calls", {
           receiver_id: peer.id,
         });
         callId = session.call_id;
+        expiresAt = session.expires_at || expiresAt;
       } catch (err: any) {
         startingRef.current = false;
         notify("Call failed", err?.message || "Could not start the call.");
         return;
       }
       try {
-        setCall({ status: "outgoing", phase: "outgoing", peer, callId });
+        setCall({ status: "outgoing", phase: "outgoing", peer, callId, expiresAt });
+        ringTimeoutRef.current = setTimeout(() => {
+          if (isCurrentCall(callId) && callRef.current?.status === "outgoing") {
+            sendSignal({ type: "call_end", to: peer.id, call_id: callId });
+            teardown("MISSED");
+          }
+        }, Math.max(0, expiresAt - Date.now()));
         isCallerRef.current = true;
         callActiveSinceRef.current = null;
-        const pc = await createPeer(peer.id);
+        const pc = await createPeer(peer.id, callId);
         const offer = await pc.createOffer();
+        if (!isCurrentCall(callId)) return;
         await pc.setLocalDescription(offer);
+        if (!isCurrentCall(callId)) return;
         sendSignal({
           type: "call_offer",
           to: peer.id,
@@ -440,15 +478,9 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         });
         setPhase("ringing");
         startingRef.current = false;
-        ringTimeoutRef.current = setTimeout(() => {
-          if (callRef.current?.status === "outgoing") {
-            sendSignal({ type: "call_end", to: peer.id, call_id: callId });
-            teardown("MISSED");
-            notify("No answer", `${peer.name} didn't pick up. Try again later!`);
-          }
-        }, RING_TIMEOUT_MS);
       } catch (err: any) {
         finalizeSession(callId, "FAILED");
+        if (!isCurrentCall(callId)) return;
         cleanupMedia();
         setCall(null);
         alertMicError(err, "Call failed");
@@ -460,7 +492,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const acceptCall = async () => {
     const current = callRef.current;
-    if (!current?.offerSdp) return;
+    if (!current?.offerSdp || current.status !== "incoming") return;
     if (!webrtcAvailable()) {
       sendSignal({
         type: "call_decline",
@@ -476,7 +508,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     try {
       setCall({ ...current, status: "active", phase: "connecting" });
-      const pc = await createPeer(current.peer.id);
+      const pc = await createPeer(current.peer.id, current.callId);
       await pc.setRemoteDescription(current.offerSdp);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
@@ -488,6 +520,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         sdp: answer,
       });
     } catch (err: any) {
+      if (callRef.current?.callId !== current.callId) return;
       sendSignal({
         type: "call_decline",
         to: current.peer.id,
@@ -588,9 +621,14 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
           peer: event.caller || { id: event.from, name: "Unknown" },
           callId: event.call_id,
           offerSdp: event.sdp,
+          expiresAt: event.expires_at || Date.now() + RING_TIMEOUT_MS,
         });
         isCallerRef.current = false;
         callActiveSinceRef.current = null;
+        ringTimeoutRef.current = setTimeout(() => {
+          const ringing = callRef.current;
+          if (ringing && ringing.callId === event.call_id && ringing.status === "incoming") teardown("MISSED");
+        }, Math.max(0, (event.expires_at || Date.now() + RING_TIMEOUT_MS) - Date.now()));
         break;
       }
       case "call_answer":
@@ -600,12 +638,11 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
             clearTimeout(ringTimeoutRef.current);
             ringTimeoutRef.current = null;
           }
-          await pcRef.current.setRemoteDescription(event.sdp);
-          await flushIce();
           if (current.status === "outgoing") {
-            callActiveSinceRef.current = Date.now();
             setCall({ ...current, status: "active", phase: "connecting" });
           }
+          await pcRef.current.setRemoteDescription(event.sdp);
+          await flushIce();
         } catch {
           endCall();
         }
@@ -723,10 +760,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [user, handleEvent]);
 
   useEffect(() => {
-    if (call?.status !== "active") return;
-    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
+    if (call?.phase !== "connected" && call?.phase !== "reconnecting") return;
+    const t = setInterval(() => setSeconds(callActiveSinceRef.current ? Math.floor((Date.now() - callActiveSinceRef.current) / 1000) : 0), 1000);
     return () => clearInterval(t);
-  }, [call?.status]);
+  }, [call?.phase]);
 
   // Real speaking detection for the remote party (Web Audio on web, getStats
   // audio levels on native) + lightweight connection-quality monitoring.
@@ -800,28 +837,25 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-    <CallContext.Provider value={{ startCall, sendSignal, subscribe }}>
+    <CallContext.Provider value={{ startCall, sendSignal, subscribe, busy: !!call }}>
       {children}
-      <Modal visible={!!call} transparent animationType="fade">
-        {call && (
+      <Modal visible={!!call} transparent animationType="fade" onRequestClose={endCall}>
+        {call && call.status !== "active" ? <IncomingCallPopup peer={call.peer} outgoing={call.status === "outgoing"} expiresAt={call.expiresAt!} onAccept={acceptCall} onReject={call.status === "outgoing" ? endCall : declineCall} /> : call && (
           <LinearGradient
             colors={["#0B1B2E", "#14335A", "#0B1B2E"]}
             style={[
               styles.backdrop,
               {
-                paddingTop: spacing.xxl * 2 + insets.top,
-                paddingBottom: spacing.xxl * 2 + insets.bottom,
+                paddingTop: 16 + insets.top,
+                paddingBottom: 16 + insets.bottom,
               },
             ]}
             testID="call-overlay"
           >
+            <ScrollView style={styles.callScroll} contentContainerStyle={styles.callContent} showsVerticalScrollIndicator={false}>
             <View style={styles.topArea}>
               <Text style={styles.callKind}>
-                {call.status === "incoming"
-                  ? "Incoming audio call"
-                  : call.status === "outgoing"
-                    ? "Audio call"
-                    : "Audio call"}
+                Audio call
               </Text>
               {call.status === "active" && (
                 <View style={styles.timerPill} testID="call-timer">
@@ -856,43 +890,15 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
                   <VipBadge tier={call.peer.vip_tier} />
                 ) : null}
               </View>
-              <Text style={styles.status}>
-                {call.status === "incoming" && "wants to talk with you"}
-                {call.status === "outgoing" && "Ringing..."}
+              <Text testID="call-connection-status" style={styles.status}>
                 {call.status === "active" && activeStatusText()}
               </Text>
             </View>
 
+            {call.status === "active" && <CaptionPanel key={call.callId} callId={call.callId} stream={localStreamRef.current} muted={muted} connected={call.phase === "connected"} subscribe={subscribe} />}
+
             <View style={styles.actions}>
-              {call.status === "incoming" ? (
-                <>
-                  <View style={styles.actionCol}>
-                    <Pressable
-                      testID="call-decline-btn"
-                      style={[styles.actionBtn, styles.danger]}
-                      onPress={declineCall}
-                    >
-                      <Ionicons
-                        name="call"
-                        size={28}
-                        color="#FFF"
-                        style={{ transform: [{ rotate: "135deg" }] }}
-                      />
-                    </Pressable>
-                    <Text style={styles.actionLabel}>Decline</Text>
-                  </View>
-                  <View style={styles.actionCol}>
-                    <Pressable
-                      testID="call-accept-btn"
-                      style={[styles.actionBtn, styles.accept]}
-                      onPress={acceptCall}
-                    >
-                      <Ionicons name="call" size={28} color="#FFF" />
-                    </Pressable>
-                    <Text style={styles.actionLabel}>Accept</Text>
-                  </View>
-                </>
-              ) : (
+              {(
                 <>
                   {call.status === "active" && (
                     <>
@@ -948,6 +954,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
                 </>
               )}
             </View>
+            </ScrollView>
           </LinearGradient>
         )}
       </Modal>
@@ -969,6 +976,8 @@ const makeStyles = (colors: ThemeColors) =>
       justifyContent: "space-between",
       paddingHorizontal: spacing.xl,
     },
+    callScroll: { width: "100%", flex: 1 },
+    callContent: { flexGrow: 1, alignItems: "center", justifyContent: "space-between", gap: 24, paddingVertical: 12 },
     topArea: {
       alignItems: "center",
       gap: spacing.md,
@@ -1013,12 +1022,16 @@ const makeStyles = (colors: ThemeColors) =>
     },
     nameRow: {
       flexDirection: "row",
+      maxWidth: "100%",
+      justifyContent: "center",
       alignItems: "center",
       gap: spacing.sm,
     },
     name: {
       fontFamily: fonts.display,
       fontSize: 28,
+      flexShrink: 1,
+      textAlign: "center",
       color: "#FFFFFF",
     },
     status: {
@@ -1028,7 +1041,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     actions: {
       flexDirection: "row",
-      gap: spacing.xxl * 1.5,
+      gap: spacing.lg,
       alignItems: "flex-end",
     },
     actionCol: {

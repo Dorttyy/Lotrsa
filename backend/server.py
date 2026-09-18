@@ -29,6 +29,8 @@ from routes.admin import router as admin_router  # noqa: E402
 from routes.push import router as push_router  # noqa: E402
 from routes.rooms import router as rooms_router  # noqa: E402
 from routes.rtc import router as rtc_router  # noqa: E402
+from routes.call_practice import router as call_practice_router  # noqa: E402
+from routes.call_captions import router as call_captions_router  # noqa: E402
 import rtc_core  # noqa: E402
 from routes.pro import router as pro_router, seed_pro_tutors  # noqa: E402
 from routes.lessons import router as lessons_router  # noqa: E402
@@ -117,6 +119,7 @@ CALL_EVENT_TYPES = {
     "call_ice",
     "call_end",
     "call_decline",
+    "call_media_ready",
 }
 ROOM_EVENT_TYPES = {
     "rtc_offer",
@@ -143,13 +146,17 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
     try:
         while True:
             raw = await websocket.receive_text()
+            if len(raw) > 65536:
+                continue
             try:
                 data = _json.loads(raw)
             except ValueError:
                 continue
+            if not isinstance(data, dict):
+                continue
             event_type = data.get("type")
             target = data.get("to")
-            if not target or event_type not in (CALL_EVENT_TYPES | ROOM_EVENT_TYPES):
+            if not isinstance(target, str) or not isinstance(event_type, str) or event_type not in (CALL_EVENT_TYPES | ROOM_EVENT_TYPES):
                 continue
             # Signaling flood protection (per authenticated user).
             if not rtc_core.limiter.allow(f"sig:{user_id}", *rtc_core.SIGNAL_LIMIT):
@@ -168,6 +175,9 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     )
                     continue
                 if event_type == "call_offer":
+                    sess = rtc_core.session(call_id)
+                    if user_id != sess["caller"] and not sess.get("accepted"):
+                        continue
                     if not manager.is_online(target):
                         await manager.send_to_user(
                             user_id,
@@ -181,8 +191,15 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     caller = await users_col.find_one({"_id": user_id})
                     if caller:
                         data["caller"] = user_card(caller)
+                    data["expires_at"] = rtc_core.session(call_id)["expires_at"]
                 elif event_type == "call_answer":
-                    await rtc_core.mark_connected(call_id)
+                    if user_id != rtc_core.session(call_id)["receiver"] and not rtc_core.session(call_id).get("accepted"):
+                        continue
+                    if not rtc_core.session(call_id).get("accepted"):
+                        rtc_core.schedule_expiry(call_id, connecting=True)
+                    rtc_core.session(call_id)["accepted"] = True
+                elif event_type == "call_media_ready":
+                    await rtc_core.media_ready(call_id, user_id)
                 elif event_type == "call_decline":
                     await rtc_core.finish(call_id, rtc_core.REJECTED)
                 elif event_type == "call_end":
@@ -204,6 +221,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
 
             await manager.send_to_user(target, data)
     except WebSocketDisconnect:
+        pass
+    finally:
         manager.disconnect(user_id, websocket)
 
 
@@ -272,6 +291,8 @@ for router in (
     ai_router,
     rooms_router,
     rtc_router,
+    call_practice_router,
+    call_captions_router,
     audio_router,
     media_router,
     notifications_router,

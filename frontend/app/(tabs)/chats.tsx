@@ -51,11 +51,11 @@ const SHORTCUTS: Shortcut[] = [
     route: "/lessons",
   },
   {
-    key: "premium",
-    label: "Premium",
-    icon: "diamond",
+    key: "call",
+    label: "Call",
+    icon: "call",
     color: "#FFB627",
-    route: "/premium",
+    route: "/call",
   },
   {
     key: "learn",

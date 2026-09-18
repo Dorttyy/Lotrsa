@@ -1,11 +1,11 @@
 import { Ionicons } from "@/src/ui/icons";
-import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, ThemeColors } from "@/src/theme";
 import { audioUrl } from "@/src/utils/api";
+import { useExclusiveVoicePlayer } from "@/src/hooks/use-exclusive-voice-player";
 
 interface VoiceBubbleProps {
   audioId: string;
@@ -48,17 +48,18 @@ export const VoiceBubble: React.FC<VoiceBubbleProps> = ({
   durationMs,
   mine,
   colors: colorsOverride,
-  testID,
+  testID: providedTestID,
 }) => {
   const { colors: themeColors } = useTheme();
   const colors = colorsOverride ?? themeColors;
-  const player = useAudioPlayer(audioUrl(audioId));
-  const status = useAudioPlayerStatus(player);
+  const componentId = React.useId();
+  const testID = providedTestID || `voice-message-${componentId.replace(/:/g, "")}`;
   const [speedIdx, setSpeedIdx] = React.useState(0);
   // "activated" = the message is currently playing or was paused mid-playback.
   // Only then do we show the rich waveform + speed + countdown UI. Before the
   // first play (or after it finishes) we show the compact play + duration view.
   const [activated, setActivated] = React.useState(false);
+  const { player, status, toggle: togglePlayback, error } = useExclusiveVoicePlayer(audioUrl(audioId), () => setActivated(false));
   const bars = React.useMemo(() => barHeights(audioId), [audioId]);
 
   const totalSec =
@@ -74,16 +75,8 @@ export const VoiceBubble: React.FC<VoiceBubbleProps> = ({
     if (status.didJustFinish) setActivated(false);
   }, [status.didJustFinish]);
 
-  const toggle = () => {
-    if (playing) {
-      player.pause();
-    } else {
-      if (status.didJustFinish || curSec >= totalSec - 0.1) {
-        player.seekTo(0);
-      }
-      player.play();
-      setActivated(true);
-    }
+  const toggle = async () => {
+    if (await togglePlayback()) setActivated(true);
   };
 
   const cycleSpeed = () => {
@@ -114,6 +107,8 @@ export const VoiceBubble: React.FC<VoiceBubbleProps> = ({
   const PlayBtn = (
     <Pressable
       testID={testID ? `${testID}-play` : undefined}
+      accessibilityRole="button"
+      accessibilityLabel={playing ? "Pause voice message" : "Play voice message"}
       onPress={toggle}
       hitSlop={10}
       style={styles.playBtn}
@@ -131,7 +126,8 @@ export const VoiceBubble: React.FC<VoiceBubbleProps> = ({
   // idle it simply shows the play button on the left and the duration on the
   // right (like the reference); playback only adds the animated bars + speed.
   return (
-    <View style={styles.row} testID={testID}>
+    <View testID={testID}>
+    <View style={styles.row}>
       {PlayBtn}
       <View style={styles.wave}>
         {activated
@@ -152,8 +148,9 @@ export const VoiceBubble: React.FC<VoiceBubbleProps> = ({
       <View style={styles.right}>
         {activated ? (
           <Pressable
+            testID={`${testID}-speed`}
             onPress={cycleSpeed}
-            hitSlop={6}
+            hitSlop={14}
             style={[styles.speedPill, { backgroundColor: colors.speedPillBg }]}
           >
             <Text style={[styles.speedText, { color: colors.speedPillText }]}>
@@ -161,10 +158,12 @@ export const VoiceBubble: React.FC<VoiceBubbleProps> = ({
             </Text>
           </Pressable>
         ) : null}
-        <Text style={[styles.dur, { color: colors.bubbleMeta || onBubble }]}>
+        <Text testID={`${testID}-duration`} style={[styles.dur, { color: colors.bubbleMeta || onBubble }]}>
           {fmt(activated ? shownSec : totalSec)}
         </Text>
       </View>
+    </View>
+    {!!error && <Text testID={`${testID}-error`} style={[styles.error, { color: colors.error }]}>{error}</Text>}
     </View>
   );
 };
@@ -179,8 +178,8 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   playBtn: {
-    width: 28,
-    height: 28,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -218,4 +217,5 @@ const styles = StyleSheet.create({
     fontFamily: fonts.textSemi,
     fontSize: 12,
   },
+  error: { fontFamily: fonts.text, fontSize: 11, lineHeight: 16, maxWidth: 220 },
 });

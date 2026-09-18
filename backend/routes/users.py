@@ -20,6 +20,17 @@ logger = logging.getLogger(__name__)
 @router.put("/me")
 async def update_me(body: UserUpdate, current_user: CurrentUser):
     updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    if updates.get("paid_practice") is True and updates.get("gift_gate") is True:
+        raise HTTPException(422, "Choose either Paid Practice or Gift-Gated Messaging, not both.")
+    # Set BOTH flags atomically when enabling either mode, including concurrent
+    # requests from different devices. Keeping both off is always allowed.
+    if updates.get("paid_practice") is True:
+        updates["gift_gate"] = False
+    elif updates.get("gift_gate") is True:
+        updates["paid_practice"] = False
+    elif current_user.get("paid_practice") and current_user.get("gift_gate"):
+        # Repair legacy contradictory preferences on the user's next save.
+        updates["gift_gate"] = False
     # If a birthday (YYYY-MM-DD) is provided, derive age from it — this is the
     # source of truth once set, so the "one-time-only" age lock also applies to
     # birthday.
@@ -126,12 +137,8 @@ async def daily_check_in(current_user: CurrentUser):
 
 @router.post("/me/vip")
 async def upgrade_vip(current_user: CurrentUser):
-    """Free VIP upgrade (payment can be added later)."""
-    await users_col.update_one(
-        {"_id": current_user["_id"]}, {"$set": {"is_vip": True}}
-    )
-    current_user["is_vip"] = True
-    return user_public(current_user)
+    """Legacy self-grant is closed; a client response is not a store receipt."""
+    raise HTTPException(410, "VIP purchases must be verified through your app store.")
 
 
 @router.post("/me/avatar")

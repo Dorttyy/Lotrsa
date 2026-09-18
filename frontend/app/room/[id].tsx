@@ -2720,7 +2720,7 @@ const makeStyles = (colors: ThemeColors) =>
       color: "#FFFFFF",
     },
     endedOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: "#241D4F",
       zIndex: 100,
       paddingHorizontal: 22,
@@ -3003,7 +3003,7 @@ const makeStyles = (colors: ThemeColors) =>
       width: 74,
     },
     muteCenter: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       alignItems: "center",
       justifyContent: "center",
     },

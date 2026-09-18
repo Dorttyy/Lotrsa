@@ -1,138 +1,175 @@
 {
-  "app_name": "Social Language Exchange",
-  "personality": "2 Material You / Expressive LIGHT or DARK",
-  "personality_one_liner": "A fresh, botanical-inspired emerald identity that feels organic, encouraging, and vibrant for language learners.",
-  "color": {
-    "surface": "#FFFFFF",
-    "onSurface": "#111513",
-    "surfaceSecondary": "#F4F7F5",
-    "onSurfaceSecondary": "#3A453F",
-    "surfaceTertiary": "#E9EFEC",
-    "onSurfaceTertiary": "#5C6B64",
-    "surfaceInverse": "#0D1210",
-    "onSurfaceInverse": "#F0F5F2",
-    "brand": "#0A7A5F",
-    "brandPrimary": "#0A7A5F",
-    "onBrandPrimary": "#FFFFFF",
-    "brandSecondary": "#E1F2EC",
-    "onBrandSecondary": "#065A45",
-    "brandTertiary": "#F0F9F5",
-    "onBrandTertiary": "#0A7A5F",
-    "success": "#10B981",
-    "onSuccess": "#FFFFFF",
-    "warning": "#F59E0B",
-    "onWarning": "#FFFFFF",
-    "error": "#EF4444",
-    "onError": "#FFFFFF",
-    "info": "#0A7A5F",
-    "onInfo": "#FFFFFF",
-    "border": "#E1E8E4",
-    "borderStrong": "#A7D4C7",
-    "divider": "#E1E8E4"
+  "app_name": "LinguaConnect Mobile Web",
+  "screen": "Call Screen & Voice WebRTC Call Modal",
+  "context": {
+    "tab_name": "Call",
+    "replaced_tab": "Premium",
+    "theme_support": "Light & Dark Mode (Automatic & System switchable)",
+    "mobile_web_responsive_min_width": "320px safe width"
   },
   "typography": {
-    "displayFontFamily": "Plus Jakarta Sans",
-    "textFontFamily": "Figtree",
+    "font_family_display": "Inter_700Bold",
+    "font_family_display_semi": "Inter_600SemiBold",
+    "font_family_text": "Inter_400Regular",
+    "font_family_text_semi": "Inter_500Medium",
+    "font_family_text_bold": "Inter_600SemiBold",
     "scale": {
-      "sm": 12,
-      "base": 14,
-      "lg": 16,
-      "xl": 20,
-      "2xl": 24
-    }
-  },
-  "spacing": {
-    "rule": "Generous spacing. Let the fresh green accents breathe. Use md/lg margins around cards.",
-    "xs": 4,
-    "sm": 8,
-    "md": 12,
-    "lg": 16,
-    "xl": 24,
-    "2xl": 32,
-    "3xl": 48
-  },
-  "radius_tokens": {
-    "sm": 6,
-    "md": 12,
-    "lg": 20,
-    "pill": 999
-  },
-  "shadow_tier": "0",
-  "navigation": "bottom_tabs",
-  "icon_set": "Phosphor",
-  "glassmorphism": {
-    "enabled": "true",
-    "do's": [
-      "Use glass on the bottom tab bar",
-      "Use glass on sticky headers over the Moments feed"
-    ],
-    "dont's": [
-      "Don't use glass on chat bubbles or standard content cards"
-    ]
-  },
-  "platform_libraries": {
-    "glass": {
-      "ios": "expo-glass-effect",
-      "android": "expo-blur",
-      "low_end_android_fallback": "solid surfaceSecondary"
-    },
-    "image": "expo-image",
-    "blur": "expo-blur",
-    "bottom_sheet": "@gorhom/bottom-sheet",
-    "animation": "react-native-reanimated",
-    "gesture": "react-native-gesture-handler"
-  },
-  "screens": [
-    {
-      "name": "Moments",
-      "purpose": "Social feed where language learners share tinted content cards.",
-      "states": {
-        "loading": "Centered spinner using brandPrimary color.",
-        "empty": "Botanical illustration with 'No moments yet. Share your first learning experience!'",
-        "error": "Readable error message with a retry button."
+      "page_title": {
+        "font_size": 22,
+        "line_height": 28,
+        "font_weight": "700"
       },
-      "layout": "Vertical scroll feed. Cards use subtle pastel tints (cardTints). Tab bar is glass over the scrolling content."
-    },
-    {
-      "name": "Chat",
-      "purpose": "1:1 communication using organic, color-tinted chat bubbles and voice waveforms.",
-      "states": {
-        "loading": "Skeleton loader for chat messages.",
-        "empty": "Illustration encouraging to say hi.",
-        "error": "Error loading messages with tap-to-retry."
+      "section_heading": {
+        "font_size": 18,
+        "line_height": 24,
+        "font_weight": "600"
       },
-      "layout": "Standard chat layout. Input at the bottom with KeyboardAvoidingView. Messages scroll up. Mine on right, theirs on left."
-    }
-  ],
-  "images": {
-    "hero_empty_moments": {
-      "url": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80",
-      "dark": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80",
-      "alt": "People collaborating and learning together"
+      "card_title": {
+        "font_size": 16,
+        "line_height": 22,
+        "font_weight": "600"
+      },
+      "body": {
+        "font_size": 14,
+        "line_height": 20,
+        "font_weight": "400"
+      },
+      "caption": {
+        "font_size": 12,
+        "line_height": 16,
+        "font_weight": "400"
+      },
+      "label": {
+        "font_size": 11,
+        "line_height": 14,
+        "font_weight": "600",
+        "letter_spacing": 1.2
+      }
     }
   },
-  "instructions_to_main_agent": [
-    "CRITICAL: The user has requested a complete overhaul of the app's theme colors from purple to a new, beautiful identity. We are moving to a 'Botanical Emerald Green' identity (growth, freshness, learning).",
-    "UPDATE src/theme.ts EXACTLY with the following mappings.",
-    "--- LIGHT MODE EXACT TOKENS ---",
-    "surface: '#FFFFFF', surfaceSecondary: '#F4F7F5' (subtle sage tint), surfaceTertiary: '#E9EFEC', onSurface: '#111513', onSurfaceSecondary: '#3A453F', onSurfaceTertiary: '#5C6B64'",
-    "brand: '#0A7A5F', onBrand: '#FFFFFF', brandSecondary: '#E1F2EC', onBrandSecondary: '#065A45', brandTertiary: '#F0F9F5', onBrandTertiary: '#0A7A5F'",
-    "bubbleMine: '#E1F2EC', onBubbleMine: '#065A45', bubbleTheirs: '#F4F7F5', onBubbleTheirs: '#111513', bubbleMeta: '#5C6B64'",
-    "waveActive: '#0A7A5F', waveInactive: '#A7D4C7', speedPillBg: '#FFFFFF', speedPillText: '#0A7A5F'",
-    "cardTints: ['#FFFDF5', '#F4FAFC', '#FCF6F5', '#F4F7F5', '#FFF7E6', '#E1F2EC'] (Slot 6 replaced old lavender with soft mint)",
-    "--- DARK MODE EXACT TOKENS ---",
-    "surface: '#0D1210', surfaceSecondary: '#161D1A' (deep forest tint), surfaceTertiary: '#212C27', onSurface: '#F0F5F2', onSurfaceSecondary: '#A3B5AC', onSurfaceTertiary: '#82968C'",
-    "brand: '#34D399' (Glowing mint for dark mode contrast), onBrand: '#022C22', brandSecondary: '#064E3B', onBrandSecondary: '#6EE7B7', brandTertiary: '#022C22', onBrandTertiary: '#34D399'",
-    "bubbleMine: '#064E3B', onBubbleMine: '#D1FAE5', bubbleTheirs: '#161D1A', onBubbleTheirs: '#F0F5F2', bubbleMeta: '#82968C'",
-    "waveActive: '#34D399', waveInactive: '#047857', speedPillBg: '#161D1A', speedPillText: '#34D399'",
-    "cardTints: ['#1A1915', '#151A1C', '#1C1516', '#161D1A', '#1C1813', '#064E3B'] (Slot 6 replaced old lavender with deep brand green)",
-    "--- REPLACEMENT GUIDANCE FOR DECORATIVE PURPLES ---",
-    "Swap Old #7C3AED (Main Purple) -> Light: #0A7A5F / Dark: #34D399",
-    "Swap Old #5B21B6 (Deep) -> Light: #045C47 / Dark: #022C22",
-    "Swap Old #A78BFA (Mid) -> Light: #10B981 / Dark: #059669 (adjusted for contrast)",
-    "Swap Old #8B5CF6 (Bright) -> Light: #059669 / Dark: #10B981 (adjusted for contrast)",
-    "Swap Old #EDE9FE (Soft Chip) -> Light: #E1F2EC / Dark: #064E3B",
-    "Swap Gradient Pair ['#A78BFA','#7C3AED'] -> Light: ['#10B981','#0A7A5F'] / Dark: ['#6EE7B7','#34D399']",
-    "Swap Gradient Pair ['#8B5CF6','#7C3AED'] -> Light: ['#059669','#0A7A5F'] / Dark: ['#34D399','#10B981']"
+  "colors": {
+    "light": {
+      "surface": "#FFFFFF",
+      "onSurface": "#0F1720",
+      "surfaceSecondary": "#F1F5F9",
+      "onSurfaceSecondary": "#5B6B7A",
+      "surfaceTertiary": "#E6EEF5",
+      "onSurfaceTertiary": "#2A3540",
+      "brand": "#0E9AE0",
+      "onBrand": "#FFFFFF",
+      "brandSecondary": "#E2F3FC",
+      "onBrandSecondary": "#0A6B9E",
+      "brandTertiary": "#F0F9FE",
+      "onBrandTertiary": "#0E9AE0",
+      "border": "#E2E9F0",
+      "borderStrong": "#C6D3DF",
+      "divider": "#EEF2F7",
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444"
+    },
+    "dark": {
+      "surface": "#0B1220",
+      "onSurface": "#EAF1F8",
+      "surfaceSecondary": "#131C2B",
+      "onSurfaceSecondary": "#9AACC0",
+      "surfaceTertiary": "#1E2A3C",
+      "onSurfaceTertiary": "#D3DEEA",
+      "brand": "#38B6F1",
+      "onBrand": "#041E2E",
+      "brandSecondary": "#0B3B58",
+      "onBrandSecondary": "#7FD1F5",
+      "brandTertiary": "#10293B",
+      "onBrandTertiary": "#38B6F1",
+      "border": "#223044",
+      "borderStrong": "#38495F",
+      "divider": "#16202D",
+      "success": "#34D399",
+      "warning": "#FBBF24",
+      "error": "#F87171"
+    }
+  },
+  "layout_and_spacing": {
+    "padding_horizontal": 16,
+    "card_padding": 20,
+    "card_border_radius": 20,
+    "pill_border_radius": 999,
+    "minimum_touch_target": "44x44px",
+    "safe_min_width": "320px"
+  },
+  "key_features_and_components": {
+    "navigation_header": {
+      "back_button": "data-testid='call-back-btn' - Chevron Back 24px",
+      "title": "data-testid='call-page-title' - Page Title 'Call'",
+      "voice_rooms_shortcut": "data-testid='call-voice-rooms-btn' - Quick navigation link to Voice Rooms"
+    },
+    "availability_toggle": {
+      "container": "Flex row with subtitle and status description",
+      "title": "data-testid='practice-availability-title'",
+      "switch": "data-testid='practice-availability-switch' - 60x44px rounded pill switch with animated knob"
+    },
+    "language_filter_bar": {
+      "label": "data-testid='practice-language-label' - 'I WANT TO PRACTICE'",
+      "requirement": "EXACTLY four horizontal tab choices: 'All' + 3 specific practice languages",
+      "all_tab": "data-testid='practice-language-all' - Shows all online call-available users regardless of language",
+      "lang_tabs": [
+        "data-testid='practice-language-en'",
+        "data-testid='practice-language-es'",
+        "data-testid='practice-language-bn'"
+      ],
+      "active_state": "High-contrast brandSecondary background pill with bold text"
+    },
+    "random_partner_hero_card": {
+      "card_testid": "data-testid='random-partner-card'",
+      "idle_state": "Sleek hero card encouraging 1-on-1 language voice exchange",
+      "searching_state": "Dynamic search state with multi-layer animated pulse ring and radar radar wave around shuffle icon",
+      "action_button": "data-testid='start-random-match-btn' or 'cancel-random-match-btn' - Minimum 52px height full-width pill button"
+    },
+    "captions_and_translation_info": {
+      "icon": "Ionicons 'language' 22px in brand color",
+      "native_language_label": "data-testid='practice-native-language' - Displays transcribed and translated captions target language",
+      "info_copy": "data-testid='practice-caption-info' - Transcribing & live native translation consent explanation"
+    },
+    "partner_list": {
+      "header_row": "data-testid='practice-partners-heading' and count data-testid='practice-partner-count'",
+      "compact_card": {
+        "avatar": "48px avatar with online status indicator",
+        "name": "data-testid='practice-partner-name-{id}'",
+        "languages": "data-testid='practice-partner-languages-{id}' - Native language · practicing language",
+        "call_button": "data-testid='practice-call-{id}' - 48x48px pill icon button"
+      },
+      "honest_empty_state": {
+        "title": "data-testid='practice-empty-title' - 'No partners available yet'",
+        "description": "data-testid='practice-empty-description' - Clear explanation without fake user counts"
+      }
+    },
+    "fullscreen_webrtc_call_modal": {
+      "container_testid": "data-testid='call-overlay'",
+      "backdrop": "Linear gradient deep navy dark overlay (#0B1B2E to #14335A)",
+      "live_timer": "data-testid='call-timer' - Live counter MM:SS with green live status dot",
+      "avatar_pulse": "Dual-ring expanding wave animation behind 124px avatar when ringing",
+      "connection_status": "data-testid='call-connection-status' - Clear phase indicators ('Ringing...', 'Connecting...', 'Connected', 'Reconnecting...')",
+      "caption_panel": "Live transcribe and auto-translation caption drawer in native language",
+      "control_bar": {
+        "accept_btn": "data-testid='call-accept-btn' - Green emerald circle button 68x68px",
+        "decline_btn": "data-testid='call-decline-btn' - Red rose circle button 68x68px",
+        "mute_btn": "data-testid='call-mute-btn' - Translucent neutral button 68x68px with active state highlight",
+        "speaker_btn": "data-testid='call-speaker-btn' - Speaker toggle button",
+        "end_btn": "data-testid='call-end-btn' - Red end call button 68x68px"
+      }
+    }
+  },
+  "motion_and_animations": {
+    "random_search_pulse": "Continuous looping scale (1 -> 1.65) and opacity fade (0.5 -> 0) with 1800ms duration",
+    "call_ringing_waves": "Staggered double/triple pulse rings expanding behind avatar",
+    "switch_transition": "Smooth alignment transition on toggle switch knob",
+    "accessibility_motion": "Respects reduce motion settings automatically via AccessibilityInfo"
+  },
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "Ensure all interactive buttons, switches, filters, cards, and modals contain exact data-testid attributes.",
+    "Never hardcode fake or artificial online partner counts; maintain honest empty states.",
+    "Ensure total horizontal padding fits narrow devices down to 320px width without horizontal scrolling or truncation.",
+    "Maintain WCAG AA color contrast in both Light Mode (#FFFFFF background) and Dark Mode (#0B1220 background).",
+    "Keep WebRTC state handling, audio session management, and signaling fully functional with graceful error fallbacks."
   ]
 }

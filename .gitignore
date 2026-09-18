@@ -1,3 +1,5 @@
+# Downloaded caption weights (reproducible via backend/provision_caption_models.py)
+backend/caption_models/
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # IDE and editors

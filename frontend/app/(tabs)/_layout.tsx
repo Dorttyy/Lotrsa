@@ -76,6 +76,9 @@ export default function TabsLayout() {
         tabBarLabelStyle: {
           fontFamily: fonts.textBold,
           fontSize: 11,
+          lineHeight: 16,
+          minHeight: 16,
+          flexShrink: 0,
         },
         tabBarItemStyle: {
           paddingTop: 4,
@@ -86,7 +89,7 @@ export default function TabsLayout() {
           borderTopWidth: StyleSheet.hairlineWidth,
           // Comfortable content height + safe-area gap (min 12) so the bar
           // stays lifted above the home indicator on every device.
-          height: 56 + bottomGap,
+          height: 68 + bottomGap,
           paddingBottom: bottomGap,
           paddingTop: 8,
           ...Platform.select({

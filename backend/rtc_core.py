@@ -6,12 +6,39 @@ in memory for fast per-signal validation (ICE candidates arrive in bursts) and
 mirrored into MongoDB for call history.
 """
 
+import asyncio
 import os
 import time
 import uuid
 from datetime import datetime, timezone
+from dotenv import load_dotenv
 
 from db import calls_col, rooms_col
+
+load_dotenv()
+session_lock = asyncio.Lock()
+RING_TIMEOUT_SECONDS = 45
+_expiry_tasks: set[asyncio.Task] = set()
+
+
+def schedule_expiry(call_id: str, *, connecting: bool = False):
+    async def expire():
+        await asyncio.sleep(30 if connecting else RING_TIMEOUT_SECONDS)
+        s = session(call_id)
+        if not s or s["status"] != RINGING:
+            return
+        if not connecting and s.get("accepted"):
+            return
+        from ws_manager import manager
+        status = FAILED if connecting else MISSED
+        await finish(call_id, status)
+        await manager.broadcast([s["caller"], s["receiver"]], {
+            "type": "call_end", "call_id": call_id,
+            "reason": "connection_failed" if connecting else "no_answer",
+        })
+    task = asyncio.create_task(expire())
+    _expiry_tasks.add(task)
+    task.add_done_callback(_expiry_tasks.discard)
 
 # --------------------------------------------------------------------------- #
 # ICE configuration (STUN + TURN) — always sourced from the environment so no
@@ -93,6 +120,10 @@ async def create_session(caller_id: str, receiver_id: str) -> str:
         "status": RINGING,
         "created": time.monotonic(),
         "connected_at": None,
+        "accepted": False,
+        "media_ready": set(),
+        "caption_consent": {},
+        "expires_at": int((time.time() + RING_TIMEOUT_SECONDS) * 1000),
     }
     await calls_col.insert_one(
         {
@@ -108,6 +139,7 @@ async def create_session(caller_id: str, receiver_id: str) -> str:
         }
     )
     _prune()
+    schedule_expiry(call_id)
     return call_id
 
 
@@ -121,6 +153,34 @@ def _prune() -> None:
 
 def session(call_id: str) -> dict | None:
     return _sessions.get(call_id)
+
+
+def pending_random_calls(user_id: str) -> list[tuple[str, str]]:
+    return [(cid, s["receiver"] if user_id == s["caller"] else s["caller"])
+            for cid, s in _sessions.items()
+            if s["status"] == RINGING and not s.get("accepted") and s.get("random_match")
+            and user_id in (s["caller"], s["receiver"])]
+
+
+async def busy(user_id: str) -> bool:
+    """Release abandoned ringing reservations; never match a live call twice."""
+    for cid, s in list(_sessions.items()):
+        if s["status"] == RINGING and time.monotonic() - s["created"] > 60:
+            await finish(cid, MISSED)
+        if s["status"] not in TERMINAL and user_id in (s["caller"], s["receiver"]):
+            return True
+    return bool(await rooms_col.find_one(
+        {"is_live": True, f"members.{user_id}": {"$exists": True}}, {"_id": 1}
+    ))
+
+
+async def media_ready(call_id: str, user_id: str) -> None:
+    s = session(call_id)
+    if not s or s["status"] in TERMINAL or not s.get("accepted"):
+        return
+    s["media_ready"].add(user_id)
+    if len(s["media_ready"]) == 2:
+        await mark_connected(call_id)
 
 
 def is_participant(call_id: str, user_id: str, target_id: str) -> bool:

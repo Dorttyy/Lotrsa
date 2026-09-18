@@ -49,7 +49,7 @@ async def practice_status(partner_id: str, current_user: CurrentUser):
     rate = int(partner.get("practice_rate") or 50)
     unlock = await active_unlock(current_user["_id"], partner_id) if is_paid else None
     # Gift gate state
-    gift_gate = bool(partner.get("gift_gate"))
+    gift_gate = bool(partner.get("gift_gate")) and not is_paid
     gift_min = int(partner.get("gift_gate_min") or 20)
     gift_unlock = None
     if gift_gate:

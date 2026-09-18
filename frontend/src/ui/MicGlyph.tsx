@@ -1,5 +1,5 @@
 import React from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { Image, Platform, StyleSheet, View } from "react-native";
 import type { ColorValue, ImageStyle, StyleProp, TextStyle, ViewStyle } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
@@ -54,7 +54,7 @@ export function MicOffGlyph({
         source={microphoneSource}
         style={[StyleSheet.absoluteFill, styles.image, { tintColor: color }]}
         fadeDuration={0}
-        accessible={false}
+        accessible={Platform.OS === "web" ? undefined : false}
       />
       <Svg
         width="100%"
@@ -62,7 +62,7 @@ export function MicOffGlyph({
         viewBox="0 0 24 24"
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
-        accessible={false}
+        accessible={Platform.OS === "web" ? undefined : false}
       >
         <Path d="M3.6 20.4 L20.4 3.6" stroke={color} strokeWidth={2.25} strokeLinecap="round" />
       </Svg>

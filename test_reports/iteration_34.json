@@ -1,0 +1,69 @@
+{
+  "summary": "Backend+frontend integration tested for practice calls, WebRTC signaling, captions, and call UI flows using current QA1/QA2 accounts on public preview. Core practice/call flows pass; local caption speech inference flow fails to emit detected speech/caption events.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/rtc/calls/{call_id}/audio",
+        "issue": "With real speech WAV fixture (Open Speech Repository, resampled PCM16k), response is 200 but returns {ok:true, speech_detected:false}; no call_caption events emitted to participants despite connected call and both caption consents enabled.",
+        "priority": "CRITICAL"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Call screen runtime",
+        "issue": "React DOM warning toast appeared during call flow: 'Received false for a non-boolean attribute ... accessible'.",
+        "testID": "call-screen",
+        "priority": "medium"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Local captions text publishing",
+        "issue": "UI shows 'Listening · captions appear in your native language' after both users enable consent, but translated caption text could not be validated from backend due speech_detected=false on audio endpoint runtime test.",
+        "affected_testIDs": [
+          "call-caption-consent-btn",
+          "call-caption-status",
+          "call-native-translated-box"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration34_calls_practice_captions.py",
+    "/app/test_reports/pytest/iteration34.xml",
+    "/app/test_reports/iter34_shots/frontend_load.jpg",
+    "/app/test_reports/iter34_shots/chats_shortcuts.jpg",
+    "/app/test_reports/iter34_shots/call_screen.jpg",
+    "/app/test_reports/iter34_shots/moments_report_open_390.jpg",
+    "/app/test_reports/iter34_shots/call_incoming_b.jpg",
+    "/app/test_reports/iter34_shots/second_call_connected.jpg"
+  ],
+  "action_items": [
+    "Fix local caption pipeline so real speech PCM returns speech_detected=true and emits call_caption events per listener target language.",
+    "Inspect caption_engine filtering path (segment no_speech_prob gate and text assembly) because faster_whisper detects language en in logs but endpoint still returns speech_detected=false.",
+    "Investigate and remove non-boolean DOM attribute warning ('accessible=false' path) in call UI render tree.",
+    "Re-test unverified backend scopes: practice direct-call blocked/self/unavailable matrix, queue expiration TTL behavior, room RTC membership relay guards under this QA dataset."
+  ],
+  "critical_code_review_comments": [
+    "caption_engine.process() can return None even after language detection log appears; likely all segments filtered by `s.no_speech_prob < 0.7` predicate causing silent drop of transcripts.",
+    "Call flow state machine behaved correctly in runtime: answer alone did not activate captions; only after both call_media_ready events did caption status become active."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration34_calls_practice_captions.py",
+    "/app/test_reports/iteration_34.json"
+  ],
+  "success_rate": {
+    "backend": "75% (3/4 pytest tests passed)",
+    "frontend": "88% (major requested call/navigation checks passed; caption text-language emission not verified due backend failure)"
+  },
+  "seed_data_creation": "No new user created. Temporary QA1/QA2 language changes (bn/es) were restored in test teardown.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Two isolated browser contexts are supported via `page.context.browser.new_context()` in this environment. Verified: Chats shortcut now has `chats-shortcut-call`, premium shortcut absent, Pro unchanged; call availability toggle works; random search/cancel path reachable; decline and second call flows pass; timer hidden during ringing and visible after connected; mute status updates. Weekly Moments Report header wraps naturally at 320 (height 48) and fits single line at 430 (height 24). Navbar labels not clipped at 320/430 in this run.",
+  "rca_of_issue": "Reproduction: (1) Login QA1+QA2, (2) create call and exchange offer/answer/media_ready, (3) enable caption consent on both, (4) POST valid octet-stream PCM16k speech fixture to /api/rtc/calls/{call_id}/audio. Observed: HTTP 200 with `{ok:true, speech_detected:false}`; no call_caption WS events. Backend logs show faster_whisper processed 2.2s audio and detected language 'en' with probability 0.58, indicating model execution happened but transcription output was dropped before publish. Likely cause is over-strict segment filtering (`no_speech_prob` threshold / text aggregation) returning empty text -> None. Mitigation: relax/inspect segment acceptance criteria, log segment text+probability, then re-run this test and assert speech_detected true with bn/es target outputs."
+}
