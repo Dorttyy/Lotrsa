@@ -31,6 +31,7 @@ import { useAuth } from "@/src/context/AuthContext";
 import { useNetwork } from "@/src/context/NetworkContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, shadow, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api, Room } from "@/src/utils/api";
 import { timeAgo } from "@/src/utils/time";
 
@@ -216,7 +217,7 @@ export default function Voice() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]} testID="voice-screen">
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Voice Rooms</Text>
+        <AppTitle variant="page" testID="voice-header-title" style={styles.headerTitle}>Voice Rooms</AppTitle>
         <Text style={styles.headerSub}>
           Join live audio rooms and practice speaking
         </Text>

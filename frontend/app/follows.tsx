@@ -18,6 +18,7 @@ import { LanguagePair } from "@/src/components/LanguagePair";
 import { countryToCode } from "@/src/constants/countries";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, shadow, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api, User } from "@/src/utils/api";
 
 export default function Follows() {
@@ -49,7 +50,7 @@ export default function Follows() {
     <SafeAreaView style={styles.container} edges={["top", "bottom"]} testID="follows-screen">
       <View style={styles.header}>
         <BackButton testID="follows-back-btn" />
-        <Text style={styles.headerTitle}>Connections</Text>
+        <AppTitle variant="navigation" testID="follows-header-title" style={styles.headerTitle}>Connections</AppTitle>
         <View style={{ width: 40 }} />
       </View>
       <View style={styles.tabs}>

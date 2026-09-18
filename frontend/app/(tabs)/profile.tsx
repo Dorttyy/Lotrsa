@@ -28,6 +28,7 @@ import { useAuth } from "@/src/context/AuthContext";
 import { useNotifications } from "@/src/context/NotificationsContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, shadow, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api, User, Visitor } from "@/src/utils/api";
 import {
   getPushPermissionStatus,
@@ -595,7 +596,7 @@ export default function Profile() {
             >
               <Ionicons name="close" size={24} color={colors.onSurface} />
             </Pressable>
-            <Text style={styles.modalTitle}>Settings</Text>
+            <AppTitle variant="navigation" testID="settings-header-title" style={styles.modalTitle}>Settings</AppTitle>
             <View style={styles.iconBtn} />
           </View>
           <ScrollView contentContainerStyle={styles.scroll}>

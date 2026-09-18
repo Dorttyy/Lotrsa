@@ -22,6 +22,7 @@ import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { useChatSocket } from "@/src/hooks/use-chat-socket";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api, Conversation } from "@/src/utils/api";
 import { timeAgo } from "@/src/utils/time";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -305,7 +306,7 @@ export default function Chats() {
     <SafeAreaView style={styles.container} edges={["top"]} testID="chats-screen">
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Chats</Text>
+        <AppTitle variant="page" testID="chats-header-title" style={styles.headerTitle}>Chats</AppTitle>
         <Pressable
           testID="chats-add-btn"
           style={styles.headerIconBtn}

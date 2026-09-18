@@ -17,6 +17,7 @@ import { countryToCode } from "@/src/constants/countries";
 import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api, Moment } from "@/src/utils/api";
 
 const PURPLE = "#0E9AE0";
@@ -86,7 +87,7 @@ export default function MomentsReport() {
           <Pressable testID="rep-back" onPress={() => router.back()} hitSlop={10}>
             <Ionicons name="chevron-back" size={26} color="#FFFFFF" />
           </Pressable>
-          <Text style={styles.title}>Weekly Moments Report</Text>
+          <AppTitle variant="navigation" testID="moments-report-header-title" style={styles.title}>Weekly Moments Report</AppTitle>
           <Pressable testID="rep-share" onPress={share} hitSlop={8}>
             <Ionicons name="share-social" size={22} color="#FFFFFF" />
           </Pressable>

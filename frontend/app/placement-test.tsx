@@ -28,6 +28,7 @@ import {
   vocabApi,
 } from "@/src/learn/api";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 
 type Stage = "intro" | "quiz" | "result";
 
@@ -120,7 +121,7 @@ export default function PlacementTest() {
           size={22}
           onPress={() => router.back()}
         />
-        <Text style={styles.headerTitle}>Placement Test</Text>
+        <AppTitle variant="navigation" testID="placement-test-header-title" style={styles.headerTitle}>Placement Test</AppTitle>
         <View style={{ width: 36 }} />
       </View>
 

@@ -17,6 +17,7 @@ import { PartnerCard } from "@/src/components/PartnerCard";
 import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api, Conversation, User } from "@/src/utils/api";
 
 const LEVELS = ["Beginner", "Elementary", "Intermediate", "Advanced", "Proficient"];
@@ -100,7 +101,7 @@ export default function CustomSearch() {
         <Pressable testID="cs-back" onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="chevron-back" size={26} color={colors.onSurface} />
         </Pressable>
-        <Text style={styles.title}>Custom Search</Text>
+        <AppTitle variant="navigation" testID="custom-search-header-title" style={styles.title}>Custom Search</AppTitle>
         <View style={{ width: 26 }} />
       </View>
 

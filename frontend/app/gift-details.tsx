@@ -16,6 +16,7 @@ import { countryToCode } from "@/src/constants/countries";
 import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api, User } from "@/src/utils/api";
 
 interface GiftItem {
@@ -63,7 +64,7 @@ export default function GiftDetails() {
         <Pressable testID="gd-back" onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="chevron-back" size={26} color={colors.onSurface} />
         </Pressable>
-        <Text style={styles.title}>Gift details</Text>
+        <AppTitle variant="navigation" testID="gift-details-header-title" style={styles.title}>Gift details</AppTitle>
         <View style={{ width: 26 }} />
       </View>
 

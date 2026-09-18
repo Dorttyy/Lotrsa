@@ -18,6 +18,7 @@ import { BackButton } from "@/src/components/BackButton";
 import { countryToCode } from "@/src/constants/countries";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api, Conversation } from "@/src/utils/api";
 
 /**
@@ -127,7 +128,7 @@ export default function ShareToChatScreen() {
     <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
       <View style={styles.header}>
         <BackButton testID="share-chat-back-btn" />
-        <Text style={styles.title}>Share to Chat</Text>
+        <AppTitle variant="navigation" testID="share-to-chat-header-title" style={styles.title}>Share to Chat</AppTitle>
         <View style={{ width: 40 }} />
       </View>
 

@@ -28,6 +28,7 @@ import { IconChip } from "@/src/components/IconChip";
 import { langName } from "@/src/constants/languages";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 
 // Curated palette per language (matches AI card palette on the hub).
 const LANG_PALETTE: Record<string, { gradient: [string, string]; accent: string }> = {
@@ -69,7 +70,7 @@ export default function LanguageCourses() {
         />
         <View style={styles.headerCenter}>
           <FlagIcon code={lang} size={22} />
-          <Text style={styles.headerTitle}>{name} Courses</Text>
+          <AppTitle variant="navigation" testID="language-courses-header-title" style={styles.headerTitle}>{name} Courses</AppTitle>
         </View>
         <View style={{ width: 40 }} />
       </View>

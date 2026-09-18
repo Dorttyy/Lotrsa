@@ -22,6 +22,7 @@ import { LANGUAGES, langName } from "@/src/constants/languages";
 import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api, Conversation, User } from "@/src/utils/api";
 
 const CATEGORIES = [
@@ -227,7 +228,7 @@ export default function Connect() {
     <SafeAreaView style={styles.container} edges={["top"]} testID="connect-screen">
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Connect</Text>
+        <AppTitle variant="page" testID="connect-header-title" style={styles.headerTitle}>Connect</AppTitle>
         <View style={styles.headerActions}>
           <IconChip
             testID="connect-boost-btn"

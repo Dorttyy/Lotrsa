@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api } from "@/src/utils/api";
 
 interface StoreItem {
@@ -137,7 +138,7 @@ export default function Categories() {
         <Pressable testID="cat-back" style={styles.roundBtn} onPress={() => router.back()} hitSlop={8}>
           <Ionicons name="chevron-back" size={22} color={colors.onSurface} />
         </Pressable>
-        <Text style={styles.title}>Categories</Text>
+        <AppTitle variant="navigation" testID="categories-header-title" style={styles.title}>Categories</AppTitle>
         <View style={{ flex: 1 }} />
         <View style={styles.coinPill}>
           <View style={styles.coinDot}>

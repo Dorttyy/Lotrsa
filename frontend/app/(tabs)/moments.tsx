@@ -39,6 +39,7 @@ import { useNetwork } from "@/src/context/NetworkContext";
 import { useNotifications } from "@/src/context/NotificationsContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, shadow, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api, assetUrl, Moment } from "@/src/utils/api";
 import { timeAgo } from "@/src/utils/time";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -370,12 +371,11 @@ export default function Moments() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]} testID="moments-screen">
       <View style={styles.header}>
-        <Text
+        <AppTitle
+          variant="page"
           testID="moments-header-title"
-          accessibilityRole="header"
           style={styles.headerTitle}
-          numberOfLines={1}
-        >Moments</Text>
+        >Moments</AppTitle>
         <View style={{ flex: 1 }} />
         <View style={styles.headerActions}>
           <IconChip

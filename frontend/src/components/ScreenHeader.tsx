@@ -1,16 +1,16 @@
 import React from "react";
-import { StyleSheet, Text, View, ViewStyle } from "react-native";
+import { StyleSheet, View, ViewStyle } from "react-native";
 
 import { BackButton } from "@/src/components/BackButton";
 import { useTheme } from "@/src/context/ThemeContext";
-import { fonts, spacing } from "@/src/theme";
+import { spacing } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 
 /**
- * Unified top-bar for every non-tab screen. Guarantees the same title font
- * (extra-bold Figtree 800 with subtle tracking), same 44pt height, and the
- * standard BackButton on the left so the app has one visual identity.
+ * Shared non-tab top-bar using the same navigation-title role as other screens.
+ * The bar can grow for longer/scaled titles, with the standard BackButton.
  *
- * Layout: [back or spacer] · [title (centered on native, left on web)] · [right slot]
+ * Layout: [back or spacer] · [centered title] · [right slot]
  *
  * Use it as:
  *   <ScreenHeader title="Notifications" right={<Ionicons name="ellipsis" />} />
@@ -52,15 +52,15 @@ export function ScreenHeader({
           />
         ) : null}
       </View>
-      <Text
+      <AppTitle
+        variant="navigation"
         style={[
           styles.title,
           { color: isOverlay ? "#FFFFFF" : colors.onSurface },
         ]}
-        numberOfLines={1}
       >
         {title}
-      </Text>
+      </AppTitle>
       <View style={[styles.side, styles.rightSide]}>{right}</View>
     </View>
   );
@@ -86,8 +86,5 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     textAlign: "center",
-    fontFamily: fonts.displayBold,
-    fontSize: 18,
-    letterSpacing: 0.2,
   },
 });

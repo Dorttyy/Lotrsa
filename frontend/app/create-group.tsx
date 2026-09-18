@@ -20,6 +20,7 @@ import { countryToCode } from "@/src/constants/countries";
 import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api, Conversation, User } from "@/src/utils/api";
 
 const notify = (title: string, message: string) => {
@@ -98,7 +99,7 @@ export default function CreateGroup() {
         <Pressable testID="choose-back" onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="chevron-back" size={26} color={colors.onSurface} />
         </Pressable>
-        <Text style={styles.title}>Choose</Text>
+        <AppTitle variant="navigation" testID="create-group-header-title" style={styles.title}>Choose</AppTitle>
         <Pressable
           testID="choose-create-btn"
           style={[styles.createBtn, canCreate && styles.createBtnActive]}

@@ -17,6 +17,7 @@ import { IconChip } from "@/src/components/IconChip";
 import { useAuth } from "@/src/context/AuthContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api, Moment } from "@/src/utils/api";
 
 const SIZES = [
@@ -108,7 +109,7 @@ export default function BoostCenter() {
           size={20}
           onPress={() => router.back()}
         />
-        <Text style={styles.title}>Boost Center</Text>
+        <AppTitle variant="navigation" testID="boost-header-title" style={styles.title}>Boost Center</AppTitle>
         <View style={{ width: 36 }} />
       </View>
 

@@ -15,6 +15,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { fonts, radius, spacing } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api } from "@/src/utils/api";
 import { cartTotal, clearCart, getCart, setQty } from "@/src/utils/store-cart";
 
@@ -69,7 +70,7 @@ export default function StoreCart() {
         <Pressable testID="sc-back" onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="chevron-back" size={26} color="#111" />
         </Pressable>
-        <Text style={styles.title}>Your cart</Text>
+        <AppTitle variant="navigation" testID="store-cart-header-title" style={styles.title}>Your cart</AppTitle>
         <View style={{ width: 26 }} />
       </View>
 

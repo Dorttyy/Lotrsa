@@ -1,4 +1,24 @@
-# Current task — UI update delivered; verified scope and limitations
+# Current task — real Practice calling proposal (awaiting approval/infrastructure)
+
+## Latest requested scope
+User (Bengali) wants Chats top Pro shortcut replaced with Practice calling page, opt-in available-user list, direct call request/accept, random partner searching animation followed by realaudio, strongerWebRTC/voice rooms, free transcription+translation, and no systembar/nav overlap with matching backgrounds. Do NOTdelete entirePro module, fake onlineusers/matches/audio, orcopySpeakPalbranding. No newfeaturecode implemented yet.
+
+## Read-only findings and research
+- ExistingP2P /api/rtc/calls + CallContext implements SDPoffer/answer/ICE, WebSocket signaling, ring/accept/reject/end/mute, permissions, Opus, reconnect. Call timer/serverconnected begin tooearly atanswer, notprovedmedia. Sessionsinmemory mirroredMongo; roomsusemesh. NO configuredTURN/SFU.
+- Integrationplaybook recommendsLiveKit for productionmedia(1:1twopersonrooms+groupSFU), keepcustomsignalingforconsent/presence/matching. CloudmanagedTURN orselfhostpublicmediaendpointrequired; previewHTTP/WSSingresscan'thostrelayUDP. Needs LIVEKIT_URL/API_KEY/API_SECRET providedsecurely BEFOREimplementation. APIkeysbackendonly. Existingreact-native-webrtc124 andLiveKitnativefork mustnotbothlink; compatibility/rebuild required. PreserveExpoRouter main/metro/existingMONGO_URL/APIenv/ports; genericplaybookexamplesarenotpermissiontorenamethose. NoEASCLI; physicalbuildviaPublish whenready.
+- Currenttranscribe=faster-whisper tiny CPUint8 onSERVER, notondevice; canavoidperrequestAPIfees butneedsCPU/RAM/modelstorage. Translation=undocumentedGoogleGTX+paidLLMfallback, unreliableunlimitedfreeclaim. Proposedlicense-reviewedlocalSTT+Argos/Marian perapprovedlanguagepairs, boundedworkerqueue/cache/accesscontrol/clearunavailableerrors, NOpaidfallback. Modelprovisioning/prioritylanguagesnotyetapproved. Neverassumeall28languages/zerooperatingcost.
+- Proposeddefaultsneedingapproval: namePractice,18+explicitopt-in, matchselectedpracticelanguage, busy/blockedusers excluded, waitqueuecancel/timeout, realstateonlyconnectedaftermedia. No recording added.
+
+## Pending prior typography increment (preserve changes)
+- SharedAppTitle implemented18routes+ScreenHeader. Page28/34bold, navigation18/24bold, chat18/24semi. No body/card/profileidentitychanges. Backend9/9,AUI10/10passes, Bsecondaryheaders+Settings+themespass.
+- ConfirmedPREEXISTINGbottomnavbarlabelclipping: measuredvisibleheight5 vsrequired14px at320/430. User'snewglobalsafearea request includesaddressingthis; NOTfixedyet.
+- WeeklyReport testerflagsnowrap butRCAcontradictory: measuredfont18yetclaimedoldstyle24overridesrole. AppTitleappliesrolelastsoinspectactualrectoverflowbeforefix; no needforcewrapwhenfits. Tester screenshotpathsnotfoundunder/app/.screenshots (Ashots exist); notfixedyet.
+- Current27preexistingTSCdiagnostics unchanged. New18screentitleslintpassed; remainingsection/cardtitlephasepending.
+
+## Next action
+Confirmphasedplan andhostoption/language/eligibility; obtainnewexternalservicecredentials securelyifchosen. Do notmodifyprotectedexistingconfig orcallinfrastructurebeforeapproval. Completefirstindependentlyverifiedincrement thenreview. Testbackendfirst,thenUIwithapprovedconsent; realtwo-deviceaudio/TURN/networkhandover cannotbefakedbyanimations.
+
+## Historical task record below
 
 ## AUTHORITATIVE CURRENT STATUS (supersedes all older planning notes below)
 - User approved A for new3pageintro/sharedmic/UIchecks andQA-onlySent/Seen testing; most recent task is minimal login/signup like reference with NO Guest Mode. Implemented actualemail/password design only; no dummyGoogle/Applebuttons.

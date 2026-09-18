@@ -47,6 +47,7 @@ import { useCall } from "@/src/context/CallContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { useChatSocket } from "@/src/hooks/use-chat-socket";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { premiumThemeColors } from "@/src/premium/theme";
 import { api, audioUrl, Conversation, Message, mediaUrl, User } from "@/src/utils/api";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -1349,9 +1350,9 @@ export default function ChatScreen() {
               style={styles.headerInfo}
               onPress={() => router.push(`/group-settings/${id}`)}
             >
-              <Text testID="chat-header-name" style={styles.headerName} numberOfLines={1} ellipsizeMode="tail">
+              <AppTitle variant="conversation" testID="chat-header-name" style={styles.headerName} numberOfLines={1} ellipsizeMode="tail">
                 {conversation?.name}
-              </Text>
+              </AppTitle>
               <Text style={styles.headerStatus}>
                 Group members ({conversation?.member_count || 0})
               </Text>
@@ -1372,9 +1373,9 @@ export default function ChatScreen() {
               style={styles.headerInfo}
               onPress={() => router.push(`/user/${partner.id}`)}
             >
-              <Text testID="chat-header-name" style={styles.headerName} numberOfLines={1} ellipsizeMode="tail">
+              <AppTitle variant="conversation" testID="chat-header-name" style={styles.headerName} numberOfLines={1} ellipsizeMode="tail">
                 {partner.name}
-              </Text>
+              </AppTitle>
               <Text style={styles.headerStatus}>
                 {partner.is_online ? "Active now" : "Offline"}
               </Text>

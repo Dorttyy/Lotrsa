@@ -20,6 +20,7 @@ import { useAuth } from "@/src/context/AuthContext";
 import { useNotifications } from "@/src/context/NotificationsContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { fonts, radius, spacing, ThemeColors } from "@/src/theme";
+import { AppTitle } from "@/src/ui/AppTitle";
 import { api, AppNotification, assetUrl, Conversation } from "@/src/utils/api";
 import { timeAgo } from "@/src/utils/time";
 
@@ -124,7 +125,7 @@ export default function Notifications() {
     <SafeAreaView style={styles.container} edges={["top", "bottom"]} testID="notifications-screen">
       <View style={styles.header}>
         <BackButton testID="notifications-back-btn" />
-        <Text style={styles.headerTitle}>Moments Notices</Text>
+        <AppTitle variant="navigation" testID="notifications-header-title" style={styles.headerTitle}>Moments Notices</AppTitle>
         <View style={{ width: 40 }} />
       </View>
 
