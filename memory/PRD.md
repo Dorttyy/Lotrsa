@@ -1,5 +1,11 @@
 # PRD — Mello (previously LinguaConnect)
 
+## Latest direction: user will perform acceptance testing
+- User: “অসমাপ্ত কাজ গুলো কর … এন্ড্রয়েডের apk বিল্ড … সমস্যা … সমাধান … নিজের থেকে কোন টেস্ট করতে হবে না আমি টেস্ট করব”. Focusremainingcode/buildwork; don'tlaunchanotherbroadUIacceptancerun. Requiredsource/buildvalidationremainsdistinctfromuseracceptance. Don'tclaimactualsignedAPK/nativepushdeliveryuntilrealbuild.
+- Beforethatinstruction, tester54completed31/31(22translation/reaction+9branding)PASS; controlledpending-fontCDPsplashcapturePASSandstartupafterreleasePASS. MainrealChatunsupportedTelugu->ENexactoriginalwithnowarning+supportedBNtranslationPASS. LogoalphaandseparateopaqueiOSassetverified.
+- RecurringMetrolegacy/sounds requests diagnosed: canonicalcodeusesmedia/sounds, oldURLs/testfixturesresolveprojectroot/sounds. Addedbyte-identicalrealcompatibilitysourcefiles plusREADME, noabsolute/appsymlink orprotectedMetrochanges. Existingnativecanonicalimportsunchanged.
+- Nativebuildcodefixcompleted(cleanYarnlock/peers/EASignore;test52cleaninstall+hashunchangedPASS). FinalgatependingFirebaseclientforloggedapp.emergent.elevatefamiliarebcc2e16; currentgoogle-servicescontainsdifferentregisteredpackages. NeedauthenticclientJSONorconfirmedbuilderidentitycorrection, NEVERfakepackage_nameindifferentclient/removeFirebase/disablepush.
+
 ## Newest user changes — transparent artwork + gentle translation fallback
 - UseruploadedNEWtransparentPNG rizf8n77_1000101542.png andaskedlogo+appicontransparent.
   SourceRGBAverified; allinapplogo/splash/defaulticon/Androidforeground/faviconretainalpha.
